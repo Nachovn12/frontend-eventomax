@@ -113,7 +113,8 @@
 
 /* ─── Secondary button ─── */
 
-.btn-secondary {
+.btn-secondary,
+.btn-logout {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -123,16 +124,27 @@
   font-size: 0.875rem;
   font-weight: 500;
   font-family: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 44px;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.btn-secondary {
   color: #334155;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
-  min-height: 44px;
   margin-top: 1rem;
+}
+
+.btn-logout {
+  color: #b91c1c;
+  background: transparent;
+  border: 1px solid #fca5a5;
+  margin-top: 0.75rem;
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -140,12 +152,23 @@
   border-color: #cbd5e1;
 }
 
+.btn-logout:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
 .btn-secondary:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
-.btn-secondary:disabled {
+.btn-logout:focus-visible {
+  outline: 2px solid #b91c1c;
+  outline-offset: 2px;
+}
+
+.btn-secondary:disabled,
+.btn-logout:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }

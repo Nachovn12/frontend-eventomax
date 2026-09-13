@@ -62,13 +62,27 @@
           type="button"
           class="btn-secondary"
           (click)="onTestToken()"
-          [disabled]="tokenLoading()"
+          [disabled]="tokenLoading() || isLoggingOut()"
         >
           @if (tokenLoading()) {
             <span class="spinner spinner--small" aria-hidden="true"></span>
             Verificando token…
           } @else {
             Comprobar Access Token
+          }
+        </button>
+
+        <button
+          type="button"
+          class="btn-logout"
+          (click)="onLogout()"
+          [disabled]="isLoggingOut() || tokenLoading()"
+        >
+          @if (isLoggingOut()) {
+            <span class="spinner spinner--small" aria-hidden="true"></span>
+            Cerrando sesión…
+          } @else {
+            Cerrar sesión
           }
         </button>
 
