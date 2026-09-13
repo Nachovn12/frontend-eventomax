@@ -1,0 +1,287 @@
+/* ─── Login page ─── */
+
+:host {
+  display: block;
+  min-height: 100dvh;
+  background-color: #f5f6f8;
+  font-family:
+    'Segoe UI',
+    -apple-system,
+    BlinkMacSystemFont,
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+}
+
+/* ─── Layout ─── */
+
+.login-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 4px 24px rgba(0, 0, 0, 0.06);
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+/* ─── Header / Brand ─── */
+
+.login-header {
+  margin-bottom: 2rem;
+}
+
+.brand {
+  display: inline-block;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #0f172a;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+
+.login-title {
+  font-size: 1.625rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+  line-height: 1.25;
+}
+
+.login-subtitle {
+  font-size: 0.9375rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ─── Microsoft button ─── */
+
+.btn-microsoft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #1e293b;
+  background: #fff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+  min-height: 48px;
+}
+
+.btn-microsoft:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.btn-microsoft:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.btn-microsoft:active {
+  background: #e2e8f0;
+}
+
+.ms-icon {
+  flex-shrink: 0;
+}
+
+/* ─── Secondary button ─── */
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+  min-height: 44px;
+  margin-top: 1rem;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.btn-secondary:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ─── Authenticated state ─── */
+
+.login-authenticated {
+  text-align: center;
+}
+
+.auth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.check-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #22c55e;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.account-info {
+  text-align: left;
+  margin: 0 0 0.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.account-info dt {
+  font-weight: 600;
+  color: #475569;
+  margin-top: 0.25rem;
+}
+
+.account-info dt:first-of-type {
+  margin-top: 0;
+}
+
+.account-info dd {
+  margin: 0 0 0.25rem;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+/* ─── Token feedback ─── */
+
+.token-feedback {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.token-feedback--success {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.token-feedback--error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+/* ─── Loading spinner ─── */
+
+.login-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0;
+  font-size: 0.9375rem;
+  color: #475569;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner--small {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── Footer ─── */
+
+.login-footer {
+  margin-top: 2rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.login-footer p {
+  margin: 0;
+}
+
+/* ─── Responsive ─── */
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 2rem 1.25rem;
+  }
+
+  .login-title {
+    font-size: 1.375rem;
+  }
+}
