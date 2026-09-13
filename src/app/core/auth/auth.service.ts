@@ -3,6 +3,7 @@ import { MsalService } from '@azure/msal-angular';
 import {
   AccountInfo,
   AuthenticationResult,
+  EndSessionRequest,
   RedirectRequest,
   SilentRequest,
 } from '@azure/msal-browser';
@@ -14,11 +15,11 @@ import { environment } from '../../../environments/environment';
  *
  * Responsibilities:
  *  - login via redirect (Authorization Code + PKCE)
+ *  - logout via redirect
  *  - retrieve / restore the active account
  *  - acquire an access token silently for eventomax-api
  *
  * NOT implemented yet (future stories):
- *  - logout  → EMX-10
  *  - guards  → EMX-11
  *  - interceptor → EMX-12
  */
@@ -32,6 +33,16 @@ export class AuthService {
       scopes: [environment.apiScope],
     };
     this.msal.loginRedirect(request);
+  }
+
+  /** Logs out the current active account. */
+  logout(): void {
+    const account = this.getAccount();
+    const request: EndSessionRequest = {
+      account,
+      postLogoutRedirectUri: environment.postLogoutRedirectUri,
+    };
+    this.msal.logoutRedirect(request);
   }
 
   /**

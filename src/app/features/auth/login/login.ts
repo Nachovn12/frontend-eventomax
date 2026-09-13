@@ -54,6 +54,9 @@ export class Login implements OnInit {
   /** Whether a token acquisition is in progress. */
   readonly tokenLoading = signal(false);
 
+  /** True while logout redirect is being triggered. */
+  readonly isLoggingOut = signal(false);
+
   ngOnInit(): void {
     this.broadcastService.inProgress$
       .pipe(
@@ -96,6 +99,12 @@ export class Login implements OnInit {
     } finally {
       this.tokenLoading.set(false);
     }
+  }
+
+  /** Trigger logout redirect. */
+  onLogout(): void {
+    this.isLoggingOut.set(true);
+    this.auth.logout();
   }
 
   /** Refresh local signals from MSAL account state. */
