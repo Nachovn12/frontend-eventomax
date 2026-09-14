@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { MsalGuard, MSAL_GUARD_CONFIG } from '@azure/msal-angular';
+import { HttpClient } from '@angular/common/http';
+import { MsalGuard, MSAL_GUARD_CONFIG, MSAL_INTERCEPTOR_CONFIG } from '@azure/msal-angular';
 import { appConfig } from './app.config';
 
 describe('App Configuration DI', () => {
@@ -17,5 +18,19 @@ describe('App Configuration DI', () => {
     expect(guardConfig.interactionType).toBeDefined();
     expect(guardConfig.authRequest).toBeDefined();
     expect(guardConfig.loginFailedRoute).toBe('/login');
+  });
+
+  it('should successfully resolve HttpClient and MSAL_INTERCEPTOR_CONFIG', () => {
+    TestBed.configureTestingModule({
+      providers: appConfig.providers,
+    });
+
+    const httpClient = TestBed.inject(HttpClient);
+    expect(httpClient).toBeTruthy();
+
+    const interceptorConfig = TestBed.inject(MSAL_INTERCEPTOR_CONFIG);
+    expect(interceptorConfig).toBeTruthy();
+    expect(interceptorConfig.interactionType).toBeDefined();
+    expect(interceptorConfig.protectedResourceMap).toBeDefined();
   });
 });

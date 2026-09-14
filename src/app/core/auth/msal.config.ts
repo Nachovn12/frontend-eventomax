@@ -5,7 +5,7 @@ import {
   LogLevel,
   InteractionType,
 } from '@azure/msal-browser';
-import { MsalGuardConfiguration } from '@azure/msal-angular';
+import { MsalGuardConfiguration, MsalInterceptorConfiguration } from '@azure/msal-angular';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -44,5 +44,19 @@ export function msalGuardConfigFactory(): MsalGuardConfiguration {
       scopes: [environment.apiScope],
     },
     loginFailedRoute: '/login',
+  };
+}
+
+/**
+ * Factory that creates the MSAL Interceptor configuration.
+ * Attaches the access token automatically to the EventoMax API Gateway.
+ */
+export function msalInterceptorConfigFactory(): MsalInterceptorConfiguration {
+  const protectedResourceMap = new Map<string, Array<string>>();
+  protectedResourceMap.set(`${environment.apiGatewayUrl}/*`, [environment.apiScope]);
+
+  return {
+    interactionType: InteractionType.Redirect,
+    protectedResourceMap,
   };
 }
