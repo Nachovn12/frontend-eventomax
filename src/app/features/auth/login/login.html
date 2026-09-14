@@ -4,8 +4,8 @@
       <span class="brand">EventoMax</span>
       <h1 id="login-heading" class="login-title">Bienvenido</h1>
       <p class="login-subtitle">
-        Plataforma profesional de producciÃ³n de eventos.
-        Inicia sesiÃ³n con tu cuenta corporativa Microsoft para continuar.
+        Plataforma profesional de producción de eventos.
+        Inicia sesión con tu cuenta corporativa Microsoft para continuar.
       </p>
     </header>
 
@@ -13,7 +13,7 @@
     @if (isLoading()) {
       <div class="login-status" role="status" aria-live="polite">
         <span class="spinner" aria-hidden="true"></span>
-        <span>Iniciando sesiÃ³n seguraâ€¦</span>
+        <span>Iniciando sesión segura…</span>
       </div>
     }
 
@@ -38,7 +38,7 @@
             <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
             <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
           </svg>
-          Iniciar sesiÃ³n con Microsoft
+          Iniciar sesión con Microsoft
         </button>
       </div>
     }
@@ -47,8 +47,8 @@
     @if (!isLoading() && isAuthenticated()) {
       <div class="login-authenticated" role="status" aria-live="polite">
         <div class="auth-badge">
-          <span class="check-icon" aria-hidden="true">âœ“</span>
-          <span>SesiÃ³n iniciada</span>
+          <span class="check-icon" aria-hidden="true">✓</span>
+          <span>Sesión iniciada</span>
         </div>
 
         <dl class="account-info">
@@ -68,7 +68,7 @@
         >
           @if (tokenLoading()) {
             <span class="spinner spinner--small" aria-hidden="true"></span>
-            Verificando tokenâ€¦
+            Verificando token…
           } @else {
             Comprobar Access Token
           }
@@ -82,9 +82,9 @@
         >
           @if (isLoggingOut()) {
             <span class="spinner spinner--small" aria-hidden="true"></span>
-            Cerrando sesiÃ³nâ€¦
+            Cerrando sesión…
           } @else {
-            Cerrar sesiÃ³n
+            Cerrar sesión
           }
         </button>
 
@@ -104,6 +104,6 @@
   </div>
 
   <footer class="login-footer">
-    <p>Â© 2026 EventoMax â€” DSY1107 Desarrollo Cloud Native I</p>
+    <p>© 2026 EventoMax — DSY1107 Desarrollo Cloud Native I</p>
   </footer>
 </section>

@@ -34,7 +34,7 @@ describe('Audit Component', () => {
   it('should create the component and render the title', () => {
     expect(component).toBeTruthy();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('AuditorÃ­a');
+    expect(compiled.querySelector('h1')?.textContent).toContain('Auditoría');
   });
 
   it('should display "Auditor" when user has Auditor role', () => {

@@ -17,7 +17,7 @@ import { AuthorizationService } from '../../../core/auth/authorization.service';
 import { AppRole } from '../../../core/auth/models/app-role';
 
 /**
- * Login page component â€” EMX-9.
+ * Login page component — EMX-9.
  *
  * Reacts to MSAL interaction status to distinguish:
  *  1. MSAL initializing (spinner)
@@ -114,7 +114,7 @@ export class Login implements OnInit {
     } catch {
       this.tokenSuccess.set(false);
       this.tokenStatus.set(
-        'No se pudo obtener el token. Es posible que se requiera interacciÃ³n.',
+        'No se pudo obtener el token. Es posible que se requiera interacción.',
       );
     } finally {
       this.tokenLoading.set(false);
