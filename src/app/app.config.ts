@@ -1,9 +1,15 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { MSAL_INSTANCE, MsalService, MsalBroadcastService } from '@azure/msal-angular';
+import {
+  MSAL_INSTANCE,
+  MSAL_GUARD_CONFIG,
+  MsalService,
+  MsalBroadcastService,
+  MsalGuard,
+} from '@azure/msal-angular';
 
 import { routes } from './app.routes';
-import { createMsalInstance } from './core/auth/msal.config';
+import { createMsalInstance, msalGuardConfigFactory } from './core/auth/msal.config';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -13,7 +19,12 @@ export const appConfig: ApplicationConfig = {
       provide: MSAL_INSTANCE,
       useFactory: createMsalInstance,
     },
+    {
+      provide: MSAL_GUARD_CONFIG,
+      useFactory: msalGuardConfigFactory,
+    },
     MsalService,
     MsalBroadcastService,
+    MsalGuard,
   ],
 };
