@@ -39,7 +39,7 @@ export class App implements OnInit {
           await this.syncAuthorizationState();
         },
         error: (error: unknown) => {
-          // Log a safe message â€” never expose JWT or sensitive data
+          // Log a safe message — never expose JWT or sensitive data
           console.error('MSAL redirect error:', error instanceof Error ? error.message : 'Unknown error');
           this.authz.clear();
         },
