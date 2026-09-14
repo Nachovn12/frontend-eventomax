@@ -4,6 +4,7 @@ import {
   OnInit,
   inject,
   signal,
+  computed,
   DestroyRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -12,9 +13,11 @@ import { InteractionStatus } from '@azure/msal-browser';
 import { filter } from 'rxjs/operators';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { AuthorizationService } from '../../../core/auth/authorization.service';
+import { AppRole } from '../../../core/auth/models/app-role';
 
 /**
- * Login page component — EMX-9.
+ * Login page component â€” EMX-9.
  *
  * Reacts to MSAL interaction status to distinguish:
  *  1. MSAL initializing (spinner)
@@ -33,6 +36,8 @@ export class Login implements OnInit {
   private readonly broadcastService = inject(MsalBroadcastService);
   private readonly destroyRef = inject(DestroyRef);
 
+  private readonly authz = inject(AuthorizationService);
+
   /** True while MSAL interaction is in progress. */
   readonly isLoading = signal(true);
 
@@ -44,6 +49,21 @@ export class Login implements OnInit {
 
   /** Email / UPN of the active account. */
   readonly accountEmail = signal('');
+
+  /** User role string for display. */
+  readonly displayRole = computed(() => {
+    const roles = this.authz.roles();
+    if (roles.length === 0) {
+      return 'Sin rol asignado';
+    }
+    const roleMap: Record<AppRole, string> = {
+      [AppRole.Admin]: 'Administrador',
+      [AppRole.Producer]: 'Productor',
+      [AppRole.Organizer]: 'Organizador',
+      [AppRole.Auditor]: 'Auditor',
+    };
+    return roles.map(r => roleMap[r]).join(', ');
+  });
 
   /** Status text for the token test. */
   readonly tokenStatus = signal('');
@@ -67,8 +87,8 @@ export class Login implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => {
-        this.isLoading.set(false);
         this.checkAccount();
+        this.isLoading.set(false);
       });
   }
 
@@ -94,7 +114,7 @@ export class Login implements OnInit {
     } catch {
       this.tokenSuccess.set(false);
       this.tokenStatus.set(
-        'No se pudo obtener el token. Es posible que se requiera interacción.',
+        'No se pudo obtener el token. Es posible que se requiera interacciÃ³n.',
       );
     } finally {
       this.tokenLoading.set(false);
@@ -107,7 +127,7 @@ export class Login implements OnInit {
     this.auth.logout();
   }
 
-  /** Refresh local signals from MSAL account state. */
+  /** Refresh local signals from MSAL account state and authorization. */
   private checkAccount(): void {
     const account = this.auth.getAccount();
     this.isAuthenticated.set(account !== null);

@@ -1,0 +1,15 @@
+<section class="dashboard-page" aria-labelledby="dashboard-heading">
+  <div class="dashboard-card">
+    <h1 id="dashboard-heading" class="dashboard-title">Dashboard</h1>
+    <p class="dashboard-text">Bienvenido a EventoMax.</p>
+
+    <dl class="account-info">
+      <dt>Rol actual</dt>
+      <dd>{{ displayRole() }}</dd>
+    </dl>
+
+    <button type="button" class="btn-logout" (click)="onLogout()">
+      Cerrar sesiÃ³n
+    </button>
+  </div>
+</section>
