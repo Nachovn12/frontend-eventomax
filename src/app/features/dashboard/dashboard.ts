@@ -1,34 +1,50 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
-import { AuthService } from '../../core/auth/auth.service';
+import { RouterLink } from '@angular/router';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
+import {
+  DEMO_INVENTORY,
+  DEMO_PRODUCTIONS,
+  DEMO_PERIOD,
+  DEMO_AUDIT,
+} from '../../demo/eventomax.fixtures';
+import { Icon } from '../../shared/ui/icon';
+import { ProductionTable } from '../../shared/ui/production-table';
+import { StatusChip } from '../../shared/ui/status-chip';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
+  imports: [RouterLink, Icon, ProductionTable, StatusChip],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Dashboard {
-  private readonly auth = inject(AuthService);
   private readonly authz = inject(AuthorizationService);
-
-  readonly displayRole = computed(() => {
-    const roles = this.authz.roles();
-    if (roles.length === 0) {
-      return 'Sin rol asignado';
-    }
-    const roleMap: Record<AppRole, string> = {
-      [AppRole.Admin]: 'Administrador',
-      [AppRole.Producer]: 'Productor',
-      [AppRole.Organizer]: 'Organizador',
-      [AppRole.Auditor]: 'Auditor',
-    };
-    return roles.map(r => roleMap[r]).join(', ');
-  });
-
-  onLogout(): void {
-    this.auth.logout();
-  }
+  readonly canViewProductions = computed(() =>
+    this.authz
+      .roles()
+      .some((role) => [AppRole.Admin, AppRole.Producer, AppRole.Organizer].includes(role)),
+  );
+  readonly canViewCatalog = computed(() =>
+    this.authz.roles().some((role) => [AppRole.Admin, AppRole.Producer].includes(role)),
+  );
+  readonly isAdmin = computed(() => this.authz.roles().includes(AppRole.Admin));
+  readonly isAuditor = computed(() => this.authz.roles().includes(AppRole.Auditor));
+  readonly isOrganizerOnly = computed(
+    () => this.authz.roles().includes(AppRole.Organizer) && !this.canViewCatalog(),
+  );
+  readonly period = DEMO_PERIOD;
+  readonly productions = DEMO_PRODUCTIONS.filter(
+    (item) => !['CERRADO', 'CANCELADO'].includes(item.status),
+  );
+  readonly upcoming = this.productions.slice(0, 4);
+  readonly requested = this.productions.filter((item) => item.status === 'SOLICITADO').length;
+  readonly confirmed = this.productions.filter((item) => item.status === 'CONFIRMADO').length;
+  readonly live = this.productions.filter((item) =>
+    ['EN_MONTAJE', 'EN_EJECUCIÓN'].includes(item.status),
+  ).length;
+  readonly inventory = DEMO_INVENTORY;
+  readonly activity = DEMO_AUDIT.slice(0, 3);
 }

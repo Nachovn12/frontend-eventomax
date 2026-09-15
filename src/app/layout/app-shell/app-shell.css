@@ -1,0 +1,152 @@
+.emx-workspace {
+  &.shell-layout {
+    display: flex;
+    min-height: 100dvh;
+  }
+  .shell-sidebar {
+    width: 244px;
+    flex-shrink: 0;
+    background: #111f32;
+    color: #bac8da;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    overflow-y: auto;
+  }
+  .sidebar-header {
+    padding: 29px 24px 26px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+  }
+  .brand-text {
+    font-size: 21px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.6px;
+    line-height: 1.1;
+    display: block;
+  }
+  .brand-text span {
+    font-weight: 400;
+  }
+  .brand-caption {
+    color: #99acc5;
+    display: block;
+    font-size: 8px;
+    letter-spacing: 2px;
+    margin-top: 5px;
+  }
+  .sidebar-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .workspace-label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    border: 1px solid #2b3c52;
+    background: #19293f;
+    border-radius: 8px;
+    margin: 0 16px 27px;
+    padding: 11px;
+    font-size: 10px;
+  }
+  .workspace-label strong {
+    font-size: 11px;
+    color: #e2eaf5;
+    display: block;
+    font-weight: 500;
+  }
+  .workspace-label span:not(.workspace-avatar):not(.workspace-dot) {
+    font-size: 9px;
+    display: block;
+    margin-top: 2px;
+  }
+  .workspace-avatar {
+    width: 29px;
+    height: 29px;
+    background: #30435e;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+  }
+  .workspace-dot {
+    width: 5px;
+    height: 5px;
+    background: #65b9a0;
+    border-radius: 100%;
+    margin-left: auto;
+  }
+  .sidebar-nav {
+    padding: 0 13px;
+    display: grid;
+    gap: 5px;
+  }
+  .nav-section {
+    font-size: 9px;
+    color: #8fa2be;
+    letter-spacing: 1.4px;
+    padding: 0 13px 9px;
+    font-weight: 600;
+  }
+  .nav-section.secondary {
+    padding-top: 25px;
+  }
+  .nav-link {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    min-height: 44px;
+    padding: 11px 13px;
+    text-decoration: none;
+    border-radius: 7px;
+    font-size: 12px;
+  }
+  .nav-link:hover {
+    background: #1c2e46;
+    color: white;
+  }
+  .nav-link.active {
+    background: #285fd6;
+    color: white;
+    box-shadow: 0 4px 12px #0002;
+  }
+
+  .sidebar-footer {
+    margin-top: 4px;
+    border-top: 1px solid #2a394e;
+    padding: 18px;
+  }
+
+  .btn-logout {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: none;
+    border: 0;
+    color: #b8c8dc;
+    font-size: 11px;
+    min-height: 44px;
+    margin-top: 7px;
+    width: 100%;
+    text-align: left;
+    padding: 8px;
+    border-radius: 6px;
+  }
+  .btn-logout:hover {
+    background: #263951;
+    color: white;
+  }
+}

@@ -1,15 +1,106 @@
-<section class="audit-page" aria-labelledby="audit-heading">
-  <div class="audit-card">
-    <h1 id="audit-heading" class="audit-title">Auditoría</h1>
-    <p class="audit-text">Consulta de trazabilidad y timeline de EventoMax.</p>
+<div class="page-content">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">TRAZABILIDAD Y CONTROL</p>
+      <h1 class="page-title">Auditoría</h1>
+      <p class="page-description">La historia de cada producción, en una línea de tiempo.</p>
+    </div>
+    <a class="btn-primary" routerLink="/dashboard">Volver al dashboard <emx-icon name="arrow" /></a>
+  </header>
 
-    <dl class="account-info">
-      <dt>Rol actual</dt>
-      <dd>{{ displayRole() }}</dd>
-    </dl>
-
-    <a routerLink="/dashboard" class="btn-primary">
-      Volver al dashboard
-    </a>
+  <div class="audit-layout">
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Timeline de actividad</h2>
+          <p>Del movimiento más reciente al más antiguo · horarios de Chile</p>
+        </div>
+        <span class="badge">Solo lectura</span>
+      </div>
+      <div class="toolbar">
+        <label class="field grow" for="audit-search"
+          >Buscar actividad<input
+            #searchInput
+            type="search"
+            id="audit-search"
+            [formControl]="search"
+            placeholder="Actor, evento o identificador de traza…" /></label
+        ><label class="field" for="audit-production"
+          >Producción<select id="audit-production" [formControl]="production">
+            <option value="">Todas las producciones</option>
+            @for (item of events; track item.id) {
+              <option [value]="item.production">{{ item.production }} · {{ item.name }}</option>
+            }
+          </select></label
+        ><button class="btn" type="button" (click)="clearFilters(); searchInput.focus()">
+          Limpiar
+        </button>
+      </div>
+      @if (rows().length) {
+        <ol class="timeline">
+          @for (item of rows(); track item.id) {
+            <li class="timeline-item">
+              <span class="timeline-marker" aria-hidden="true"><emx-icon name="check" /></span>
+              <article>
+                <div class="timeline-heading">
+                  <h3>{{ item.title }}</h3>
+                  <span class="audit-time">{{ item.time }}</span>
+                </div>
+                <p class="timeline-event">{{ item.production }} <span>·</span> {{ item.name }}</p>
+                <p class="timeline-description">{{ item.description }}</p>
+                <div class="timeline-meta">
+                  <span class="audit-actor"
+                    ><span class="actor-avatar" aria-hidden="true">{{
+                      item.actor.slice(0, 1)
+                    }}</span
+                    >{{ item.actor }} <span class="actor-role">{{ item.role }}</span></span
+                  ><emx-status [status]="item.status" />
+                </div>
+                <details class="trace-details">
+                  <summary>Ver trazabilidad</summary>
+                  <dl>
+                    <div>
+                      <dt>Registro</dt>
+                      <dd>{{ item.id }}</dd>
+                    </div>
+                    <div>
+                      <dt>Trace ID</dt>
+                      <dd>{{ item.trace }}</dd>
+                    </div>
+                    <div>
+                      <dt>Origen</dt>
+                      <dd>Fixture UI local · ficticio</dd>
+                    </div>
+                  </dl>
+                </details>
+              </article>
+            </li>
+          }
+        </ol>
+      } @else {
+        <div class="empty-state" role="status">
+          <span class="icon-tile"><emx-icon name="search" /></span>
+          <h3>No hay actividad con estos filtros</h3>
+          <p>Busca por actor, producción o identificador de traza.</p>
+          <button type="button" class="btn-primary" (click)="clearFilters(); searchInput.focus()">
+            Limpiar filtros
+          </button>
+        </div>
+      }
+      <div class="panel-footer">
+        <span role="status">{{ rows().length }} de {{ events.length }} registros demo</span
+        ><span>12–14 sep 2026</span>
+      </div>
+    </section>
+    <aside class="audit-context">
+      <section class="panel">
+        <div class="panel-heading">
+          <span class="icon-tile purple"><emx-icon name="shield" /></span>
+        </div>
+        <div class="panel-body">
+          <p>Este registro centraliza los cambios realizados sobre las producciones. No puede editarse ni eliminarse manualmente.</p>
+        </div>
+      </section>
+    </aside>
   </div>
-</section>
+</div>
