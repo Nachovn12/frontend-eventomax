@@ -2,7 +2,6 @@ import {
   IPublicClientApplication,
   PublicClientApplication,
   BrowserCacheLocation,
-  LogLevel,
   InteractionType,
 } from '@azure/msal-browser';
 import { MsalGuardConfiguration, MsalInterceptorConfiguration } from '@azure/msal-angular';
@@ -24,12 +23,6 @@ export function createMsalInstance(): IPublicClientApplication {
     },
     cache: {
       cacheLocation: BrowserCacheLocation.SessionStorage,
-    },
-    system: {
-      loggerOptions: {
-        logLevel: LogLevel.Warning,
-        piiLoggingEnabled: false,
-      },
     },
   });
 }

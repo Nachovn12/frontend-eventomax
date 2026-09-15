@@ -1,4 +1,4 @@
-import { InteractionType } from '@azure/msal-browser';
+﻿import { InteractionType } from '@azure/msal-browser';
 import { msalInterceptorConfigFactory } from './msal.config';
 import { environment } from '../../../environments/environment';
 
