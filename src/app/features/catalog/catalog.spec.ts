@@ -1,4 +1,4 @@
-﻿import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { Catalog } from './catalog';
 
 describe('Catalog', () => {

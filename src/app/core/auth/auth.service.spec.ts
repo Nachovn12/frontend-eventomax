@@ -1,4 +1,4 @@
-﻿import { TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { MsalService } from '@azure/msal-angular';
 import { AccountInfo, EndSessionRequest } from '@azure/msal-browser';
 import { AuthService } from './auth.service';

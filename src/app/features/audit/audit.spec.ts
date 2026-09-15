@@ -1,4 +1,4 @@
-﻿import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Audit } from './audit';
 import { AuthorizationService } from '../../core/auth/authorization.service';

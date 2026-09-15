@@ -1,4 +1,4 @@
-﻿import { MsalGuard } from '@azure/msal-angular';
+import { MsalGuard } from '@azure/msal-angular';
 import { routes } from './app.routes';
 import { roleGuard } from './core/auth/guards/role.guard';
 import { AppRole } from './core/auth/models/app-role';
