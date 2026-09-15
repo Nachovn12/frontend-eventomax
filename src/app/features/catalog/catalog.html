@@ -1,7 +1,7 @@
 <div class="page-content">
   <header class="page-header">
     <div>
-      <p class="eyebrow">RECURSOS PARA CADA PRODUCCI�N</p>
+      <p class="eyebrow">RECURSOS PARA CADA PRODUCCIÓN</p>
       <h1 class="page-title">Catálogo e inventario</h1>
       <p class="page-description">El equipo correcto, listo para el próximo evento.</p>
     </div>
@@ -16,28 +16,28 @@
       <div class="metric-top">
         Equipos en inventario <span class="icon-tile"><emx-icon name="box" /></span>
       </div>
-      <strong class="metric-value">{{ inventory.total }}</strong>
+      <strong class="metric-value">{{ inventory().total }}</strong>
       <p class="metric-foot">6 referencias · excluye servicios</p>
     </article>
     <article class="metric-card">
       <div class="metric-top">
         Disponibles <span class="icon-tile green"><emx-icon name="check" /></span>
       </div>
-      <strong class="metric-value">{{ inventory.available }}</strong>
+      <strong class="metric-value">{{ inventory().available }}</strong>
       <p class="metric-foot">Unidades libres en el ejemplo</p>
     </article>
     <article class="metric-card">
       <div class="metric-top">
         Reservados <span class="icon-tile purple"><emx-icon name="calendar" /></span>
       </div>
-      <strong class="metric-value">{{ inventory.reserved }}</strong>
+      <strong class="metric-value">{{ inventory().reserved }}</strong>
       <p class="metric-foot">Asignación ilustrativa</p>
     </article>
     <article class="metric-card">
       <div class="metric-top">
         En mantenimiento <span class="icon-tile amber"><emx-icon name="clock" /></span>
       </div>
-      <strong class="metric-value">{{ inventory.maintenance }}</strong>
+      <strong class="metric-value">{{ inventory().maintenance }}</strong>
       <p class="metric-foot">Fuera de disponibilidad demo</p>
     </article>
   </section>
@@ -107,7 +107,7 @@
                     /></span>
                     <div>
                       <strong>{{ item.name }}</strong
-                      ><span class="cell-meta">{{ item.id }} � {{ item.description }}</span>
+                      ><span class="cell-meta">{{ item.id }} · {{ item.description }}</span>
                     </div>
                   </div>
                 </td>

@@ -14,18 +14,23 @@ import { CatalogDataService } from './catalog-data.service';
 })
 export class Catalog {
   private readonly dataService = inject(CatalogDataService);
-  readonly inventory = this.dataService.getInventory();
+
+  readonly inventory = toSignal(this.dataService.getInventory(), { initialValue: { total: 0, reserved: 0, maintenance: 0, available: 0 } });
+  private readonly allEquipment = toSignal(this.dataService.getEquipment(), { initialValue: [] });
+
   readonly categories = ['Audio', 'Iluminación', 'Escenario', 'Servicios'] as const;
   readonly search = new FormControl('', { nonNullable: true });
   readonly category = new FormControl('', { nonNullable: true });
   readonly availability = new FormControl('', { nonNullable: true });
+
   private readonly query = toSignal(this.search.valueChanges, { initialValue: '' });
   private readonly selectedCategory = toSignal(this.category.valueChanges, { initialValue: '' });
   private readonly selectedAvailability = toSignal(this.availability.valueChanges, {
     initialValue: '',
   });
+
   readonly rows = computed(() => {
-    return this.dataService.getEquipment().filter((item) => {
+    return this.allEquipment().filter((item) => {
       const available = item.stock - item.reserved - item.maintenance;
       const matchesAvailability =
         !this.selectedAvailability() ||
@@ -40,6 +45,7 @@ export class Catalog {
       );
     });
   });
+
   clearFilters(): void {
     this.search.setValue('');
     this.category.setValue('');

@@ -1,10 +1,11 @@
+import { ProductionViewModel, ProductionStatus } from '../core/models/production.model';
 /** UI-only, fictional fixtures. Never use these records for authorization, reservations or APIs. */
 export const DEMO_PERIOD = '14–20 sep 2026';
 export const DEMO_STATUSES = [
   'SOLICITADO',
   'CONFIRMADO',
   'EN_MONTAJE',
-  'EN_EJECUCIÓN',
+  'EN_EJECUCION',
   'CERRADO',
   'CANCELADO',
 ] as const;
@@ -23,7 +24,7 @@ export interface DemoProduction {
   readonly equipment: number;
   readonly category: string;
 }
-export const DEMO_PRODUCTIONS: readonly DemoProduction[] = [
+export const DEMO_PRODUCTIONS: readonly ProductionViewModel[] = [
   {
     id: 'EMX-2401',
     name: 'Summit Horizonte 2026',
@@ -33,7 +34,7 @@ export const DEMO_PRODUCTIONS: readonly DemoProduction[] = [
     day: '14',
     month: 'SEP',
     time: '09:00',
-    status: 'EN_EJECUCIÓN',
+    status: 'EN_EJECUCION',
     crew: 'Cuadrilla Norte',
     equipment: 24,
     category: 'Corporativo',
@@ -276,10 +277,10 @@ export const DEMO_AUDIT = [
     name: 'Summit Horizonte 2026',
     time: '14 sep · 09:00',
     title: 'Producción en ejecución',
-    description: 'Transición de EN_MONTAJE a EN_EJECUCIÓN.',
+    description: 'Transición de EN_MONTAJE a EN_EJECUCION.',
     actor: 'Camila Rojas',
     role: 'Producer',
-    status: 'EN_EJECUCIÓN',
+    status: 'EN_EJECUCION',
     trace: 'demo-trace-2401-05',
   },
   {
@@ -324,7 +325,7 @@ export const DEMO_AUDIT = [
     name: 'Foro Ciudad Circular',
     time: '12 sep · 18:30',
     title: 'Producción cerrada',
-    description: 'Transición de EN_EJECUCIÓN a CERRADO.',
+    description: 'Transición de EN_EJECUCION a CERRADO.',
     actor: 'Diego Soto',
     role: 'Producer',
     status: 'CERRADO',

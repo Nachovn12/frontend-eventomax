@@ -12,7 +12,10 @@ describe('Productions', () => {
   it('shows realistic demo rows and all six status chips', () => {
     expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(8);
 
-    for (const status of DEMO_STATUSES) expect(fixture.nativeElement.textContent).toContain(status);
+    for (const status of DEMO_STATUSES) {
+      const label = status === 'EN_EJECUCION' ? 'EN_EJECUCIÓN' : status;
+      expect(fixture.nativeElement.textContent).toContain(label);
+    }
   });
   it('combines the visible search and status controls', () => {
     const input: HTMLInputElement = fixture.nativeElement.querySelector('#production-search');

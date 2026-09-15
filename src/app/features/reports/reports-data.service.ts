@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
 import {
   DEMO_INVENTORY,
   DEMO_PRODUCTIONS,
@@ -6,26 +7,40 @@ import {
   DEMO_WEEKLY_REPORT,
   DEMO_REPORT_CHART_OPTION,
 } from '../../demo/eventomax.fixtures';
+import { ProductionViewModel, ProductionStatus } from '../../core/models/production.model';
+
+export interface WeeklyReportItem {
+  label: string;
+  period: string;
+  productions: number;
+}
+
+export interface InventoryStats {
+  total: number;
+  reserved: number;
+  maintenance: number;
+  available: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ReportsDataService {
-  getWeeklyReport() {
-    return DEMO_WEEKLY_REPORT;
+  getWeeklyReport(): Observable<readonly WeeklyReportItem[]> {
+    return of(DEMO_WEEKLY_REPORT);
   }
 
-  getInventory() {
-    return DEMO_INVENTORY;
+  getInventory(): Observable<InventoryStats> {
+    return of(DEMO_INVENTORY);
   }
 
-  getProductions() {
-    return DEMO_PRODUCTIONS;
+  getProductions(): Observable<readonly ProductionViewModel[]> {
+    return of(DEMO_PRODUCTIONS);
   }
 
-  getStatuses() {
-    return DEMO_STATUSES;
+  getStatuses(): Observable<readonly ProductionStatus[]> {
+    return of(DEMO_STATUSES);
   }
 
-  getChartOption() {
-    return DEMO_REPORT_CHART_OPTION;
+  getChartOption(): Observable<any> {
+    return of(DEMO_REPORT_CHART_OPTION);
   }
 }

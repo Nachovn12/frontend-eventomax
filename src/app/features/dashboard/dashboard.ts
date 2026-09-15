@@ -1,13 +1,9 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
-import {
-  DEMO_INVENTORY,
-  DEMO_PRODUCTIONS,
-  DEMO_PERIOD,
-  DEMO_AUDIT,
-} from '../../demo/eventomax.fixtures';
+import { DashboardDataService } from './dashboard-data.service';
 import { Icon } from '../../shared/ui/icon';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { StatusChip } from '../../shared/ui/status-chip';
@@ -22,6 +18,8 @@ import { StatusChip } from '../../shared/ui/status-chip';
 })
 export class Dashboard {
   private readonly authz = inject(AuthorizationService);
+  private readonly dataService = inject(DashboardDataService);
+
   readonly canViewProductions = computed(() =>
     this.authz
       .roles()
@@ -35,16 +33,22 @@ export class Dashboard {
   readonly isOrganizerOnly = computed(
     () => this.authz.roles().includes(AppRole.Organizer) && !this.canViewCatalog(),
   );
-  readonly period = DEMO_PERIOD;
-  readonly productions = DEMO_PRODUCTIONS.filter(
-    (item) => !['CERRADO', 'CANCELADO'].includes(item.status),
+
+  readonly period = toSignal(this.dataService.getPeriod(), { initialValue: '' });
+
+  private readonly allProductions = toSignal(this.dataService.getProductions(), { initialValue: [] });
+
+  readonly productions = computed(() =>
+    this.allProductions().filter((item) => !['CERRADO', 'CANCELADO'].includes(item.status))
   );
-  readonly upcoming = this.productions.slice(0, 4);
-  readonly requested = this.productions.filter((item) => item.status === 'SOLICITADO').length;
-  readonly confirmed = this.productions.filter((item) => item.status === 'CONFIRMADO').length;
-  readonly live = this.productions.filter((item) =>
-    ['EN_MONTAJE', 'EN_EJECUCIÓN'].includes(item.status),
-  ).length;
-  readonly inventory = DEMO_INVENTORY;
-  readonly activity = DEMO_AUDIT.slice(0, 3);
+
+  readonly upcoming = computed(() => this.productions().slice(0, 4));
+  readonly requested = computed(() => this.productions().filter((item) => item.status === 'SOLICITADO').length);
+  readonly confirmed = computed(() => this.productions().filter((item) => item.status === 'CONFIRMADO').length);
+  readonly live = computed(() => this.productions().filter((item) => ['EN_MONTAJE', 'EN_EJECUCION'].includes(item.status)).length);
+
+  readonly inventory = toSignal(this.dataService.getInventory(), { initialValue: { total: 0, reserved: 0, maintenance: 0, available: 0 } });
+
+  private readonly allAudit = toSignal(this.dataService.getAuditActivity(), { initialValue: [] });
+  readonly activity = computed(() => this.allAudit().slice(0, 3));
 }

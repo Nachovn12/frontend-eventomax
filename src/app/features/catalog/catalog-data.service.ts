@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
 import { DEMO_EQUIPMENT, DEMO_INVENTORY } from '../../demo/eventomax.fixtures';
 
 @Injectable({ providedIn: 'root' })
 export class CatalogDataService {
-  getEquipment() {
-    return DEMO_EQUIPMENT;
+  getEquipment(): Observable<readonly any[]> {
+    return of(DEMO_EQUIPMENT);
   }
 
-  getInventory() {
-    return DEMO_INVENTORY;
+  getInventory(): Observable<any> {
+    return of(DEMO_INVENTORY);
   }
 }
