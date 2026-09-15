@@ -1,0 +1,148 @@
+�<div class="page-content">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">ANÁLISIS DE LA OPERACI�N</p>
+      <h1 class="page-title">Reportes</h1>
+      <p class="page-description">Convierte la actividad en una visión clara de tu producción.</p>
+    </div>
+    <span class="badge">Septiembre 2026 · escenario ficticio</span>
+  </header>
+
+  <section class="metric-grid" aria-label="Indicadores de demostración">
+    <article class="metric-card">
+      <div class="metric-top">
+        Proyección del mes <span class="icon-tile"><emx-icon name="chart" /></span>
+      </div>
+      <strong class="metric-value">{{ total }}</strong>
+      <p class="metric-foot">Producciones · serie ilustrativa mensual</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        Semana de mayor actividad <span class="icon-tile green"><emx-icon name="calendar" /></span>
+      </div>
+      <strong class="metric-value">09</strong>
+      <p class="metric-foot">21�27 sep · proyección de ejemplo</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        Equipos reservados <span class="icon-tile purple"><emx-icon name="box" /></span>
+      </div>
+      <strong class="metric-value">{{ reservedPercent }}<small>%</small></strong>
+      <p class="metric-foot">
+        {{ inventory.reserved }} de {{ inventory.total }} equipos · escenario demo
+      </p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        Equipos disponibles <span class="icon-tile amber"><emx-icon name="check" /></span>
+      </div>
+      <strong class="metric-value">{{ inventory.available }}</strong>
+      <p class="metric-foot">Excluye {{ inventory.maintenance }} en mantenimiento</p>
+    </article>
+  </section>
+  <div class="split-grid">
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Ritmo de producción</h2>
+          <p>Proyección semanal · datos ilustrativos independientes del listado de eventos</p>
+        </div>
+        <span class="demo-tag">DEMO</span>
+      </div>
+      <div class="panel-body">
+        <figure
+          class="chart-placeholder"
+          data-chart-library="echarts"
+          aria-labelledby="weekly-chart-caption"
+        >
+          <figcaption id="weekly-chart-caption">
+            Producciones por semana · septiembre 2026
+          </figcaption>
+          <div
+            class="bar-chart"
+            role="img"
+            aria-label="Proyección demo: semana 1, 4; semana 2, 7; semana 3, 6; semana 4, 9; semana 5, 3 producciones."
+          >
+            <div class="chart-grid" aria-hidden="true">
+              <span>10</span><span>5</span><span>0</span>
+            </div>
+            <div class="bars" aria-hidden="true">
+              @for (item of weekly; track item.label) {
+                <div class="bar-column">
+                  <strong>{{ item.productions }}</strong>
+                  <div
+                    class="bar"
+                    [class.highlight]="item.label === 'S3'"
+                    [style.height.px]="item.productions * 17"
+                  ></div>
+                  <span>{{ item.label }}</span
+                  ><small>{{ item.period }}</small>
+                </div>
+              }
+            </div>
+          </div>
+        </figure>
+        <details class="chart-data">
+          <summary>Ver datos del gráfico</summary>
+          <table class="data-table">
+            <caption class="sr-only">
+              Proyección semanal de demostración
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Semana</th>
+                <th scope="col">Producciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of weekly; track item.label) {
+                <tr>
+                  <td>{{ item.period }}</td>
+                  <td>{{ item.productions }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </details>
+      </div>
+      <div class="panel-footer">
+        <span>Visualización de demostración · sin conexión a reportería</span>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Estado de las producciones</h2>
+          <p>Distribución de los {{ productionsCount }} eventos del listado demo</p>
+        </div>
+      </div>
+      <div class="panel-body state-distribution">
+        @for (item of stateCounts; track item.status) {
+          <div class="state-row">
+            <div>
+              <emx-status [status]="item.status" /><strong>{{ item.count }}</strong>
+            </div>
+            <div
+              class="progress-track"
+              role="img"
+              [attr.aria-label]="item.status + ': ' + item.count + ' de ' + productionsCount"
+            >
+              <span [style.width.%]="(item.count / productionsCount) * 100"></span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+  <section class="report-roadmap">
+    <span class="icon-tile"><emx-icon name="chart" /></span>
+    <div>
+      <h2>Un espacio para decisiones con datos</h2>
+      <p>
+        Próximamente podrás explorar tendencias de producción y uso de recursos con datos de tu
+        operación. Por ahora, esta vista muestra ejemplos locales.
+      </p>
+    </div>
+    <span class="badge">Próxima integración</span>
+  </section>
+</div>

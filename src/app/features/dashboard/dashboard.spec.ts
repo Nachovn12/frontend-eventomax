@@ -1,56 +1,50 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { signal, WritableSignal } from '@angular/core';
-import { Dashboard } from './dashboard';
-import { AuthService } from '../../core/auth/auth.service';
+﻿import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
+import { Dashboard } from './dashboard';
 
-describe('Dashboard Component', () => {
-  let component: Dashboard;
+describe('Dashboard', () => {
   let fixture: ComponentFixture<Dashboard>;
-  let authMock: any;
-  let authzMock: any;
-  let rolesSignal: WritableSignal<AppRole[]>;
-
+  const roles = signal<AppRole[]>([]);
   beforeEach(async () => {
-    rolesSignal = signal([]);
-    authMock = {
-      logout: vi.fn(),
-    };
-
-    authzMock = {
-      roles: () => rolesSignal(),
-    };
-
+    roles.set([]);
     await TestBed.configureTestingModule({
       imports: [Dashboard],
-      providers: [
-        { provide: AuthService, useValue: authMock },
-        { provide: AuthorizationService, useValue: authzMock },
-      ],
+      providers: [provideRouter([]), { provide: AuthorizationService, useValue: { roles } }],
     }).compileComponents();
-
     fixture = TestBed.createComponent(Dashboard);
-    component = fixture.componentInstance;
     fixture.detectChanges();
   });
-
-  it('should create the component', () => {
-    expect(component).toBeTruthy();
+  it.each([
+    [AppRole.Admin, ['/productions', '/catalog', '/reports']],
+    [AppRole.Producer, ['/productions', '/catalog']],
+    [AppRole.Organizer, ['/productions']],
+    [AppRole.Auditor, ['/audit']],
+  ])('only provides permitted quick actions to %s', (role, expected) => {
+    roles.set([role]);
+    fixture.detectChanges();
+    const links = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.quick-action'),
+    ).map((link) => link.getAttribute('href'));
+    expect(links).toEqual(expected);
   });
+  it('labels the examples and hides inventory from Organizer and Auditor', () => {
+    for (const role of [AppRole.Organizer, AppRole.Auditor]) {
+      roles.set([role]);
+      fixture.detectChanges();
+      const text = fixture.nativeElement.textContent;
 
-  it('should display "Administrador" when user has Admin role', () => {
-    rolesSignal.set([AppRole.Admin]);
-    expect(component.displayRole()).toBe('Administrador');
+      expect(text).not.toContain('Inventario y reservas');
+    }
   });
-
-  it('should display "Sin rol asignado" when user has no roles', () => {
-    rolesSignal.set([]);
-    expect(component.displayRole()).toBe('Sin rol asignado');
+  it('does not imply that demo records belong to the signed-in Organizer', () => {
+    roles.set([AppRole.Organizer]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('no representa eventos de tu cuenta');
   });
-
-  it('should trigger logout when onLogout is called', () => {
-    component.onLogout();
-    expect(authMock.logout).toHaveBeenCalled();
+  it('does not expose actions with no recognized roles', () => {
+    expect(fixture.nativeElement.querySelectorAll('a').length).toBe(0);
   });
 });

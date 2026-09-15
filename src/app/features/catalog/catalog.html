@@ -1,0 +1,175 @@
+<div class="page-content">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">RECURSOS PARA CADA PRODUCCI�N</p>
+      <h1 class="page-title">Catálogo e inventario</h1>
+      <p class="page-description">El equipo correcto, listo para el próximo evento.</p>
+    </div>
+    <span class="badge">Equipos + servicios · demo</span>
+  </header>
+
+  <section
+    class="metric-grid"
+    aria-label="Stock de equipos del escenario completo, excluye servicios"
+  >
+    <article class="metric-card">
+      <div class="metric-top">
+        Equipos en inventario <span class="icon-tile"><emx-icon name="box" /></span>
+      </div>
+      <strong class="metric-value">{{ inventory.total }}</strong>
+      <p class="metric-foot">6 referencias · excluye servicios</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        Disponibles <span class="icon-tile green"><emx-icon name="check" /></span>
+      </div>
+      <strong class="metric-value">{{ inventory.available }}</strong>
+      <p class="metric-foot">Unidades libres en el ejemplo</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        Reservados <span class="icon-tile purple"><emx-icon name="calendar" /></span>
+      </div>
+      <strong class="metric-value">{{ inventory.reserved }}</strong>
+      <p class="metric-foot">Asignación ilustrativa</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        En mantenimiento <span class="icon-tile amber"><emx-icon name="clock" /></span>
+      </div>
+      <strong class="metric-value">{{ inventory.maintenance }}</strong>
+      <p class="metric-foot">Fuera de disponibilidad demo</p>
+    </article>
+  </section>
+  <section class="panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Equipos y servicios</h2>
+        <p>Consulta el stock y la capacidad del escenario de demostración</p>
+      </div>
+      <span class="badge">8 referencias</span>
+    </div>
+    <div class="toolbar">
+      <label class="field grow" for="catalog-search"
+        >Buscar recurso<input
+          #searchInput
+          type="search"
+          id="catalog-search"
+          [formControl]="search"
+          placeholder="Nombre, descripción o código⬦" /></label
+      ><label class="field" for="catalog-category"
+        >Categoría<select id="catalog-category" [formControl]="category">
+          <option value="">Todas las categorías</option>
+          @for (item of categories; track item) {
+            <option [value]="item">{{ item }}</option>
+          }
+        </select></label
+      ><label class="field" for="catalog-availability"
+        >Disponibilidad<select id="catalog-availability" [formControl]="availability">
+          <option value="">Todos los recursos</option>
+          <option value="available">Con disponibilidad</option>
+          <option value="unavailable">Sin disponibilidad</option>
+        </select></label
+      ><button type="button" class="btn" (click)="clearFilters(); searchInput.focus()">
+        Limpiar
+      </button>
+    </div>
+    @if (rows().length) {
+      <p class="table-hint">Desliza la tabla para consultar stock, reservas y disponibilidad.</p>
+      <div
+        class="table-scroll"
+        role="region"
+        aria-label="Catálogo de equipos y servicios demo"
+        tabindex="0"
+      >
+        <table class="data-table catalog-table">
+          <caption class="sr-only">
+            Catálogo ficticio. Las cantidades se expresan en la unidad de cada recurso.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Recurso</th>
+              <th scope="col">Categoría</th>
+              <th scope="col">Stock / capacidad</th>
+              <th scope="col">Reservado</th>
+              <th scope="col">Mantenimiento</th>
+              <th scope="col">Disponible</th>
+              <th scope="col" aria-label="Acciones"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of rows(); track item.id) {
+              <tr class="clickable">
+                <td>
+                  <div class="resource-cell">
+                    <span class="resource-art" [attr.data-category]="item.category"
+                      ><emx-icon [name]="item.icon"
+                    /></span>
+                    <div>
+                      <strong>{{ item.name }}</strong
+                      ><span class="cell-meta">{{ item.id }} � {{ item.description }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge">{{ item.category }}</span>
+                </td>
+                <td>
+                  <strong>{{ item.stock }}</strong
+                  ><span class="cell-meta">{{ item.unit }}</span>
+                </td>
+                <td>
+                  <strong>{{ item.reserved }}</strong>
+                  @if (item.category !== 'Servicios') {
+                    <div class="stock-track" aria-hidden="true">
+                      <span [style.width.%]="(item.reserved / item.stock) * 100"></span>
+                    </div>
+                  }
+                </td>
+                <td>
+                  @if (item.category === 'Servicios') {
+                    <span class="cell-meta"></span>
+                  } @else {
+                    {{ item.maintenance }}
+                  }
+                </td>
+                <td>
+                  <strong
+                    >{{ item.stock - item.reserved - item.maintenance }} {{ item.unit }}</strong
+                  ><span
+                    class="badge"
+                    [class.available]="item.stock - item.reserved - item.maintenance > 0"
+                    [class.danger]="item.stock - item.reserved - item.maintenance === 0"
+                    >{{
+                      item.stock - item.reserved - item.maintenance > 0
+                        ? 'Disponible'
+                        : 'Sin disponibilidad'
+                    }}</span
+                  >
+                </td>
+                <td class="row-action"><emx-icon name="chevron-right" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state" role="status">
+        <span class="icon-tile"><emx-icon name="search" /></span>
+        <h3>No encontramos ese recurso</h3>
+        <p>Cambia la búsqueda o limpia los filtros para explorar el catálogo de ejemplo.</p>
+        <button type="button" class="btn-primary" (click)="clearFilters(); searchInput.focus()">
+          Mostrar todos los recursos
+        </button>
+      </div>
+    }
+    <div class="panel-footer">
+      <span role="status">{{ rows().length }} de 8 referencias visibles</span
+      ><span>Stock de ejemplo · no representa disponibilidad por fecha</span>
+    </div>
+  </section>
+  <div class="selection-note">
+    <strong>Reservas con contexto.</strong> Estas cantidades son ilustrativas. La disponibilidad por
+    fecha y la confirmación de reservas se validarán en el backend cuando se conecte el servicio.
+  </div>
+</div>

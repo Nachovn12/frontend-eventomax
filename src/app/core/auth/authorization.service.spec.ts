@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+﻿import { TestBed } from '@angular/core/testing';
 import { AuthorizationService } from './authorization.service';
 import { AuthService } from './auth.service';
 import { AppRole } from './models/app-role';

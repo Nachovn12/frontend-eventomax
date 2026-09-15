@@ -1,4 +1,4 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
+﻿import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 import { AuthenticationResult, AccountInfo } from '@azure/msal-browser';

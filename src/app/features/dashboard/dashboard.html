@@ -1,15 +1,249 @@
-<section class="dashboard-page" aria-labelledby="dashboard-heading">
-  <div class="dashboard-card">
-    <h1 id="dashboard-heading" class="dashboard-title">Dashboard</h1>
-    <p class="dashboard-text">Bienvenido a EventoMax.</p>
-
-    <dl class="account-info">
-      <dt>Rol actual</dt>
-      <dd>{{ displayRole() }}</dd>
-    </dl>
-
-    <button type="button" class="btn-logout" (click)="onLogout()">
-      Cerrar sesión
-    </button>
+<div class="page-content">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">CENTRO DE OPERACIONES</p>
+      <h1 class="page-title">Cada evento, bajo control.</h1>
+      <p class="page-description">Una mirada a tus producciones, recursos y próximos pasos.</p>
+    </div>
+    <div class="header-actions">
+      <span class="period-label"><emx-icon name="calendar" /> {{ period }}</span>
+      @if (canViewProductions()) {
+        <a class="btn-primary" routerLink="/productions"
+          >Ver producciones <emx-icon name="arrow"
+        /></a>
+      }
+    </div>
+  </header>
+  <section class="metric-grid" aria-label="Resumen operativo de demostración">
+    <article class="metric-card">
+      <div class="metric-top">
+        <span>Producciones de la semana</span
+        ><span class="icon-tile"><emx-icon name="calendar" /></span>
+      </div>
+      <strong class="metric-value">{{ productions.length.toString().padStart(2, '0') }}</strong>
+      <p class="metric-foot">
+        <span class="positive">{{ confirmed }} confirmadas</span> · {{ period }}
+      </p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        <span>En operación</span><span class="icon-tile green"><emx-icon name="stage" /></span>
+      </div>
+      <strong class="metric-value">{{ live.toString().padStart(2, '0') }}</strong>
+      <p class="metric-foot"><span class="positive">1 en ejecución</span> · 1 en montaje</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        <span>Solicitudes pendientes</span
+        ><span class="icon-tile amber"><emx-icon name="clock" /></span>
+      </div>
+      <strong class="metric-value">{{ requested.toString().padStart(2, '0') }}</strong>
+      <p class="metric-foot">Por revisar y confirmar</p>
+    </article>
+    @if (canViewCatalog()) {
+      <article class="metric-card">
+        <div class="metric-top">
+          <span>Equipos reservados</span
+          ><span class="icon-tile purple"><emx-icon name="box" /></span>
+        </div>
+        <strong class="metric-value"
+          >{{ inventory.reserved }}<small>/{{ inventory.total }}</small></strong
+        >
+        <p class="metric-foot">
+          {{ inventory.available }} disponibles · {{ inventory.maintenance }} en mantenimiento
+        </p>
+      </article>
+    } @else {
+      <article class="metric-card">
+        <div class="metric-top">
+          <span>Producciones confirmadas</span
+          ><span class="icon-tile purple"><emx-icon name="check" /></span>
+        </div>
+        <strong class="metric-value">{{ confirmed.toString().padStart(2, '0') }}</strong>
+        <p class="metric-foot">Con fecha y cuadrilla asignada · demo</p>
+      </article>
+    }
+  </section>
+  @if (canViewProductions()) {
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>
+            {{ isOrganizerOnly() ? 'Producciones de ejemplo' : 'Próximas producciones' }}
+            <span class="count-badge">{{ productions.length }}</span>
+          </h2>
+          <p>
+            {{
+              isOrganizerOnly()
+                ? 'Escenario ficticio; no representa eventos de tu cuenta.'
+                : 'Agenda de la semana · desde montaje hasta cierre de producción'
+            }}
+          </p>
+        </div>
+        <a class="text-link" routerLink="/productions">Ver todas <emx-icon name="arrow" /></a>
+      </div>
+      <emx-production-table [rows]="upcoming" caption="Próximas producciones · septiembre 2026" />
+      <div class="panel-footer">
+        <span
+          >Mostrando {{ upcoming.length }} de {{ productions.length }} producciones de la
+          semana</span
+        ><span>Horarios de Chile · demo</span>
+      </div>
+    </section>
+  }
+  <div class="split-grid">
+    @if (canViewCatalog()) {
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Inventario y reservas</h2>
+            <p>Distribución ilustrativa de {{ inventory.total }} equipos</p>
+          </div>
+          <span class="icon-tile"><emx-icon name="box" /></span>
+        </div>
+        <div class="panel-body">
+          <div class="inventory-head">
+            <strong>{{ inventory.available }} <span>equipos disponibles</span></strong
+            ><a class="text-link" routerLink="/catalog">Abrir catálogo <emx-icon name="arrow" /></a>
+          </div>
+          <div
+            class="inventory-bar"
+            role="img"
+            [attr.aria-label]="
+              inventory.reserved +
+              ' reservados, ' +
+              inventory.available +
+              ' disponibles, ' +
+              inventory.maintenance +
+              ' en mantenimiento'
+            "
+          >
+            <span
+              class="reserved"
+              [style.width.%]="(inventory.reserved / inventory.total) * 100"
+            ></span
+            ><span
+              class="available"
+              [style.width.%]="(inventory.available / inventory.total) * 100"
+            ></span
+            ><span
+              class="maintenance"
+              [style.width.%]="(inventory.maintenance / inventory.total) * 100"
+            ></span>
+          </div>
+          <div class="inventory-legend">
+            <div>
+              <span class="legend-dot reserved"></span>Reservados<strong>{{
+                inventory.reserved
+              }}</strong>
+            </div>
+            <div>
+              <span class="legend-dot available"></span>Disponibles<strong>{{
+                inventory.available
+              }}</strong>
+            </div>
+            <div>
+              <span class="legend-dot maintenance"></span>Mantenimiento<strong>{{
+                inventory.maintenance
+              }}</strong>
+            </div>
+          </div>
+          <div class="inventory-note">
+            <emx-icon name="info" /><span
+              >Stock de ejemplo. La disponibilidad por fecha se validará al conectar el
+              servicio.</span
+            >
+          </div>
+        </div>
+      </section>
+    } @else {
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>{{ isAuditor() ? 'Actividad de demostración' : 'Así avanza una producción' }}</h2>
+            <p>
+              {{
+                isAuditor()
+                  ? 'Últimos movimientos del escenario ficticio'
+                  : 'Del primer requerimiento al cierre del evento'
+              }}
+            </p>
+          </div>
+        </div>
+        <div class="panel-body activity-preview">
+          @if (isAuditor()) {
+            @for (item of activity; track item.id) {
+              <div class="activity-row">
+                <span class="activity-bullet"></span>
+                <div>
+                  <strong>{{ item.title }}</strong>
+                  <p>{{ item.name }} · {{ item.time }}</p>
+                </div>
+              </div>
+            }
+          } @else {
+            <div class="journey-row">
+              <emx-status status="SOLICITADO" />
+              <p>Comparte la fecha, el lugar y las necesidades.</p>
+            </div>
+            <div class="journey-row">
+              <emx-status status="CONFIRMADO" />
+              <p>La productora confirma los recursos del evento.</p>
+            </div>
+            <div class="journey-row">
+              <emx-status status="EN_EJECUCIÓN" />
+              <p>Consulta el avance de tu producción.</p>
+            </div>
+          }
+        </div>
+      </section>
+    }
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Tu siguiente paso</h2>
+          <p>Accesos disponibles según tu rol</p>
+        </div>
+        <emx-icon name="arrow" />
+      </div>
+      <div class="panel-body quick-actions">
+        @if (canViewProductions()) {
+          <a routerLink="/productions" class="quick-action"
+            ><span class="icon-tile"><emx-icon name="calendar" /></span
+            ><span
+              ><strong>Revisar producciones</strong
+              ><small>Agenda, estados y coordinación</small></span
+            ><emx-icon name="arrow"
+          /></a>
+        }
+        @if (canViewCatalog()) {
+          <a routerLink="/catalog" class="quick-action"
+            ><span class="icon-tile green"><emx-icon name="box" /></span
+            ><span
+              ><strong>Consultar disponibilidad</strong
+              ><small>Equipos, servicios y reservas demo</small></span
+            ><emx-icon name="arrow"
+          /></a>
+        }
+        @if (isAdmin()) {
+          <a routerLink="/reports" class="quick-action"
+            ><span class="icon-tile purple"><emx-icon name="chart" /></span
+            ><span
+              ><strong>Explorar reportes</strong
+              ><small>Indicadores y tendencias de ejemplo</small></span
+            ><emx-icon name="arrow"
+          /></a>
+        }
+        @if (isAuditor()) {
+          <a routerLink="/audit" class="quick-action"
+            ><span class="icon-tile purple"><emx-icon name="shield" /></span
+            ><span
+              ><strong>Consultar trazabilidad</strong
+              ><small>Timeline de actividad · solo lectura</small></span
+            ><emx-icon name="arrow"
+          /></a>
+        }
+      </div>
+    </section>
   </div>
-</section>
+</div>
