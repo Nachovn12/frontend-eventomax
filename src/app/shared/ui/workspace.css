@@ -142,60 +142,71 @@
   border-radius: 4px;
 }
 .emx-workspace .metric-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  display: flex;
+  background: white;
+  border: 1px solid #eaecf0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+  overflow: hidden;
 }
 .emx-workspace .metric-card {
-  background: white;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  padding: 19px 20px;
-  box-shadow: 0 2px 3px #142d4910;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-right: 1px solid #eaecf0;
+  border-radius: 0;
+  padding: 24px;
+  box-shadow: none;
+}
+.emx-workspace .metric-card:last-child {
+  border-right: none;
 }
 .emx-workspace .metric-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: var(--muted);
+  color: #475467;
   gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
 }
 .emx-workspace .icon-tile {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 35px;
-  height: 35px;
-  border-radius: 9px;
-  color: var(--blue);
-  background: #edf2ff;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #004ee6;
+  background: #f0f6ff;
   flex-shrink: 0;
 }
 .emx-workspace .icon-tile.green {
-  background: #eaf7f0;
-  color: #18704c;
+  background: #ecfdf3;
+  color: #027a48;
 }
 .emx-workspace .icon-tile.amber {
-  background: #fff3df;
-  color: #975b08;
+  background: #fffaeb;
+  color: #b54708;
 }
 .emx-workspace .icon-tile.purple {
-  background: #f2edfc;
-  color: #7650ab;
+  background: #f9f5ff;
+  color: #6941c6;
 }
 .emx-workspace .metric-value {
   display: block;
-  font-size: 34px;
-  letter-spacing: -0.055em;
-  font-weight: 650;
-  margin: 7px 0 2px;
-  line-height: 1.2;
+  font-size: 32px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+  color: #101828;
+  margin: 12px 0 4px;
+  line-height: 1.1;
 }
 .emx-workspace .metric-foot {
-  color: var(--muted);
-  font-size: 11px;
+  color: #667085;
+  font-size: 12px;
 }
 .emx-workspace .positive {
   color: #18704c;

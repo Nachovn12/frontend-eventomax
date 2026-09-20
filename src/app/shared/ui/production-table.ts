@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { DemoProduction } from '../../demo/eventomax.fixtures';
+import { ProductionViewModel } from '../../core/models/production.model';
 import { StatusChip } from './status-chip';
 import { Icon } from './icon';
 
@@ -72,6 +72,6 @@ import { Icon } from './icon';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductionTable {
-  readonly rows = input.required<readonly DemoProduction[]>();
+  readonly rows = input.required<readonly ProductionViewModel[]>();
   readonly caption = input('Producciones de demostración');
 }

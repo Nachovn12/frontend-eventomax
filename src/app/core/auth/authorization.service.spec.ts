@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { AuthorizationService } from './authorization.service';
 import { AuthService } from './auth.service';
 import { AppRole } from './models/app-role';
+import { environment } from '../../../environments/environment';
 
 // Helper to create a dummy JWT for tests
 function createDummyJwt(payload: any): string {
@@ -32,6 +33,7 @@ describe('AuthorizationService', () => {
 
   const getValidPayload = () => ({
     aud: validAud,
+    iss: environment.expectedIssuer,
     exp: Math.floor(Date.now() / 1000) + 3600,
     roles: ['Admin'],
     scp: 'access_as_user'
@@ -100,6 +102,20 @@ describe('AuthorizationService', () => {
     authMock.acquireAccessToken.mockResolvedValue({
       accessToken: createDummyJwt(payload)
     });
+    await service.refreshAuthorization();
+
+    expect(service.roles()).toEqual([]);
+    expect(service.scopes()).toEqual([]);
+  });
+
+  it('should fail closed if issuer is incorrect', async () => {
+    const payload = getValidPayload();
+    payload.iss = 'https://login.microsoftonline.com/other-tenant/v2.0';
+
+    authMock.acquireAccessToken.mockResolvedValue({
+      accessToken: createDummyJwt(payload)
+    });
+
     await service.refreshAuthorization();
 
     expect(service.roles()).toEqual([]);

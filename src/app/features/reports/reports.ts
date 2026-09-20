@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Icon } from '../../shared/ui/icon';
 import { StatusChip } from '../../shared/ui/status-chip';
-import { ReportsDataService } from './reports-data.service';
+import { ReportsDataService, WeeklyReportItem, InventoryStats } from './reports-data.service';
 
 @Component({
   selector: 'app-reports',
@@ -14,15 +15,28 @@ import { ReportsDataService } from './reports-data.service';
 export class Reports {
   private readonly dataService = inject(ReportsDataService);
 
-  readonly weekly = this.dataService.getWeeklyReport();
-  readonly total = this.dataService.getWeeklyReport().reduce((sum, item) => sum + item.productions, 0);
-  readonly inventory = this.dataService.getInventory();
-  readonly reservedPercent = Math.round((this.dataService.getInventory().reserved / this.dataService.getInventory().total) * 100);
-  readonly stateCounts = this.dataService.getStatuses().map((status) => ({
+  readonly weekly = toSignal(this.dataService.getWeeklyReport(), { initialValue: [] as readonly WeeklyReportItem[] });
+
+  readonly total = computed(() => this.weekly().reduce((sum, item) => sum + item.productions, 0));
+
+  readonly inventory = toSignal(this.dataService.getInventory(), { initialValue: { total: 0, reserved: 0, maintenance: 0, available: 0 } as InventoryStats });
+
+  readonly reservedPercent = computed(() => {
+    const inv = this.inventory();
+    if (!inv || !inv.total) return 0;
+    return Math.round((inv.reserved / inv.total) * 100);
+  });
+
+  private readonly allStatuses = toSignal(this.dataService.getStatuses(), { initialValue: [] });
+  private readonly allProductions = toSignal(this.dataService.getProductions(), { initialValue: [] });
+
+  readonly stateCounts = computed(() => this.allStatuses().map((status) => ({
     status,
-    count: this.dataService.getProductions().filter((item) => item.status === status).length,
-  }));
-  readonly productionsCount = this.dataService.getProductions().length;
+    count: this.allProductions().filter((item) => item.status === status).length,
+  })));
+
+  readonly productionsCount = computed(() => this.allProductions().length);
+
   /** Replace the accessible placeholder with an ECharts component when reporting is integrated. */
-  readonly chartOption = this.dataService.getChartOption();
+  readonly chartOption = toSignal(this.dataService.getChartOption(), { initialValue: null });
 }

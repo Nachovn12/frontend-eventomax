@@ -3,33 +3,39 @@
   gap: 12px;
   align-items: end;
   flex-wrap: wrap;
-  padding: 0 22px 20px;
+  padding: 0 24px 20px;
 }
 .emx-workspace .field {
   display: grid;
-  gap: 5px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
+  gap: 6px;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 500;
 }
 .emx-workspace .field.grow {
-  flex: 1;
-  min-width: 200px;
+  flex: none;
+  width: 320px;
 }
 .emx-workspace input,
 .emx-workspace select {
-  min-height: 42px;
-  border: 1px solid #d9e1e9;
-  border-radius: 7px;
-  padding: 9px 12px;
-  color: var(--ink);
-  background: white;
-  min-width: 0;
-  width: 100%;
-  font-size: 12px;
+  min-height: 36px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #101828;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+.emx-workspace input:focus,
+.emx-workspace select:focus {
+  outline: none;
+  border-color: #004ee6;
+  box-shadow: 0 0 0 4px rgba(0, 78, 230, 0.1);
 }
 .emx-workspace input::placeholder {
-  color: #7c8997;
+  color: #98a2b3;
 }
 .emx-workspace .empty-state {
   padding: 48px 20px;
@@ -39,33 +45,34 @@
   justify-items: center;
 }
 .emx-workspace .empty-state h3 {
-  font-size: 17px;
+  font-size: 16px;
+  color: #101828;
 }
 .emx-workspace .empty-state p {
-  color: var(--muted);
+  color: #667085;
   max-width: 420px;
   font-size: 13px;
 }
 .emx-workspace .badge {
   padding: 4px 8px;
-  border-radius: 5px;
-  font-size: 10px;
-  font-weight: 600;
-  color: #52657a;
-  background: #f0f3f7;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #475467;
+  background: #f2f4f7;
   white-space: nowrap;
 }
 .emx-workspace .badge.available {
-  color: #18704c;
-  background: #e9f5ee;
+  color: #027a48;
+  background: #ecfdf3;
 }
 .emx-workspace .badge.warning {
-  color: #895a11;
-  background: #fff3db;
+  color: #b54708;
+  background: #fffaeb;
 }
 .emx-workspace .badge.danger {
-  color: #a34132;
-  background: #fff0ed;
+  color: #b42318;
+  background: #fef3f2;
 }
 .emx-workspace .split-grid {
   display: grid;
@@ -74,14 +81,14 @@
 }
 .emx-workspace .progress-track {
   width: 100%;
-  height: 7px;
-  background: #eef1f5;
+  height: 8px;
+  background: #f2f4f7;
   border-radius: 20px;
   overflow: hidden;
 }
 .emx-workspace .progress-track > span {
   display: block;
-  background: var(--blue);
+  background: #004ee6;
   height: 100%;
   border-radius: inherit;
 }
@@ -90,19 +97,19 @@
   justify-content: flex-end;
   align-items: center;
   gap: 10px;
-  color: var(--muted);
-  font-size: 11px;
+  color: #667085;
+  font-size: 12px;
 }
 .emx-workspace .scenario-control select {
   width: auto;
-  min-height: 36px;
+  min-height: 32px;
   padding: 6px 10px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .emx-workspace .selection-note {
-  border: 1px solid #eadfc5;
-  background: #fffbf1;
-  color: #765b23;
+  border: 1px solid #fecdca;
+  background: #fef3f2;
+  color: #b42318;
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 12px;
@@ -114,7 +121,14 @@
 }
 @media (max-width: 1100px) {
   .emx-workspace .metric-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-wrap: wrap;
+  }
+  .emx-workspace .metric-card {
+    flex: 1 1 40%;
+    border-bottom: 1px solid #eaecf0;
+  }
+  .emx-workspace .metric-card:nth-child(2) {
+    border-right: none;
   }
   .emx-workspace .split-grid {
     grid-template-columns: 1fr;
@@ -129,26 +143,23 @@
     flex-direction: column;
     gap: 14px;
   }
-  .emx-workspace .metric-grid {
-    gap: 10px;
-  }
   .emx-workspace .metric-card {
-    padding: 14px;
+    flex: 1 1 100%;
+    border-right: none;
+  }
+  .emx-workspace .metric-card:last-child {
+    border-bottom: none;
   }
   .emx-workspace .metric-top {
-    font-size: 11px;
+    font-size: 12px;
     align-items: start;
   }
   .emx-workspace .metric-value {
     font-size: 28px;
   }
   .emx-workspace .metric-top .icon-tile {
-    width: 27px;
-    height: 27px;
-  }
-  .emx-workspace .metric-top emx-icon {
-    width: 16px;
-    height: 16px;
+    width: 28px;
+    height: 28px;
   }
   .emx-workspace .demo-notice {
     align-items: start;

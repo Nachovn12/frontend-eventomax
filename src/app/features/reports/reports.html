@@ -1,7 +1,7 @@
-�<div class="page-content">
+<div class="page-content">
   <header class="page-header">
     <div>
-      <p class="eyebrow">ANÁLISIS DE LA OPERACI�N</p>
+      <p class="eyebrow">ANÁLISIS DE LA OPERACIÓN</p>
       <h1 class="page-title">Reportes</h1>
       <p class="page-description">Convierte la actividad en una visión clara de tu producción.</p>
     </div>
@@ -13,7 +13,7 @@
       <div class="metric-top">
         Proyección del mes <span class="icon-tile"><emx-icon name="chart" /></span>
       </div>
-      <strong class="metric-value">{{ total }}</strong>
+      <strong class="metric-value">{{ total() }}</strong>
       <p class="metric-foot">Producciones · serie ilustrativa mensual</p>
     </article>
     <article class="metric-card">
@@ -21,23 +21,23 @@
         Semana de mayor actividad <span class="icon-tile green"><emx-icon name="calendar" /></span>
       </div>
       <strong class="metric-value">09</strong>
-      <p class="metric-foot">21�27 sep · proyección de ejemplo</p>
+      <p class="metric-foot">21–27 sep · proyección de ejemplo</p>
     </article>
     <article class="metric-card">
       <div class="metric-top">
         Equipos reservados <span class="icon-tile purple"><emx-icon name="box" /></span>
       </div>
-      <strong class="metric-value">{{ reservedPercent }}<small>%</small></strong>
+      <strong class="metric-value">{{ reservedPercent() }}<small>%</small></strong>
       <p class="metric-foot">
-        {{ inventory.reserved }} de {{ inventory.total }} equipos · escenario demo
+        {{ inventory().reserved }} de {{ inventory().total }} equipos · escenario demo
       </p>
     </article>
     <article class="metric-card">
       <div class="metric-top">
         Equipos disponibles <span class="icon-tile amber"><emx-icon name="check" /></span>
       </div>
-      <strong class="metric-value">{{ inventory.available }}</strong>
-      <p class="metric-foot">Excluye {{ inventory.maintenance }} en mantenimiento</p>
+      <strong class="metric-value">{{ inventory().available }}</strong>
+      <p class="metric-foot">Excluye {{ inventory().maintenance }} en mantenimiento</p>
     </article>
   </section>
   <div class="split-grid">
@@ -67,7 +67,7 @@
               <span>10</span><span>5</span><span>0</span>
             </div>
             <div class="bars" aria-hidden="true">
-              @for (item of weekly; track item.label) {
+              @for (item of weekly(); track item.label) {
                 <div class="bar-column">
                   <strong>{{ item.productions }}</strong>
                   <div
@@ -95,7 +95,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (item of weekly; track item.label) {
+              @for (item of weekly(); track item.label) {
                 <tr>
                   <td>{{ item.period }}</td>
                   <td>{{ item.productions }}</td>
@@ -113,11 +113,11 @@
       <div class="panel-heading">
         <div>
           <h2>Estado de las producciones</h2>
-          <p>Distribución de los {{ productionsCount }} eventos del listado demo</p>
+          <p>Distribución de los {{ productionsCount() }} eventos del listado demo</p>
         </div>
       </div>
       <div class="panel-body state-distribution">
-        @for (item of stateCounts; track item.status) {
+        @for (item of stateCounts(); track item.status) {
           <div class="state-row">
             <div>
               <emx-status [status]="item.status" /><strong>{{ item.count }}</strong>
@@ -125,9 +125,9 @@
             <div
               class="progress-track"
               role="img"
-              [attr.aria-label]="item.status + ': ' + item.count + ' de ' + productionsCount"
+              [attr.aria-label]="item.status + ': ' + item.count + ' de ' + productionsCount()"
             >
-              <span [style.width.%]="(item.count / productionsCount) * 100"></span>
+              <span [style.width.%]="(item.count / productionsCount()) * 100"></span>
             </div>
           </div>
         }

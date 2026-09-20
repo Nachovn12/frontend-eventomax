@@ -28,7 +28,7 @@
         ><label class="field" for="audit-production"
           >Producción<select id="audit-production" [formControl]="production">
             <option value="">Todas las producciones</option>
-            @for (item of events; track item.id) {
+            @for (item of events(); track item.id) {
               <option [value]="item.production">{{ item.production }} · {{ item.name }}</option>
             }
           </select></label
@@ -88,7 +88,7 @@
         </div>
       }
       <div class="panel-footer">
-        <span role="status">{{ rows().length }} de {{ events.length }} registros demo</span
+        <span role="status">{{ rows().length }} de {{ events().length }} registros demo</span
         ><span>12–14 sep 2026</span>
       </div>
     </section>

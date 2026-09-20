@@ -4,7 +4,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
-import { DEMO_AUDIT } from '../../demo/eventomax.fixtures';
+import { AuditDataService } from './audit-data.service';
 import { Icon } from '../../shared/ui/icon';
 import { StatusChip } from '../../shared/ui/status-chip';
 
@@ -33,7 +33,7 @@ export class Audit {
   readonly search = new FormControl('', { nonNullable: true });
   readonly production = new FormControl('', { nonNullable: true });
 
-  readonly events = DEMO_AUDIT;
+  readonly events = toSignal(inject(AuditDataService).getEvents(), { initialValue: [] });
 
   private readonly query = toSignal(this.search.valueChanges, { initialValue: '' });
   private readonly selectedProduction = toSignal(this.production.valueChanges, { initialValue: '' });
@@ -41,7 +41,7 @@ export class Audit {
   readonly rows = computed(() => {
     const q = this.query().toLowerCase();
     const p = this.selectedProduction();
-    return this.events.filter(e =>
+    return this.events().filter(e =>
       (!p || e.production === p) &&
       (!q || e.actor.toLowerCase().includes(q) || e.name.toLowerCase().includes(q) || e.trace.toLowerCase().includes(q))
     );
