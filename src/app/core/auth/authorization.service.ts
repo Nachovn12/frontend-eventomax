@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { AppRole } from './models/app-role';
 import { AuthClaims } from './models/auth-claims';
+import { environment } from '../../../environments/environment';
 
 /**
  * Authorization service.
@@ -98,6 +99,11 @@ export class AuthorizationService {
 
     // Validate audience (eventomax-api App ID)
     if (payload['aud'] !== 'a1a87bcd-fed7-4d65-83c3-338389b80093') {
+      return false;
+    }
+
+    // Validate issuer (exact match)
+    if (payload['iss'] !== environment.expectedIssuer) {
       return false;
     }
 
