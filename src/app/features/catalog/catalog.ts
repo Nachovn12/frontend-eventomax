@@ -3,6 +3,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Icon } from '../../shared/ui/icon';
 import { CatalogDataService } from './catalog-data.service';
+import { Equipment } from './models/equipment.model';
 
 @Component({
   selector: 'app-catalog',
@@ -15,8 +16,8 @@ import { CatalogDataService } from './catalog-data.service';
 export class Catalog {
   private readonly dataService = inject(CatalogDataService);
 
-  readonly inventory = toSignal(this.dataService.getInventory(), { initialValue: { total: 0, reserved: 0, maintenance: 0, available: 0 } });
-  private readonly allEquipment = toSignal(this.dataService.getEquipment(), { initialValue: [] });
+  readonly inventory = toSignal(this.dataService.getInventory(), { initialValue: { total: 0, reserved: 0, maintenance: 0, available: 0 } as const });
+  private readonly allEquipment = toSignal(this.dataService.getEquipment(), { initialValue: [] as readonly Equipment[] });
 
   readonly categories = ['Audio', 'Iluminación', 'Escenario', 'Servicios'] as const;
   readonly search = new FormControl('', { nonNullable: true });
