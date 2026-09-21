@@ -1,0 +1,133 @@
+<div class="page-content">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">RECURSOS PARA CADA PRODUCCIÓN</p>
+      <h1 class="page-title">Catálogo de servicios</h1>
+      <p class="page-description">Consulta el catálogo de servicios disponibles para los eventos.</p>
+    </div>
+  </header>
+
+  <section class="metric-grid" aria-label="Métricas de catálogo">
+    <article class="metric-card">
+      <div class="metric-top">
+        Total de servicios <span class="icon-tile"><emx-icon name="box" /></span>
+      </div>
+      <strong class="metric-value">{{ total() }}</strong>
+      <p class="metric-foot">Servicios registrados</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        Activos <span class="icon-tile green"><emx-icon name="check" /></span>
+      </div>
+      <strong class="metric-value">{{ activeCount() }}</strong>
+      <p class="metric-foot">Servicios en operación</p>
+    </article>
+    <article class="metric-card">
+      <div class="metric-top">
+        Inactivos <span class="icon-tile amber"><emx-icon name="clock" /></span>
+      </div>
+      <strong class="metric-value">{{ inactiveCount() }}</strong>
+      <p class="metric-foot">Servicios no disponibles</p>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Servicios ofrecidos</h2>
+        <p>Listado oficial de servicios y tarifas</p>
+      </div>
+    </div>
+    <div class="toolbar">
+      <label class="field grow" for="catalog-search"
+        >Buscar servicio<input
+          #searchInput
+          type="search"
+          id="catalog-search"
+          [formControl]="search"
+          placeholder="Nombre, descripción o ID…" /></label
+      ><label class="field" for="catalog-status"
+        >Estado<select id="catalog-status" [formControl]="status">
+          <option value="">Todos los servicios</option>
+          <option value="active">Activos</option>
+          <option value="inactive">Inactivos</option>
+        </select></label
+      ><button type="button" class="btn" (click)="clearFilters(); searchInput.focus()">
+        Limpiar
+      </button>
+    </div>
+
+    @if (isLoading()) {
+      <div class="empty-state" role="status">
+        <span class="icon-tile"><emx-icon name="box" /></span>
+        <h3>Cargando catálogo...</h3>
+        <p>Conectando con el servidor.</p>
+      </div>
+    } @else if (isError()) {
+      <div class="empty-state" role="alert">
+        <span class="icon-tile amber"><emx-icon name="info" /></span>
+        <h3>No pudimos cargar el catálogo</h3>
+        <p>Ocurrió un error al intentar conectar con el servidor.</p>
+        <button type="button" class="btn-primary" (click)="retry(); searchInput.focus()">
+          Reintentar
+        </button>
+      </div>
+    } @else if (total() === 0) {
+      <div class="empty-state">
+        <span class="icon-tile"><emx-icon name="box" /></span>
+        <h3>Catálogo vacío</h3>
+        <p>Aún no hay servicios registrados en la plataforma.</p>
+      </div>
+    } @else if (rows().length === 0) {
+      <div class="empty-state" role="status">
+        <span class="icon-tile"><emx-icon name="search" /></span>
+        <h3>Sin coincidencias</h3>
+        <p>Cambia la búsqueda o limpia los filtros para explorar el catálogo.</p>
+        <button type="button" class="btn-primary" (click)="clearFilters(); searchInput.focus()">
+          Mostrar todos los recursos
+        </button>
+      </div>
+    } @else {
+      <div class="table-scroll" role="region" aria-label="Catálogo de servicios" tabindex="0">
+        <table class="data-table catalog-table">
+          <caption class="sr-only">
+            Listado de servicios y tarifas.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Servicio</th>
+              <th scope="col">Tarifa</th>
+              <th scope="col">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of rows(); track item.id) {
+              <tr>
+                <td>
+                  <div class="resource-cell">
+                    <div>
+                      <strong>{{ item.name }}</strong>
+                      <span class="cell-meta">ID: {{ item.id }} · {{ item.description }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <strong>{{ item.rate | currency:'CLP':'symbol-narrow':'1.0-0' }} CLP</strong>
+                </td>
+                <td>
+                  <span class="badge" [class.available]="item.active" [class.danger]="!item.active">
+                    {{ item.active ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    <div class="panel-footer">
+      <span role="status">{{ rows().length }} de {{ total() }} referencias visibles</span
+      ><span>Registros actualizados</span>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,84 @@
+<main class="l-lyt">
+  <div class="outer-shell">
+    <section class="p-auth" aria-labelledby="h-auth">
+      <div class="auth-inner">
+        <header class="a-hd">
+          <img src="/branding/eventomax/logos/eventomax-logo-dark.svg" alt="EventoMax" class="a-logo">
+          <h1 id="h-auth">Acceso a EventoMax</h1>
+          <p class="a-sub">Plataforma de producción y montaje de eventos.</p>
+        </header>
+
+        <div class="a-bd">
+          <p class="a-inst">Accede con tu cuenta corporativa de Microsoft para continuar.</p>
+
+          @if (errorMsg()) {
+            <div class="err" role="alert">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <span>{{ errorMsg() }}</span>
+            </div>
+          }
+
+          <button type="button" class="btn-ms" (click)="onLogin()" [disabled]="isLoading()" [attr.aria-busy]="isLoading()">
+            <div class="btn-c" [class.inv]="isLoading()">
+              <svg class="ms-ic" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 21 21" aria-hidden="true">
+                <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+              </svg>
+              <span>Iniciar sesión con Microsoft</span>
+            </div>
+            @if (isLoading()) {
+              <div class="btn-ld" aria-hidden="true">
+                <span class="spin"></span>
+                <span>Conectando con Microsoft...</span>
+              </div>
+            }
+          </button>
+
+          <div class="a-trust">
+            <svg class="ic-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path d="M12 3 19 6v5c0 4.5-2.9 8.5-7 10-4.1-1.5-7-5.5-7-10V6l7-3Z" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="m9 12 2 2 4-4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Acceso protegido mediante Microsoft Entra ID</span>
+          </div>
+
+          <div class="a-div" aria-hidden="true"></div>
+
+          <div class="a-help">
+            <p>¿Problemas para ingresar? <a href="#">Contacta al administrador.</a></p>
+          </div>
+        </div>
+
+        <footer class="a-ft">
+          <p>© 2026 EventoMax &mdash; Acceso corporativo seguro</p>
+        </footer>
+      </div>
+    </section>
+
+    <section class="p-brand" aria-label="Funciones de EventoMax">
+      <div class="b-crsl">
+        @for (slide of [currentSlide()]; track slide.image) {
+          <div class="b-slide ac" animate.enter="slide-enter">
+            <img [src]="currentSlide().image" class="b-img" alt="" aria-hidden="true" fetchpriority="high">
+            <div class="b-over"></div>
+            <div class="b-copy">
+              <span class="eyebrow">{{ currentSlide().eyebrow }}</span>
+              <h2>{{ currentSlide().title }}</h2>
+              <p>{{ currentSlide().description }}</p>
+            </div>
+          </div>
+        }
+      </div>
+
+      <nav class="b-dots" aria-label="Funciones de EventoMax">
+        @for (slide of slides; track slide.image; let i = $index) {
+          <button type="button" class="b-dot" [class.active]="activeSlide() === i" (click)="goToSlide(i)" [attr.aria-current]="activeSlide() === i ? 'true' : null" [attr.aria-label]="'Ir a ' + slide.eyebrow">
+            <span class="dot-v"></span>
+          </button>
+        }
+      </nav>
+    </section>
+  </div>
+</main>

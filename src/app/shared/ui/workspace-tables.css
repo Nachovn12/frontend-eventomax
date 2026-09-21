@@ -1,0 +1,177 @@
+.emx-workspace .panel {
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface);
+  overflow: hidden;
+  min-width: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.emx-workspace .panel-heading {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  border-bottom: 1px solid var(--border-base);
+}
+
+.emx-workspace .panel-heading h2 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-main);
+}
+
+.emx-workspace .panel-heading p {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.emx-workspace .panel-body {
+  padding: 24px;
+}
+
+.emx-workspace .panel-footer {
+  border-top: 1px solid var(--border-base);
+  padding: 16px 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-root);
+}
+
+/* Tables */
+.emx-workspace .table-scroll {
+  overflow-x: auto;
+}
+
+.emx-workspace .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.emx-workspace .data-table th {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-light);
+  background: var(--bg-root);
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border-base);
+}
+
+.emx-workspace .data-table td {
+  border-bottom: 1px solid var(--border-light);
+  padding: 16px 24px;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.emx-workspace .data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.emx-workspace .data-table tbody tr {
+  transition: background-color 0.1s ease;
+}
+
+.emx-workspace .data-table strong {
+  display: block;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.emx-workspace .cell-meta {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.emx-workspace .event-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.emx-workspace .event-monogram {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-accent-bg);
+  color: var(--brand-accent);
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Status Chips - Pill shape, filled */
+.emx-workspace .status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--status-neutral-bg);
+  color: var(--status-neutral);
+  letter-spacing: 0.02em;
+}
+
+.emx-workspace .status-chip .status-dot {
+  display: none; /* Hide the old dot style */
+}
+
+/* Status variants */
+.emx-workspace .status-chip[data-status='SOLICITADO'] {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+
+.emx-workspace .status-chip[data-status='CONFIRMADO'] {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+}
+
+.emx-workspace .status-chip[data-status='EN_MONTAJE'] {
+  background: var(--status-purple-bg);
+  color: var(--status-purple);
+}
+
+.emx-workspace .status-chip[data-status='EN_EJECUCION'],
+.emx-workspace .status-chip[data-status='EN_EJECUCIÓN'] {
+  background: var(--status-success-bg);
+  color: var(--status-success);
+}
+
+.emx-workspace .status-chip[data-status='CERRADO'] {
+  background: var(--status-neutral-bg);
+  color: var(--status-neutral);
+}
+
+.emx-workspace .status-chip[data-status='CANCELADO'] {
+  background: var(--status-danger-bg);
+  color: var(--status-danger);
+}
+
+.emx-workspace .table-hint {
+  display: none;
+}
+@media (max-width: 760px) {
+  .emx-workspace .table-hint {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 0 16px 16px;
+  }
+}

@@ -1,0 +1,228 @@
+.emx-workspace {
+  &.shell-layout {
+    display: flex;
+    min-height: 100dvh;
+    background: var(--bg-root);
+  }
+
+  .shell-sidebar {
+    width: 236px;
+    flex-shrink: 0;
+    background: #fcfcfd;
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    overflow-y: auto;
+    border-right: 1px solid var(--border-light);
+  }
+
+  .sidebar-header {
+    padding: 24px 16px 20px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    outline: none;
+  }
+
+  .brand-mark {
+    width: 20px;
+    height: 20px;
+  }
+
+  .brand-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    display: block;
+  }
+
+  .brand-text span {
+    font-weight: 400;
+    color: var(--text-muted);
+  }
+
+  .brand-caption {
+    color: var(--text-muted);
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.02em;
+    margin-top: 2px;
+    font-weight: 500;
+  }
+
+  .sidebar-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .sidebar-nav {
+    padding: 0 12px;
+    display: grid;
+    gap: 2px;
+  }
+
+  .nav-section {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    padding: 16px 12px 6px;
+    font-weight: 500;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+  }
+
+  .nav-link {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    height: 32px;
+    padding: 0 12px;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: background 0.15s ease, color 0.15s ease;
+    outline: none;
+    position: relative;
+  }
+
+  .nav-link:hover, .nav-link:focus-visible {
+    background: var(--bg-surface-hover);
+    color: var(--text-main);
+  }
+
+  .nav-link.active {
+    background: rgba(0, 78, 230, 0.04);
+    color: var(--text-main);
+    font-weight: 600;
+  }
+
+  .nav-link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: var(--brand-primary);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .nav-link emx-icon {
+    opacity: 0.7;
+    transition: opacity 0.15s ease, color 0.15s ease;
+  }
+
+  .nav-link:hover emx-icon {
+    opacity: 1;
+  }
+
+  .nav-link.active emx-icon {
+    opacity: 1;
+    color: var(--brand-primary);
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .workspace-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    cursor: default;
+    background: transparent;
+  }
+
+  .workspace-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+  }
+
+  .workspace-info strong {
+    font-size: 13px;
+    color: var(--text-main);
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  .workspace-info span {
+    font-size: 12px;
+    color: var(--text-light);
+    line-height: 1.2;
+  }
+
+  .workspace-avatar {
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-sm);
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .workspace-dot {
+    width: 5px;
+    height: 5px;
+    background: var(--status-success);
+    border-radius: 100%;
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+
+  .btn-logout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    height: 32px;
+    width: 100%;
+    text-align: left;
+    padding: 0 8px;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s ease, color 0.15s ease;
+    cursor: pointer;
+  }
+
+  .btn-logout emx-icon {
+    opacity: 0.7;
+  }
+
+  .btn-logout:hover, .btn-logout:focus-visible {
+    background: rgba(220, 38, 38, 0.05);
+    color: var(--status-danger);
+  }
+
+  .btn-logout:hover emx-icon, .btn-logout:focus-visible emx-icon {
+    color: var(--status-danger);
+    opacity: 1;
+  }
+}

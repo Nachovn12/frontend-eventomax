@@ -1,0 +1,222 @@
+<div class="page-content">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">
+        {{ isAuditor() ? 'PANEL DE AUDITORÍA' : 'RESUMEN OPERATIVO' }}
+      </p>
+      <h1 class="page-title">
+        {{ isAuditor() ? 'Bienvenido a EventoMax' : 'Panel de control' }}
+      </h1>
+      <p class="page-description">
+        {{
+          isAuditor()
+            ? 'La información de auditoría estará disponible en el módulo Auditoría cuando el servicio esté habilitado.'
+            : 'Indicadores operacionales y próximos eventos.'
+        }}
+      </p>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="empty-state" role="status">
+      <span class="icon-tile"><emx-icon name="box" /></span>
+      <h3>Cargando información del panel...</h3>
+      <p>Conectando con los servicios operativos.</p>
+    </div>
+  } @else if (isError()) {
+    <div class="empty-state" role="alert">
+      <span class="icon-tile amber"><emx-icon name="info" /></span>
+      <h3>No pudimos cargar tu panel</h3>
+      <p>Ocurrió un error al intentar conectar con el servidor.</p>
+      <button type="button" class="btn-primary" (click)="retry()">
+        Reintentar
+      </button>
+    </div>
+  } @else {
+
+    @if (canViewCatalog()) {
+      <section class="metric-grid" aria-label="Métricas de operación">
+        <article class="metric-card">
+          <div class="metric-top">
+            <span>Producciones totales</span
+            ><span class="icon-tile"><emx-icon name="calendar" /></span>
+          </div>
+          <strong class="metric-value">{{ totalProductions() }}</strong>
+          <p class="metric-foot">Producciones registradas</p>
+        </article>
+        <article class="metric-card">
+          <div class="metric-top">
+            <span>Solicitudes pendientes</span
+            ><span class="icon-tile amber"><emx-icon name="clock" /></span>
+          </div>
+          <strong class="metric-value">{{ requested() }}</strong>
+          <p class="metric-foot">Eventos por revisar y confirmar</p>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-top">
+            <span>Servicios de catálogo</span
+            ><span class="icon-tile purple"><emx-icon name="box" /></span>
+          </div>
+          <strong class="metric-value"
+            >{{ activeServicesCount() }}<small>/{{ totalServicesCount() }}</small></strong
+          >
+          <p class="metric-foot">
+            Activos / Total servicios registrados
+          </p>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>
+              Próximas producciones
+              <span class="count-badge">{{ upcoming().length }}</span>
+            </h2>
+            <p>
+              Agenda operativa de producciones activas.
+            </p>
+          </div>
+          <a class="text-link" routerLink="/productions">Ver todas <emx-icon name="arrow" /></a>
+        </div>
+
+        @if (upcoming().length > 0) {
+          <emx-production-table [rows]="upcoming()" caption="Próximas producciones activas" />
+        } @else {
+          <div class="empty-state empty-state-panel">
+            <span class="icon-tile"><emx-icon name="calendar" /></span>
+            <p>No hay producciones activas programadas próximamente.</p>
+          </div>
+        }
+
+        <div class="panel-footer">
+          <span>Mostrando {{ upcoming().length }} de {{ activeProductions().length }} producciones activas</span>
+        </div>
+      </section>
+    }
+
+    @if (isOrganizerOnly()) {
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Tus producciones</h2>
+          </div>
+        </div>
+
+        <div class="empty-state empty-state-panel">
+          <span class="icon-tile"><emx-icon name="calendar" /></span>
+          <p>La consulta personalizada de producciones estará disponible cuando el servicio aplique el alcance de datos por organizador.</p>
+        </div>
+      </section>
+    }
+
+    <div class="split-grid">
+      @if (canViewCatalog()) {
+        <section class="panel catalog-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Catálogo de servicios</h2>
+              <p>Resumen de servicios registrados</p>
+            </div>
+            <span class="icon-tile"><emx-icon name="box" /></span>
+          </div>
+          <div class="panel-body">
+            <div class="catalog-head">
+              <strong>{{ activeServicesCount() }} <span>servicios activos</span></strong>
+              <a class="text-link" routerLink="/catalog">Abrir catálogo <emx-icon name="arrow" /></a>
+            </div>
+
+            <div class="catalog-legend">
+              <div class="mini-stat">
+                <div class="mini-stat-header">
+                  <span class="legend-dot available"></span>
+                  <span class="stat-label">Activos</span>
+                </div>
+                <strong class="stat-value">{{ activeServicesCount() }}</strong>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-header">
+                  <span class="legend-dot maintenance"></span>
+                  <span class="stat-label">Inactivos</span>
+                </div>
+                <strong class="stat-value">{{ totalServicesCount() - activeServicesCount() }}</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+      } @else {
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Asi avanza una producción</h2>
+              <p>Del primer requerimiento al cierre del evento</p>
+            </div>
+          </div>
+          <div class="panel-body activity-preview">
+            <div class="journey-row">
+              <emx-status status="SOLICITADO" />
+              <p>Comparte la fecha, el lugar y las necesidades.</p>
+            </div>
+            <div class="journey-row">
+              <emx-status status="CONFIRMADO" />
+              <p>La productora confirma los recursos del evento.</p>
+            </div>
+            <div class="journey-row">
+              <emx-status status="EN_EJECUCION" />
+              <p>Consulta el avance de tu producción.</p>
+            </div>
+          </div>
+        </section>
+      }
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Accesos rápidos</h2>
+            <p>Accesos disponibles según tu rol</p>
+          </div>
+          <emx-icon name="arrow" />
+        </div>
+        <div class="panel-body quick-actions">
+          @if (canViewProductions()) {
+            <a routerLink="/productions" class="quick-action"
+              ><span class="icon-tile"><emx-icon name="calendar" /></span
+              ><span
+                ><strong>Revisar producciones</strong
+                ><small>Agenda, estados y coordinación</small></span
+              ><emx-icon name="arrow"
+            /></a>
+          }
+          @if (canViewCatalog()) {
+            <a routerLink="/catalog" class="quick-action"
+              ><span class="icon-tile green"><emx-icon name="box" /></span
+              ><span
+                ><strong>Consultar catálogo</strong
+                ><small>Servicios registrados y tarifas</small></span
+              ><emx-icon name="arrow"
+            /></a>
+          }
+          @if (isAdmin()) {
+            <a routerLink="/reports" class="quick-action"
+              ><span class="icon-tile purple"><emx-icon name="chart" /></span
+              ><span
+                ><strong>Explorar reportes</strong
+                ><small>Indicadores operacionales</small></span
+              ><emx-icon name="arrow"
+            /></a>
+          }
+          @if (isAuditor()) {
+            <a routerLink="/audit" class="quick-action"
+              ><span class="icon-tile purple"><emx-icon name="shield" /></span
+              ><span
+                ><strong>Consultar trazabilidad</strong
+                ><small>Módulo de auditoría</small></span
+              ><emx-icon name="arrow"
+            /></a>
+          }
+        </div>
+      </section>
+    </div>
+  }
+</div>

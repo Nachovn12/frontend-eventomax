@@ -1,0 +1,79 @@
+<div class="shell-layout emx-workspace">
+  <a class="skip-link" href="#main-content" (click)="skipToContent($event, mainContent)">Saltar al contenido</a>
+  <aside class="shell-sidebar" (keydown.escape)="closeMenu(menuToggle)">
+    <div class="sidebar-header">
+      <a class="brand" routerLink="/dashboard" aria-label="EventoMax, inicio">
+        <img class="brand-mark" src="/branding/eventomax/symbols/eventomax-symbol-dark.svg" alt="" aria-hidden="true" />
+        <span>
+          <span class="brand-text">Evento<span>Max</span></span>
+          <span class="brand-caption">OPERACIONES DE EVENTOS</span>
+        </span>
+      </a>
+      <button #menuToggle type="button" class="mobile-toggle" aria-controls="sidebar-content" [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(!menuOpen())" [attr.aria-label]="menuOpen() ? 'Cerrar menú' : 'Abrir menú'">
+        <emx-icon [name]="menuOpen() ? 'close' : 'menu'" />
+      </button>
+    </div>
+    <div id="sidebar-content" class="sidebar-content" [class.is-open]="menuOpen()">
+      <nav class="sidebar-nav" aria-label="Navegación principal">
+        <p class="nav-section">OPERACIÓN</p>
+        <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" (click)="closeMenu(menuToggle)">
+          <emx-icon name="dashboard" /> Dashboard
+        </a>
+        @if (canViewProductions()) {
+          <a routerLink="/productions" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" (click)="closeMenu(menuToggle)">
+            <emx-icon name="calendar" /> Producciones
+          </a>
+        }
+        @if (canViewCatalog()) {
+          <a routerLink="/catalog" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" (click)="closeMenu(menuToggle)">
+            <emx-icon name="box" /> Catálogo
+          </a>
+        }
+        @if (canViewReports() || isAuditor()) {
+          <p class="nav-section secondary">ANÁLISIS Y CONTROL</p>
+        }
+        @if (canViewReports()) {
+          <a routerLink="/reports" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" (click)="closeMenu(menuToggle)">
+            <emx-icon name="chart" /> Reportes
+          </a>
+        }
+        @if (isAuditor()) {
+          <a routerLink="/audit" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" (click)="closeMenu(menuToggle)">
+            <emx-icon name="shield" /> Auditoría
+          </a>
+        }
+      </nav>
+      <div class="sidebar-footer">
+        <div class="workspace-label">
+          <span class="workspace-avatar">EM</span>
+          <div class="workspace-info">
+            <strong>Espacio de trabajo</strong>
+            <span>Gestión de producciones</span>
+          </div>
+          <span class="workspace-dot" aria-hidden="true"></span>
+        </div>
+        <button type="button" class="btn-logout" (click)="onLogout()">
+          <emx-icon name="logout" /> Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </aside>
+  <div class="shell-workspace">
+    <header class="topbar">
+      <div class="topbar-context">
+        <span class="breadcrumb">EventoMax <span>/</span> <strong>{{ currentSection() }}</strong></span>
+      </div>
+      <div class="topbar-meta">
+        <div class="topbar-user">
+          <span class="user-avatar" aria-hidden="true">{{ initials }}</span>
+          <span class="user-name-role">{{ userName }} &middot; {{ displayRole() }}</span>
+        </div>
+      </div>
+    </header>
+    <main #mainContent id="main-content" class="shell-main" tabindex="-1"><router-outlet /></main>
+    <footer class="workspace-footer">
+      <span>EventoMax &middot; Operaciones de eventos</span>
+      <span>&copy; 2026 EventoMax</span>
+    </footer>
+  </div>
+</div>

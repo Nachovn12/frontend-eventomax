@@ -1,0 +1,33 @@
+:host {
+  display: block;
+}
+.resource-cell {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.resource-art {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  color: var(--brand-accent);
+  background: var(--brand-accent-bg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+.resource-art emx-icon {
+  width: 24px;
+  height: 24px;
+}
+.catalog-table td:last-child .badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 10px;
+}
+.catalog-table th:nth-child(n+2),
+.catalog-table td:nth-child(n+2) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,17 @@
+.feature-pending {
+  margin-top: 32px;
+  padding: 64px 24px;
+}
+
+.feature-pending h2 {
+  max-width: 500px;
+  margin: 16px auto;
+  font-size: 16px;
+  line-height: 1.4;
+  color: #1a2737;
+}
+
+.feature-pending-sub {
+  color: #718094;
+  margin-bottom: 24px;
+}
