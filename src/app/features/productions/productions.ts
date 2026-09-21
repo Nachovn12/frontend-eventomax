@@ -1,6 +1,8 @@
 import { Component, ChangeDetectionStrategy, computed, signal, inject } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, of } from 'rxjs';
+import { switchMap, map, catchError, startWith } from 'rxjs/operators';
 import { ProductionStatus } from '../../core/models/production.model';
 import { Icon } from '../../shared/ui/icon';
 import { ProductionTable } from '../../shared/ui/production-table';
@@ -18,28 +20,38 @@ export class Productions {
   private readonly dataService = inject(ProductionsDataService);
 
   readonly statuses = toSignal(this.dataService.getStatuses(), { initialValue: [] });
-  private readonly allProductions = toSignal(this.dataService.getProductions(), { initialValue: [] });
+
+  private readonly retrySubject = new BehaviorSubject<void>(undefined);
+
+  private readonly productionsState = toSignal(
+    this.retrySubject.pipe(
+      switchMap(() => this.dataService.getProductions().pipe(
+        map((data) => ({ data, loading: false, error: false })),
+        catchError(() => of({ data: [], loading: false, error: true })),
+        startWith({ data: [], loading: true, error: false })
+      ))
+    ),
+    { initialValue: { data: [], loading: true, error: false } }
+  );
+
+  readonly isLoading = computed(() => this.productionsState().loading);
+  readonly isError = computed(() => this.productionsState().error);
+  private readonly allProductions = computed(() => this.productionsState().data);
 
   readonly search = new FormControl('', { nonNullable: true });
   readonly status = new FormControl<ProductionStatus | ''>('', { nonNullable: true });
 
-  // Future API loading/error state
-  readonly isLoading = signal(false);
-  readonly scenario = new FormControl<'data' | 'empty' | 'error'>('data', { nonNullable: true });
-
   private readonly query = toSignal(this.search.valueChanges, { initialValue: '' });
   private readonly selectedStatus = toSignal(this.status.valueChanges, { initialValue: '' });
-  readonly view = toSignal(this.scenario.valueChanges, { initialValue: 'data' });
 
   readonly announcement = signal('');
 
   readonly rows = computed(() => {
-    if (this.view() !== 'data') return [];
     const query = this.query().trim().toLocaleLowerCase('es');
     return this.allProductions().filter(
       (item) =>
         (!this.selectedStatus() || item.status === this.selectedStatus()) &&
-        [item.id, item.name, item.client, item.venue].some((value) =>
+        [String(item.id), item.name, item.location, item.organizerId].some((value) =>
           value.toLocaleLowerCase('es').includes(query),
         ),
     );
@@ -61,9 +73,7 @@ export class Productions {
     this.status.setValue('');
   }
 
-  restoreDemo(): void {
-    this.clearFilters();
-    this.scenario.setValue('data');
-    this.announcement.set('Datos de demostración restaurados.');
+  retry(): void {
+    this.retrySubject.next();
   }
 }
