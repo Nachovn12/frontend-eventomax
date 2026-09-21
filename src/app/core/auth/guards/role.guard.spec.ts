@@ -79,13 +79,13 @@ describe('roleGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('should refresh authorization and allow access if user has at least one of the roles (Producer or Organizer)', async () => {
+  it('should refresh authorization and allow access if user has at least one of the roles (Productor or Organizador)', async () => {
     authzMock.hasAnyRole.mockReturnValue(true);
 
-    const result = await runGuard([AppRole.Producer, AppRole.Organizer]);
+    const result = await runGuard([AppRole.Productor, AppRole.Organizador]);
 
     expect(authzMock.refreshAuthorization).toHaveBeenCalled();
-    expect(authzMock.hasAnyRole).toHaveBeenCalledWith([AppRole.Producer, AppRole.Organizer]);
+    expect(authzMock.hasAnyRole).toHaveBeenCalledWith([AppRole.Productor, AppRole.Organizador]);
     expect(result).toBe(true);
   });
 

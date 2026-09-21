@@ -25,8 +25,8 @@ export const routes: Routes = [
         data: {
           roles: [
             AppRole.Admin,
-            AppRole.Producer,
-            AppRole.Organizer,
+            AppRole.Productor,
+            AppRole.Organizador,
             AppRole.Auditor,
           ]
         }
@@ -38,8 +38,8 @@ export const routes: Routes = [
         data: {
           roles: [
             AppRole.Admin,
-            AppRole.Producer,
-            AppRole.Organizer,
+            AppRole.Productor,
+            AppRole.Organizador,
           ]
         }
       },
@@ -50,7 +50,7 @@ export const routes: Routes = [
         data: {
           roles: [
             AppRole.Admin,
-            AppRole.Producer,
+            AppRole.Productor,
           ]
         }
       },
@@ -67,7 +67,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/audit/audit').then(m => m.Audit),
         canActivate: [MsalGuard, roleGuard],
         data: {
-          roles: [AppRole.Auditor]
+          roles: [
+            AppRole.Admin,
+            AppRole.Auditor
+          ]
         }
       }
     ]

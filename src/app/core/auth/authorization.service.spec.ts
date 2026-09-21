@@ -62,19 +62,19 @@ describe('AuthorizationService', () => {
 
   it('should return true for hasAnyRole when multiple roles are present', async () => {
     const payload = getValidPayload();
-    payload.roles = ['Admin', 'Producer'];
+    payload.roles = ['Admin', 'Productor'];
     authMock.acquireAccessToken.mockResolvedValue({
       accessToken: createDummyJwt(payload)
     });
     await service.refreshAuthorization();
 
-    expect(service.hasRole(AppRole.Producer)).toBe(true);
+    expect(service.hasRole(AppRole.Productor)).toBe(true);
     expect(service.hasAnyRole([AppRole.Admin, AppRole.Auditor])).toBe(true);
   });
 
-  it('should ignore unknown roles', async () => {
+  it('should ignore unknown roles (including legacy Producer/Organizer)', async () => {
     const payload = getValidPayload();
-    payload.roles = ['Admin', 'Hacker', 'Unknown'];
+    payload.roles = ['Admin', 'Hacker', 'Unknown', 'Producer', 'Organizer'];
     authMock.acquireAccessToken.mockResolvedValue({
       accessToken: createDummyJwt(payload)
     });

@@ -1,7 +1,38 @@
-<section class="forbidden-page" aria-labelledby="forbidden-heading">
-  <div class="forbidden-card">
-    <h1 id="forbidden-heading" class="forbidden-title">Acceso no autorizado</h1>
-    <p class="forbidden-text">No tienes permisos para acceder a esta sección.</p>
-    <a routerLink="/login" class="btn-primary">Volver al inicio</a>
+<main class="fb-layout">
+  <div class="fb-card">
+    <div class="fb-icon" aria-hidden="true">
+      <emx-icon name="shield" />
+    </div>
+
+    <div class="fb-header">
+      <span class="fb-eyebrow">403 &middot; Acceso restringido</span>
+      <h1 id="forbidden-heading" class="fb-title">Acceso no autorizado</h1>
+    </div>
+
+    <div class="fb-body">
+      <p class="fb-text">Tu sesión está activa, pero tu rol no tiene permisos para acceder a esta sección.</p>
+
+      @if (account) {
+        <div class="fb-session-info">
+          <p class="fb-session-label">Sesión actual</p>
+          <p class="fb-user-name">{{ userName }}</p>
+
+          @if (isResolvingRoles()) {
+            <p class="fb-user-role">Verificando permisos...</p>
+          } @else if (userRoles()) {
+            <p class="fb-user-role">{{ userRoles() }}</p>
+          } @else {
+            <p class="fb-user-role">Rol no disponible</p>
+          }
+        </div>
+      }
+
+      <p class="fb-subtext">Puedes volver al panel principal o cerrar sesión para ingresar con otra cuenta.</p>
+    </div>
+
+    <div class="fb-actions">
+      <a routerLink="/dashboard" class="fb-btn-primary">Volver al dashboard</a>
+      <button type="button" class="fb-btn-secondary" (click)="onLogout()">Cerrar sesión</button>
+    </div>
   </div>
-</section>
+</main>

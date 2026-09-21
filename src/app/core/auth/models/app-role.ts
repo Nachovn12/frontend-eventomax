@@ -1,10 +1,11 @@
 /**
  * Application roles expected from Microsoft Entra ID claims.
- * Defined strictly according to the backend and Entra app manifest.
+ * Los valores corresponden literalmente al claim "roles" emitido por Microsoft Entra ID
+ * y est�n alineados al Caso EventoMax y al BFF.
  */
 export enum AppRole {
   Admin = 'Admin',
-  Producer = 'Producer',
-  Organizer = 'Organizer',
+  Productor = 'Productor',
+  Organizador = 'Organizador',
   Auditor = 'Auditor',
 }
