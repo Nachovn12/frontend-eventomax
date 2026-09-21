@@ -1,54 +1,44 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { Audit } from './audit';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
+import { Audit } from './audit';
 
-describe('Audit', () => {
+describe('Audit Component', () => {
   let fixture: ComponentFixture<Audit>;
+  const roles = signal<AppRole[]>([]);
+
   beforeEach(async () => {
+    roles.set([AppRole.Auditor]);
+
     await TestBed.configureTestingModule({
       imports: [Audit],
       providers: [
         provideRouter([]),
-        { provide: AuthorizationService, useValue: { roles: () => [AppRole.Auditor] } },
+        { provide: AuthorizationService, useValue: { roles } },
       ],
     }).compileComponents();
+
     fixture = TestBed.createComponent(Audit);
     fixture.detectChanges();
   });
-  it('shows an Auditor read-only timeline with inspectable traces', () => {
-    expect(fixture.nativeElement.querySelector('h1').textContent).toBe('Auditoría');
-    expect(fixture.componentInstance.displayRole()).toBe('Auditor');
-    expect(fixture.nativeElement.querySelectorAll('.timeline-item').length).toBe(5);
-    expect(fixture.nativeElement.textContent).toContain('Solo lectura');
 
-    expect(fixture.nativeElement.querySelector('details dd').textContent).toBe('AUD-DEMO-005');
-    const buttons = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
-    ).map((button) => button.textContent?.trim());
-    expect(buttons).toEqual(['Limpiar']);
+  it('renders pending state for audit without fake timelines or data services', () => {
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Auditoría y trazabilidad');
+    expect(text).toContain('El historial de eventos estará disponible cuando el servicio de auditoría sea habilitado.');
+    expect(text).toContain('Identidad activa: Auditor');
   });
-  it('filters by production and actor, then restores the timeline', () => {
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector('#audit-production');
-    select.value = 'EMX-2401';
-    select.dispatchEvent(new Event('change'));
-    const input: HTMLInputElement = fixture.nativeElement.querySelector('#audit-search');
-    input.value = 'CAMILA';
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelectorAll('.timeline-item').length).toBe(1);
-    input.value = 'Diego';
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('No hay actividad con estos filtros');
-    fixture.nativeElement.querySelector('.empty-state button').click();
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelectorAll('.timeline-item').length).toBe(5);
+
+  it('displays the security shield icon for the pending state', () => {
+    const icon = fixture.nativeElement.querySelector('emx-icon[name="shield"]');
+    expect(icon).toBeTruthy();
   });
-  it('keeps the return link to the dashboard', () => {
-    expect(fixture.nativeElement.querySelector('a.btn-primary').getAttribute('href')).toBe(
-      '/dashboard',
-    );
+
+  it('provides a safe exit link to the dashboard', () => {
+    const link = fixture.nativeElement.querySelector('a[routerLink="/dashboard"]');
+    expect(link).toBeTruthy();
+    expect(link.textContent).toContain('Ir al Dashboard');
   });
 });
