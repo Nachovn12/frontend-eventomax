@@ -17,8 +17,8 @@ describe('Reports Component', () => {
 
   it('renders pending state for reports without fake metrics or data services', () => {
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Reportes');
-    expect(text).toContain('Los indicadores analíticos estarán disponibles cuando el servicio de reportería sea habilitado.');
+    expect(text).toContain('Reportes y analítica');
+    expect(text).toContain('La reportería avanzada se habilitará en una siguiente etapa de la plataforma.');
   });
 
   it('displays the module pending icon', () => {
@@ -29,6 +29,6 @@ describe('Reports Component', () => {
   it('provides a link back to the dashboard', () => {
     const link = fixture.nativeElement.querySelector('a[routerLink="/dashboard"]');
     expect(link).toBeTruthy();
-    expect(link.textContent).toContain('Ir al Dashboard');
+    expect(link.textContent).toContain('Volver al panel');
   });
 });

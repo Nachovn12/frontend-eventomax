@@ -15,7 +15,7 @@ app-login{display:block;width:100%;font-family:system-ui,-apple-system,BlinkMacS
 .btn-ms{display:flex;align-items:center;justify-content:center;height:56px;background:#0f172a;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;transition:background-color .2s,transform .2s cubic-bezier(.16,1,.3,1);position:relative;width:100%;margin-bottom:16px}
 .btn-ms:hover:not(:disabled){background:#1e293b}
 .btn-ms:active:not(:disabled){transform:translateY(1px)}
-.btn-ms:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.btn-ms:focus-visible{outline:2px solid #004ee6;outline-offset:2px}
 .btn-ms:disabled{opacity:.8;cursor:not-allowed;background:#94a3b8}
 .btn-c,.btn-ld{display:flex;align-items:center;gap:12px}
 .btn-c{transition:opacity .2s}
@@ -31,8 +31,8 @@ app-login{display:block;width:100%;font-family:system-ui,-apple-system,BlinkMacS
 .a-div{height:1px;background:rgba(0,0,0,.06);margin-bottom:24px}
 .a-help p,.a-ft p{margin:0}
 .a-help p{font-size:13.5px;color:#64748b}
-.a-help a{color:#2563eb;text-decoration:none;font-weight:500}
-.a-help a:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.a-help a{color:#004ee6;text-decoration:none;font-weight:500}
+.a-help a:focus-visible{outline:2px solid #004ee6;outline-offset:2px}
 .a-ft{margin-top:40px;text-align:center}
 .a-ft p{font-size:13px;color:#94a3b8}
 .p-brand{grid-column:1;grid-row:1;background:#0a1122;border-radius:20px;overflow:hidden;position:relative;display:flex;flex-direction:column}

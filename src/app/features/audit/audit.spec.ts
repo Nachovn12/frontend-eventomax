@@ -27,7 +27,7 @@ describe('Audit Component', () => {
   it('renders pending state for audit without fake timelines or data services', () => {
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Auditoría y trazabilidad');
-    expect(text).toContain('El historial de eventos estará disponible cuando el servicio de auditoría sea habilitado.');
+    expect(text).toContain('La trazabilidad centralizada se habilitará en una siguiente etapa de la plataforma.');
     expect(text).toContain('Identidad activa: Auditor');
   });
 
@@ -39,6 +39,6 @@ describe('Audit Component', () => {
   it('provides a safe exit link to the dashboard', () => {
     const link = fixture.nativeElement.querySelector('a[routerLink="/dashboard"]');
     expect(link).toBeTruthy();
-    expect(link.textContent).toContain('Ir al Dashboard');
+    expect(link.textContent).toContain('Volver al panel');
   });
 });

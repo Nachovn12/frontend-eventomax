@@ -1,15 +1,16 @@
 .emx-workspace .toolbar {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   align-items: end;
   flex-wrap: wrap;
   padding: 0 24px 20px;
 }
 .emx-workspace .field {
-  display: grid;
-  gap: 6px;
-  color: #344054;
-  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-main);
+  font-size: 13px;
   font-weight: 500;
 }
 .emx-workspace .field.grow {
@@ -19,104 +20,74 @@
 .emx-workspace input,
 .emx-workspace select {
   min-height: 36px;
-  border: 1px solid #d0d5dd;
-  border-radius: 8px;
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-md);
   padding: 8px 12px;
-  color: #101828;
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  color: var(--text-main);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
   font-size: 13px;
-  transition: all 0.2s ease;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 .emx-workspace input:focus,
 .emx-workspace select:focus {
   outline: none;
-  border-color: #004ee6;
-  box-shadow: 0 0 0 4px rgba(0, 78, 230, 0.1);
+  border-color: var(--brand-accent);
+  box-shadow: 0 0 0 3px var(--brand-accent-bg);
 }
 .emx-workspace input::placeholder {
-  color: #98a2b3;
+  color: var(--text-light);
 }
-.emx-workspace .empty-state {
-  padding: 48px 20px;
-  text-align: center;
-  display: grid;
-  gap: 12px;
-  justify-items: center;
-}
-.emx-workspace .empty-state h3 {
-  font-size: 16px;
-  color: #101828;
-}
-.emx-workspace .empty-state p {
-  color: #667085;
-  max-width: 420px;
-  font-size: 13px;
-}
+
 .emx-workspace .badge {
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
-  font-weight: 500;
-  color: #475467;
-  background: #f2f4f7;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-light);
   white-space: nowrap;
 }
 .emx-workspace .badge.available {
-  color: #027a48;
-  background: #ecfdf3;
+  color: var(--status-success);
+  background: var(--status-success-bg);
+  border-color: var(--status-success-bg);
 }
 .emx-workspace .badge.warning {
-  color: #b54708;
-  background: #fffaeb;
+  color: var(--status-warning);
+  background: var(--status-warning-bg);
+  border-color: var(--status-warning-bg);
 }
 .emx-workspace .badge.danger {
-  color: #b42318;
-  background: #fef3f2;
+  color: var(--status-danger);
+  background: var(--status-danger-bg);
+  border-color: var(--status-danger-bg);
 }
+
 .emx-workspace .split-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+  gap: 24px;
 }
+
 .emx-workspace .progress-track {
   width: 100%;
-  height: 8px;
-  background: #f2f4f7;
-  border-radius: 20px;
+  height: 6px;
+  background: var(--border-light);
+  border-radius: 99px;
   overflow: hidden;
 }
 .emx-workspace .progress-track > span {
   display: block;
-  background: #004ee6;
+  background: var(--brand-accent);
   height: 100%;
   border-radius: inherit;
 }
-.emx-workspace .scenario-control {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-  color: #667085;
-  font-size: 12px;
-}
-.emx-workspace .scenario-control select {
-  width: auto;
-  min-height: 32px;
-  padding: 6px 10px;
-  font-size: 12px;
-}
-.emx-workspace .selection-note {
-  border: 1px solid #fecdca;
-  background: #fef3f2;
-  color: #b42318;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 12px;
-}
+
 @media (min-width: 1600px) {
   .emx-workspace .data-table td {
-    padding-block: 22px;
+    padding-block: 20px;
   }
 }
 @media (max-width: 1100px) {
@@ -125,7 +96,7 @@
   }
   .emx-workspace .metric-card {
     flex: 1 1 40%;
-    border-bottom: 1px solid #eaecf0;
+    border-bottom: 1px solid var(--border-base);
   }
   .emx-workspace .metric-card:nth-child(2) {
     border-right: none;
@@ -136,12 +107,12 @@
 }
 @media (max-width: 600px) {
   .emx-workspace .page-content {
-    gap: 18px;
+    gap: 20px;
   }
   .emx-workspace .page-header {
     align-items: start;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
   }
   .emx-workspace .metric-card {
     flex: 1 1 100%;
@@ -149,24 +120,6 @@
   }
   .emx-workspace .metric-card:last-child {
     border-bottom: none;
-  }
-  .emx-workspace .metric-top {
-    font-size: 12px;
-    align-items: start;
-  }
-  .emx-workspace .metric-value {
-    font-size: 28px;
-  }
-  .emx-workspace .metric-top .icon-tile {
-    width: 28px;
-    height: 28px;
-  }
-  .emx-workspace .demo-notice {
-    align-items: start;
-    padding: 12px;
-  }
-  .emx-workspace .demo-tag {
-    display: none;
   }
   .emx-workspace .toolbar {
     padding-inline: 16px;
@@ -186,10 +139,6 @@
   }
   .emx-workspace .panel-footer {
     padding-inline: 16px;
-    flex-wrap: wrap;
-  }
-  .emx-workspace .scenario-control {
-    justify-content: start;
     flex-wrap: wrap;
   }
 }

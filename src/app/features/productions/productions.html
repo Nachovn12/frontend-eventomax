@@ -14,28 +14,28 @@
       <div class="metric-top">
         Total de producciones <span class="icon-tile"><emx-icon name="calendar" /></span>
       </div>
-      <strong class="metric-value">{{ total().toString().padStart(2, '0') }}</strong>
+      <strong class="metric-value">{{ total() }}</strong>
       <p class="metric-foot">Histórico de la cuenta</p>
     </article>
     <article class="metric-card">
       <div class="metric-top">
         En operación <span class="icon-tile green"><emx-icon name="stage" /></span>
       </div>
-      <strong class="metric-value">{{ active().toString().padStart(2, '0') }}</strong>
+      <strong class="metric-value">{{ active() }}</strong>
       <p class="metric-foot">Montaje y ejecución</p>
     </article>
     <article class="metric-card">
       <div class="metric-top">
         Por confirmar <span class="icon-tile amber"><emx-icon name="clock" /></span>
       </div>
-      <strong class="metric-value">{{ pending().toString().padStart(2, '0') }}</strong>
+      <strong class="metric-value">{{ pending() }}</strong>
       <p class="metric-foot">Solicitudes recibidas</p>
     </article>
     <article class="metric-card">
       <div class="metric-top">
         Finalizadas <span class="icon-tile purple"><emx-icon name="check" /></span>
       </div>
-      <strong class="metric-value">{{ closed().toString().padStart(2, '0') }}</strong>
+      <strong class="metric-value">{{ closed() }}</strong>
       <p class="metric-foot">Producción cerrada</p>
     </article>
   </section>
@@ -55,7 +55,7 @@
           #searchInput
           type="search"
           [formControl]="search"
-          placeholder="Nombre, organizador, ubicación o ID⬦" /></label
+          placeholder="Nombre, organizador, ubicación o ID" /></label
       ><label class="field" for="production-status"
         >Estado<select id="production-status" [formControl]="status">
           <option value="">Todos los estados</option>

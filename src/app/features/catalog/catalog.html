@@ -98,12 +98,11 @@
               <th scope="col">Servicio</th>
               <th scope="col">Tarifa</th>
               <th scope="col">Estado</th>
-              <th scope="col" aria-label="Acciones"></th>
             </tr>
           </thead>
           <tbody>
             @for (item of rows(); track item.id) {
-              <tr class="clickable">
+              <tr>
                 <td>
                   <div class="resource-cell">
                     <div>
@@ -113,14 +112,13 @@
                   </div>
                 </td>
                 <td>
-                  <strong>{{ item.rate | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong>
+                  <strong>{{ item.rate | currency:'CLP':'symbol-narrow':'1.0-0' }} CLP</strong>
                 </td>
                 <td>
                   <span class="badge" [class.available]="item.active" [class.danger]="!item.active">
                     {{ item.active ? 'Activo' : 'Inactivo' }}
                   </span>
                 </td>
-                <td class="row-action"><emx-icon name="chevron-right" /></td>
               </tr>
             }
           </tbody>

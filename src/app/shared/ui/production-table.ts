@@ -7,7 +7,7 @@ import { Icon } from './icon';
 @Component({
   selector: 'emx-production-table',
   standalone: true,
-  imports: [StatusChip, Icon, DatePipe],
+  imports: [StatusChip, DatePipe],
   template: `
     <p class="table-hint">Desliza la tabla para ver estados y detalles.</p>
     <div class="table-scroll" role="region" [attr.aria-label]="caption()" tabindex="0">
@@ -21,12 +21,11 @@ import { Icon } from './icon';
             <th scope="col">Ubicación</th>
             <th scope="col">Fecha y hora</th>
             <th scope="col">Estado</th>
-            <th scope="col" aria-label="Acciones"></th>
           </tr>
         </thead>
         <tbody>
           @for (event of rows(); track event.id) {
-            <tr class="clickable">
+            <tr>
               <td>
                 <div class="event-cell">
                   <span class="event-monogram" aria-hidden="true">{{ event.name.slice(0, 1) }}</span>
@@ -44,9 +43,6 @@ import { Icon } from './icon';
                 <span class="cell-meta">{{ event.scheduledAt | date:'HH:mm' }} h</span>
               </td>
               <td><emx-status [status]="event.status" /></td>
-              <td class="row-action">
-                <emx-icon name="chevron-right" />
-              </td>
             </tr>
           }
         </tbody>
