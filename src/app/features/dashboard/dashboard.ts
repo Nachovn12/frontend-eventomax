@@ -64,9 +64,10 @@ export class Dashboard {
   private readonly allProductions = computed(() => this.dashboardState().productions);
   private readonly allCatalog = computed(() => this.dashboardState().catalog);
 
-  readonly activeProductions = computed(() =>
-    this.allProductions().filter((item) => !['CERRADO', 'CANCELADO'].includes(item.status))
-  );
+  readonly activeProductions = computed(() => {
+    const active = this.allProductions().filter((item) => !['CERRADO', 'CANCELADO'].includes(item.status));
+    return [...active].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+  });
 
   readonly upcoming = computed(() => this.activeProductions().slice(0, 4));
 

@@ -72,6 +72,29 @@ describe('Dashboard', () => {
     expect(text).toContain('Servicios de catálogo1/2');
   });
 
+  it('orders upcoming productions chronologically and takes first 4', async () => {
+    roles.set([AppRole.Admin]);
+    dataServiceMock.getProductions.mockReturnValue(of([
+      { id: 1, name: 'P1', organizerId: 'org', location: 'L1', scheduledAt: '2026-09-20T00:00:00Z', status: 'CONFIRMADO', createdAt: '', updatedAt: '' },
+      { id: 2, name: 'P2', organizerId: 'org', location: 'L2', scheduledAt: '2026-09-10T00:00:00Z', status: 'SOLICITADO', createdAt: '', updatedAt: '' },
+      { id: 3, name: 'P3', organizerId: 'org', location: 'L3', scheduledAt: '2026-09-15T00:00:00Z', status: 'CONFIRMADO', createdAt: '', updatedAt: '' },
+      { id: 4, name: 'P4', organizerId: 'org', location: 'L4', scheduledAt: '2026-09-25T00:00:00Z', status: 'CONFIRMADO', createdAt: '', updatedAt: '' },
+      { id: 5, name: 'P5', organizerId: 'org', location: 'L5', scheduledAt: '2026-09-12T00:00:00Z', status: 'CONFIRMADO', createdAt: '', updatedAt: '' }
+    ]));
+
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const upcoming = fixture.componentInstance.upcoming();
+    expect(upcoming.length).toBe(4);
+    expect(upcoming[0].id).toBe(2);
+    expect(upcoming[1].id).toBe(5);
+    expect(upcoming[2].id).toBe(3);
+    expect(upcoming[3].id).toBe(1);
+  });
+
   it('displays organizer isolation note and skips catalog and productions requests', async () => {
     roles.set([AppRole.Organizador]);
     dataServiceMock.getProductions.mockReturnValue(of([]));

@@ -106,4 +106,21 @@ describe('Productions', () => {
 
     expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(2);
   });
+
+  it('sorts rows chronologically', async () => {
+    fixture = TestBed.createComponent(Productions);
+    fixture.detectChanges();
+    productionsSubject.next([
+      { ...mockProductions[0], id: 1, scheduledAt: '2026-09-20T19:30:00Z' },
+      { ...mockProductions[0], id: 2, scheduledAt: '2026-09-10T19:30:00Z' },
+      { ...mockProductions[0], id: 3, scheduledAt: '2026-09-15T19:30:00Z' }
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const rows = fixture.componentInstance.rows();
+    expect(rows[0].id).toBe(2);
+    expect(rows[1].id).toBe(3);
+    expect(rows[2].id).toBe(1);
+  });
 });
