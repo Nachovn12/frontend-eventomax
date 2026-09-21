@@ -19,8 +19,8 @@ describe('Dashboard', () => {
   });
   it.each([
     [AppRole.Admin, ['/productions', '/catalog', '/reports']],
-    [AppRole.Producer, ['/productions', '/catalog']],
-    [AppRole.Organizer, ['/productions']],
+    [AppRole.Productor, ['/productions', '/catalog']],
+    [AppRole.Organizador, ['/productions']],
     [AppRole.Auditor, ['/audit']],
   ])('only provides permitted quick actions to %s', (role, expected) => {
     roles.set([role]);
@@ -30,8 +30,8 @@ describe('Dashboard', () => {
     ).map((link) => link.getAttribute('href'));
     expect(links).toEqual(expected);
   });
-  it('labels the examples and hides inventory from Organizer and Auditor', () => {
-    for (const role of [AppRole.Organizer, AppRole.Auditor]) {
+  it('labels the examples and hides inventory from Organizador and Auditor', () => {
+    for (const role of [AppRole.Organizador, AppRole.Auditor]) {
       roles.set([role]);
       fixture.detectChanges();
       const text = fixture.nativeElement.textContent;
@@ -39,8 +39,8 @@ describe('Dashboard', () => {
       expect(text).not.toContain('Inventario y reservas');
     }
   });
-  it('does not imply that demo records belong to the signed-in Organizer', () => {
-    roles.set([AppRole.Organizer]);
+  it('does not imply that demo records belong to the signed-in Organizador', () => {
+    roles.set([AppRole.Organizador]);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('no representa eventos de tu cuenta');
   });

@@ -44,8 +44,8 @@ export class AppShell {
   readonly displayRole = computed(() => {
     const roleMap: Record<AppRole, string> = {
       [AppRole.Admin]: 'Administrador',
-      [AppRole.Producer]: 'Productor',
-      [AppRole.Organizer]: 'Organizador',
+      [AppRole.Productor]: 'Productor',
+      [AppRole.Organizador]: 'Organizador',
       [AppRole.Auditor]: 'Auditor',
     };
     return (
@@ -57,12 +57,12 @@ export class AppShell {
   });
   readonly isAuditor = computed(() => this.authz.roles().includes(AppRole.Auditor));
   readonly isAdmin = computed(() => this.authz.roles().includes(AppRole.Admin));
-  readonly isProducer = computed(() => this.authz.roles().includes(AppRole.Producer));
-  readonly isOrganizer = computed(() => this.authz.roles().includes(AppRole.Organizer));
+  readonly isProductor = computed(() => this.authz.roles().includes(AppRole.Productor));
+  readonly isOrganizador = computed(() => this.authz.roles().includes(AppRole.Organizador));
   readonly canViewProductions = computed(
-    () => this.isAdmin() || this.isProducer() || this.isOrganizer(),
+    () => this.isAdmin() || this.isProductor() || this.isOrganizador(),
   );
-  readonly canViewCatalog = computed(() => this.isAdmin() || this.isProducer());
+  readonly canViewCatalog = computed(() => this.isAdmin() || this.isProductor());
   readonly canViewReports = computed(() => this.isAdmin());
   skipToContent(event: Event, main: HTMLElement): void {
     event.preventDefault();

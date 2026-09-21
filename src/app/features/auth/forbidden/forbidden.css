@@ -1,78 +1,187 @@
 :host {
   display: block;
   min-height: 100dvh;
-  background-color: #f5f6f8;
-  font-family:
-    'Segoe UI',
-    -apple-system,
-    BlinkMacSystemFont,
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif;
+  background-color: #f3f6fa;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-.forbidden-page {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100dvh;
-  padding: 1.5rem;
+*, ::after, ::before {
   box-sizing: border-box;
 }
 
-.forbidden-card {
+.fb-layout {
   width: 100%;
-  max-width: 420px;
-  background: #fff;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.fb-card {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03), 0 2px 5px rgba(0, 0, 0, 0.02);
+  padding: clamp(32px, 5vw, 48px);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fb-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: #fef2f2;
+  color: #ef4444;
+  border-radius: 14px;
+  margin-bottom: 24px;
+}
+
+.fb-icon emx-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.fb-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.fb-title {
+  font-size: clamp(22px, 3vw, 26px);
+  font-weight: 650;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0 0 16px;
+}
+
+.fb-text {
+  font-size: 15px;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+.fb-session-info {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
   border-radius: 12px;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.08),
-    0 4px 24px rgba(0, 0, 0, 0.06);
-  padding: 2.5rem 2rem;
+  padding: 16px;
+  margin-bottom: 24px;
+  width: 100%;
   text-align: center;
 }
 
-.forbidden-title {
-  font-size: 1.625rem;
+.fb-session-label {
+  font-size: 11px;
   font-weight: 600;
-  color: #b91c1c;
-  margin: 0 0 1rem;
-  line-height: 1.25;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 8px;
 }
 
-.forbidden-text {
-  font-size: 0.9375rem;
+.fb-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.fb-user-role {
+  font-size: 13px;
   color: #475569;
-  line-height: 1.5;
-  margin: 0 0 2rem;
+  margin: 0;
 }
 
-.btn-primary {
+.fb-subtext {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 32px;
+}
+
+.fb-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.fb-btn-primary, .fb-btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 0.75rem 1.25rem;
-  font-size: 0.875rem;
+  min-height: 48px;
+  padding: 0 20px;
+  font-size: 14px;
   font-weight: 600;
-  font-family: inherit;
-  color: #fff;
-  background: #2563eb;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+  border-radius: 10px;
   text-decoration: none;
-  transition: background-color 0.15s ease;
-  min-height: 44px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.btn-primary:hover {
-  background: #1d4ed8;
+.fb-btn-primary {
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
 }
 
-.btn-primary:focus-visible {
+.fb-btn-primary:hover {
+  background: #1e293b;
+}
+
+.fb-btn-secondary {
+  background: transparent;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.fb-btn-secondary:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.fb-btn-primary:active, .fb-btn-secondary:active {
+  transform: translateY(1px);
+}
+
+.fb-btn-primary:focus-visible, .fb-btn-secondary:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
+}
+
+@media (min-width: 480px) {
+  .fb-actions {
+    flex-direction: row-reverse;
+  }
+}
+
+@media (max-width: 767px) {
+  .fb-layout {
+    padding: 16px;
+    align-items: flex-start;
+  }
+
+  .fb-card {
+    border-radius: 16px;
+    margin-top: 8vh;
+    padding: 32px 24px;
+  }
 }

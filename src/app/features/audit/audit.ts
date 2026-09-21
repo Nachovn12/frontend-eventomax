@@ -22,9 +22,9 @@ export class Audit {
   readonly displayRole = computed(() => {
     const roleMap: Record<AppRole, string> = {
       [AppRole.Admin]: 'Administrador',
-      [AppRole.Producer]: 'Productor',
+      [AppRole.Productor]: 'Productor',
       [AppRole.Auditor]: 'Auditor',
-      [AppRole.Organizer]: 'Organizador',
+      [AppRole.Organizador]: 'Organizador',
     };
     const role = this.authz.roles()[0];
     return role ? roleMap[role] : 'Sin rol';

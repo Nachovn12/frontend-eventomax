@@ -34,8 +34,8 @@ describe('AppShell', () => {
   });
   it.each([
     [AppRole.Admin, ['/dashboard', '/productions', '/catalog', '/reports']],
-    [AppRole.Producer, ['/dashboard', '/productions', '/catalog']],
-    [AppRole.Organizer, ['/dashboard', '/productions']],
+    [AppRole.Productor, ['/dashboard', '/productions', '/catalog']],
+    [AppRole.Organizador, ['/dashboard', '/productions']],
     [AppRole.Auditor, ['/dashboard', '/audit']],
   ])('keeps the existing navigation permissions for %s', (role, expected) => {
     roles.set([role]);

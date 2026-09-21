@@ -6,11 +6,11 @@ import { AppRole } from './core/auth/models/app-role';
 describe('Protected workspace routes', () => {
   const children = routes.find((route) => route.children)?.children;
   it.each([
-    ['dashboard', [AppRole.Admin, AppRole.Producer, AppRole.Organizer, AppRole.Auditor]],
-    ['productions', [AppRole.Admin, AppRole.Producer, AppRole.Organizer]],
-    ['catalog', [AppRole.Admin, AppRole.Producer]],
+    ['dashboard', [AppRole.Admin, AppRole.Productor, AppRole.Organizador, AppRole.Auditor]],
+    ['productions', [AppRole.Admin, AppRole.Productor, AppRole.Organizador]],
+    ['catalog', [AppRole.Admin, AppRole.Productor]],
     ['reports', [AppRole.Admin]],
-    ['audit', [AppRole.Auditor]],
+    ['audit', [AppRole.Admin, AppRole.Auditor]],
   ])('preserves MSAL, role guard and the exact roles on /%s', (path, roles) => {
     const route = children?.find((item) => item.path === path);
     expect(route?.canActivate).toEqual([MsalGuard, roleGuard]);

@@ -23,15 +23,15 @@ export class Dashboard {
   readonly canViewProductions = computed(() =>
     this.authz
       .roles()
-      .some((role) => [AppRole.Admin, AppRole.Producer, AppRole.Organizer].includes(role)),
+      .some((role) => [AppRole.Admin, AppRole.Productor, AppRole.Organizador].includes(role)),
   );
   readonly canViewCatalog = computed(() =>
-    this.authz.roles().some((role) => [AppRole.Admin, AppRole.Producer].includes(role)),
+    this.authz.roles().some((role) => [AppRole.Admin, AppRole.Productor].includes(role)),
   );
   readonly isAdmin = computed(() => this.authz.roles().includes(AppRole.Admin));
   readonly isAuditor = computed(() => this.authz.roles().includes(AppRole.Auditor));
   readonly isOrganizerOnly = computed(
-    () => this.authz.roles().includes(AppRole.Organizer) && !this.canViewCatalog(),
+    () => this.authz.roles().includes(AppRole.Organizador) && !this.canViewCatalog(),
   );
 
   readonly period = toSignal(this.dataService.getPeriod(), { initialValue: '' });
