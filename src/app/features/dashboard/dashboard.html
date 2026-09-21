@@ -41,7 +41,7 @@
             <span>Producciones totales</span
             ><span class="icon-tile"><emx-icon name="calendar" /></span>
           </div>
-          <strong class="metric-value">{{ totalProductions().toString().padStart(2, '0') }}</strong>
+          <strong class="metric-value">{{ totalProductions() }}</strong>
           <p class="metric-foot">Producciones registradas</p>
         </article>
         <article class="metric-card">
@@ -49,7 +49,7 @@
             <span>Solicitudes pendientes</span
             ><span class="icon-tile amber"><emx-icon name="clock" /></span>
           </div>
-          <strong class="metric-value">{{ requested().toString().padStart(2, '0') }}</strong>
+          <strong class="metric-value">{{ requested() }}</strong>
           <p class="metric-foot">Eventos por revisar y confirmar</p>
         </article>
 
@@ -84,16 +84,14 @@
         @if (upcoming().length > 0) {
           <emx-production-table [rows]="upcoming()" caption="Próximas producciones activas" />
         } @else {
-          <div class="empty-state" style="padding: 32px 0;">
+          <div class="empty-state empty-state-panel">
             <span class="icon-tile"><emx-icon name="calendar" /></span>
             <p>No hay producciones activas programadas próximamente.</p>
           </div>
         }
 
         <div class="panel-footer">
-          <span
-            >Mostrando {{ upcoming().length }} de {{ activeProductions().length }} producciones activas</span
-          ><span>Información operacional real</span>
+          <span>Mostrando {{ upcoming().length }} de {{ activeProductions().length }} producciones activas</span>
         </div>
       </section>
     }
@@ -106,7 +104,7 @@
           </div>
         </div>
 
-        <div class="empty-state" style="padding: 32px 0;">
+        <div class="empty-state empty-state-panel">
           <span class="icon-tile"><emx-icon name="calendar" /></span>
           <p>La consulta personalizada de producciones estará disponible cuando el servicio aplique el alcance de datos por organizador.</p>
         </div>
@@ -115,7 +113,7 @@
 
     <div class="split-grid">
       @if (canViewCatalog()) {
-        <section class="panel">
+        <section class="panel catalog-panel">
           <div class="panel-heading">
             <div>
               <h2>Catálogo de servicios</h2>
@@ -125,20 +123,24 @@
           </div>
           <div class="panel-body">
             <div class="catalog-head">
-              <strong>{{ activeServicesCount() }} <span>servicios activos</span></strong
-              ><a class="text-link" routerLink="/catalog">Abrir catálogo <emx-icon name="arrow" /></a>
+              <strong>{{ activeServicesCount() }} <span>servicios activos</span></strong>
+              <a class="text-link" routerLink="/catalog">Abrir catálogo <emx-icon name="arrow" /></a>
             </div>
 
             <div class="catalog-legend">
-              <div>
-                <span class="legend-dot available"></span>Activos<strong>{{
-                  activeServicesCount()
-                }}</strong>
+              <div class="mini-stat">
+                <div class="mini-stat-header">
+                  <span class="legend-dot available"></span>
+                  <span class="stat-label">Activos</span>
+                </div>
+                <strong class="stat-value">{{ activeServicesCount() }}</strong>
               </div>
-              <div>
-                <span class="legend-dot maintenance"></span>Inactivos<strong>{{
-                  totalServicesCount() - activeServicesCount()
-                }}</strong>
+              <div class="mini-stat">
+                <div class="mini-stat-header">
+                  <span class="legend-dot maintenance"></span>
+                  <span class="stat-label">Inactivos</span>
+                </div>
+                <strong class="stat-value">{{ totalServicesCount() - activeServicesCount() }}</strong>
               </div>
             </div>
           </div>
@@ -171,7 +173,7 @@
       <section class="panel">
         <div class="panel-heading">
           <div>
-            <h2>Tu siguiente paso</h2>
+            <h2>Accesos rápidos</h2>
             <p>Accesos disponibles según tu rol</p>
           </div>
           <emx-icon name="arrow" />

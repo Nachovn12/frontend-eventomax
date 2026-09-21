@@ -67,8 +67,8 @@ describe('Dashboard', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Producciones totales02');
-    expect(text).toContain('Solicitudes pendientes01');
+    expect(text).toContain('Producciones totales2');
+    expect(text).toContain('Solicitudes pendientes1');
     expect(text).toContain('Servicios de catálogo1/2');
   });
 

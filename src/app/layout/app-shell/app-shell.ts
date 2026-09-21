@@ -6,7 +6,8 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/auth/auth.service';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
@@ -64,6 +65,23 @@ export class AppShell {
   );
   readonly canViewCatalog = computed(() => this.isAdmin() || this.isProductor());
   readonly canViewReports = computed(() => this.isAdmin());
+
+  readonly currentSection = signal('Dashboard');
+
+  constructor() {
+    const router = inject(Router);
+    router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
+      const url = router.url;
+      let section = 'Operación';
+      if (url.includes('/dashboard')) section = 'Dashboard';
+      else if (url.includes('/productions')) section = 'Producciones';
+      else if (url.includes('/catalog')) section = 'Catálogo';
+      else if (url.includes('/reports')) section = 'Reportes';
+      else if (url.includes('/audit')) section = 'Auditoría';
+      this.currentSection.set(section);
+    });
+  }
+
   skipToContent(event: Event, main: HTMLElement): void {
     event.preventDefault();
     main.focus();

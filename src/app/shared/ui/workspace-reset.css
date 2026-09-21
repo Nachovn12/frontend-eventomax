@@ -22,8 +22,8 @@
     -webkit-tap-highlight-color: transparent;
   }
   :focus-visible {
-    outline: 3px solid #2563eb;
-    outline-offset: 3px;
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
   }
   .sr-only {
     position: absolute;

@@ -61,10 +61,9 @@
   <div class="shell-workspace">
     <header class="topbar">
       <div class="topbar-context">
-        <span class="breadcrumb">EventoMax <span>/</span> <strong>Operación</strong></span>
+        <span class="breadcrumb">EventoMax <span>/</span> <strong>{{ currentSection() }}</strong></span>
       </div>
       <div class="topbar-meta">
-        <span class="env-badge">ENTORNO DEMO</span>
         <div class="topbar-user">
           <span class="user-avatar" aria-hidden="true">{{ initials }}</span>
           <span class="user-name-role">{{ userName }} &middot; {{ displayRole() }}</span>
@@ -73,8 +72,8 @@
     </header>
     <main #mainContent id="main-content" class="shell-main" tabindex="-1"><router-outlet /></main>
     <footer class="workspace-footer">
-      <span>EventoMax &middot; Espacio de trabajo de operaciones</span>
-      <span>Escenario de demostración &middot; 2026</span>
+      <span>EventoMax &middot; Operaciones de eventos</span>
+      <span>&copy; 2026 EventoMax</span>
     </footer>
   </div>
 </div>

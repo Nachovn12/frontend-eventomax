@@ -3,28 +3,28 @@
 }
 .resource-cell {
   display: flex;
-  gap: 13px;
+  gap: 16px;
   align-items: center;
 }
 .resource-art {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  color: #4b6591;
-  background: #edf2fb;
-  border: 1px solid #e0e8f7;
-  border-radius: 9px;
+  color: var(--brand-accent);
+  background: var(--brand-accent-bg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
   flex-shrink: 0;
 }
 .resource-art emx-icon {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
 }
 .catalog-table td:last-child .badge {
   display: inline-block;
   margin-top: 4px;
-  font-size: 9px;
+  font-size: 10px;
 }
 .catalog-table th:nth-child(n+2),
 .catalog-table td:nth-child(n+2) {
