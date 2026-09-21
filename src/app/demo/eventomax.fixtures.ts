@@ -10,133 +10,15 @@ export const DEMO_STATUSES = [
   'CANCELADO',
 ] as const;
 export type DemoStatus = (typeof DEMO_STATUSES)[number];
-export interface DemoProduction {
-  readonly id: string;
-  readonly name: string;
-  readonly client: string;
-  readonly venue: string;
-  readonly date: string;
-  readonly day: string;
-  readonly month: string;
-  readonly time: string;
-  readonly status: DemoStatus;
-  readonly crew: string;
-  readonly equipment: number;
-  readonly category: string;
-}
 export const DEMO_PRODUCTIONS: readonly ProductionViewModel[] = [
-  {
-    id: 'EMX-2401',
-    name: 'Summit Horizonte 2026',
-    client: 'Horizonte Labs',
-    venue: 'Centro de Convenciones · Santiago',
-    date: '2026-09-14',
-    day: '14',
-    month: 'SEP',
-    time: '09:00',
-    status: 'EN_EJECUCION',
-    crew: 'Cuadrilla Norte',
-    equipment: 24,
-    category: 'Corporativo',
-  },
-  {
-    id: 'EMX-2402',
-    name: 'Festival Parque Abierto',
-    client: 'Fundación Abierto',
-    venue: 'Parque Bicentenario · Vitacura',
-    date: '2026-09-15',
-    day: '15',
-    month: 'SEP',
-    time: '16:00',
-    status: 'EN_MONTAJE',
-    crew: 'Cuadrilla Sur',
-    equipment: 40,
-    category: 'Festival',
-  },
-  {
-    id: 'EMX-2403',
-    name: 'Lanzamiento Aura',
-    client: 'Estudio Aura',
-    venue: 'Espacio Riesco · Huechuraba',
-    date: '2026-09-16',
-    day: '16',
-    month: 'SEP',
-    time: '19:30',
-    status: 'CONFIRMADO',
-    crew: 'Cuadrilla Centro',
-    equipment: 18,
-    category: 'Lanzamiento',
-  },
-  {
-    id: 'EMX-2404',
-    name: 'Encuentro de Innovación',
-    client: 'Red Innova',
-    venue: 'Centro Cultural · Providencia',
-    date: '2026-09-17',
-    day: '17',
-    month: 'SEP',
-    time: '10:00',
-    status: 'SOLICITADO',
-    crew: 'Por asignar',
-    equipment: 0,
-    category: 'Corporativo',
-  },
-  {
-    id: 'EMX-2405',
-    name: 'Gala Fundación Sur',
-    client: 'Fundación Sur',
-    venue: 'Salón Los Olivos · Las Condes',
-    date: '2026-09-19',
-    day: '19',
-    month: 'SEP',
-    time: '20:00',
-    status: 'CONFIRMADO',
-    crew: 'Cuadrilla Norte',
-    equipment: 16,
-    category: 'Gala',
-  },
-  {
-    id: 'EMX-2406',
-    name: 'Feria Diseño Local',
-    client: 'Colectivo Diseño',
-    venue: 'Plaza Central · Ñuñoa',
-    date: '2026-09-20',
-    day: '20',
-    month: 'SEP',
-    time: '11:00',
-    status: 'SOLICITADO',
-    crew: 'Por asignar',
-    equipment: 0,
-    category: 'Feria',
-  },
-  {
-    id: 'EMX-2399',
-    name: 'Foro Ciudad Circular',
-    client: 'Ciudad Circular',
-    venue: 'Teatro Municipal · Santiago',
-    date: '2026-09-12',
-    day: '12',
-    month: 'SEP',
-    time: '09:00',
-    status: 'CERRADO',
-    crew: 'Cuadrilla Centro',
-    equipment: 0,
-    category: 'Corporativo',
-  },
-  {
-    id: 'EMX-2398',
-    name: 'Sesiones de Primavera',
-    client: 'Productora Prisma',
-    venue: 'Patio Las Artes · Santiago',
-    date: '2026-09-13',
-    day: '13',
-    month: 'SEP',
-    time: '18:00',
-    status: 'CANCELADO',
-    crew: 'Sin asignación',
-    equipment: 0,
-    category: 'Concierto',
-  },
+  { id: 2401, name: 'Summit Horizonte 2026', organizerId: 'horizonte', location: 'Centro de Convenciones, Santiago', scheduledAt: '2026-09-14T09:00:00Z', status: 'EN_EJECUCION', createdAt: '2026-09-01T10:00:00Z', updatedAt: '2026-09-10T10:00:00Z' },
+  { id: 2402, name: 'Festival Parque Abierto', organizerId: 'abierto', location: 'Parque Bicentenario, Vitacura', scheduledAt: '2026-09-15T16:00:00Z', status: 'EN_MONTAJE', createdAt: '2026-09-02T10:00:00Z', updatedAt: '2026-09-12T10:00:00Z' },
+  { id: 2403, name: 'Lanzamiento Aura', organizerId: 'aura', location: 'Espacio Riesco, Huechuraba', scheduledAt: '2026-09-16T19:30:00Z', status: 'CONFIRMADO', createdAt: '2026-09-03T10:00:00Z', updatedAt: '2026-09-13T10:00:00Z' },
+  { id: 2404, name: 'Encuentro de Innovación', organizerId: 'innova', location: 'Centro Cultural, Providencia', scheduledAt: '2026-09-17T10:00:00Z', status: 'SOLICITADO', createdAt: '2026-09-04T10:00:00Z', updatedAt: '2026-09-04T10:00:00Z' },
+  { id: 2405, name: 'Gala Fundación Sur', organizerId: 'sur', location: 'Salón Los Olivos, Las Condes', scheduledAt: '2026-09-19T20:00:00Z', status: 'CONFIRMADO', createdAt: '2026-09-05T10:00:00Z', updatedAt: '2026-09-15T10:00:00Z' },
+  { id: 2406, name: 'Feria Diseño Local', organizerId: 'diseno', location: 'Plaza Central, Ñuñoa', scheduledAt: '2026-09-20T11:00:00Z', status: 'SOLICITADO', createdAt: '2026-09-06T10:00:00Z', updatedAt: '2026-09-06T10:00:00Z' },
+  { id: 2399, name: 'Foro Ciudad Circular', organizerId: 'circular', location: 'Teatro Municipal, Santiago', scheduledAt: '2026-09-12T09:00:00Z', status: 'CERRADO', createdAt: '2026-09-01T10:00:00Z', updatedAt: '2026-09-13T10:00:00Z' },
+  { id: 2398, name: 'Sesiones de Primavera', organizerId: 'primavera', location: 'Patio Las Artes, Santiago', scheduledAt: '2026-09-13T18:00:00Z', status: 'CANCELADO', createdAt: '2026-09-02T10:00:00Z', updatedAt: '2026-09-10T10:00:00Z' }
 ];
 export interface DemoEquipment {
   readonly id: string;
