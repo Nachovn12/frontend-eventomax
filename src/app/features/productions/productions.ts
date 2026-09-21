@@ -48,13 +48,14 @@ export class Productions {
 
   readonly rows = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('es');
-    return this.allProductions().filter(
+    const filtered = this.allProductions().filter(
       (item) =>
         (!this.selectedStatus() || item.status === this.selectedStatus()) &&
         [String(item.id), item.name, item.location, item.organizerId].some((value) =>
           value.toLocaleLowerCase('es').includes(query),
         ),
     );
+    return [...filtered].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
   });
 
   readonly total = computed(() => this.allProductions().length);
