@@ -23,23 +23,23 @@
   border-radius: 4px;
   color: #617184;
 }
-.inventory-head {
+.catalog-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
-.inventory-head strong {
+.catalog-head strong {
   font-size: 28px;
   letter-spacing: -0.04em;
 }
-.inventory-head strong span {
+.catalog-head strong span {
   font-size: 12px;
   color: #617184;
   font-weight: 400;
   letter-spacing: 0;
 }
-.inventory-bar {
+.catalog-bar {
   display: flex;
   gap: 4px;
   height: 13px;
@@ -56,16 +56,16 @@
 .maintenance {
   background: #e2b76b;
 }
-.inventory-legend {
+.catalog-legend {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
-.inventory-legend div {
+.catalog-legend div {
   font-size: 10px;
   color: #617184;
 }
-.inventory-legend strong {
+.catalog-legend strong {
   display: block;
   color: #24384f;
   font-size: 18px;
@@ -79,7 +79,7 @@
   border-radius: 2px;
   margin-right: 7px;
 }
-.inventory-note {
+.catalog-note {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -89,7 +89,7 @@
   margin-top: 18px;
   padding-top: 14px;
 }
-.inventory-note emx-icon {
+.catalog-note emx-icon {
   width: 15px;
   height: 15px;
 }
@@ -150,14 +150,14 @@
   margin-top: 4px;
 }
 @media (max-width: 400px) {
-  .inventory-head {
+  .catalog-head {
     align-items: start;
     flex-direction: column;
   }
-  .inventory-legend {
+  .catalog-legend {
     gap: 4px;
   }
-  .inventory-legend div {
+  .catalog-legend div {
     font-size: 9px;
   }
 }
