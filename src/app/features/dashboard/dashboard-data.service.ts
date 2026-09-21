@@ -1,23 +1,19 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { ProductionViewModel } from '../../core/models/production.model';
-import { DEMO_INVENTORY, DEMO_PRODUCTIONS, DEMO_PERIOD, DEMO_AUDIT } from '../../demo/eventomax.fixtures';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { Production } from '../../core/models/production.model';
+import { CatalogService } from '../catalog/models/catalog-service.model';
+import { ApiClientService } from '../../core/http/api-client.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class DashboardDataService {
-  getPeriod(): Observable<string> {
-    return of(DEMO_PERIOD);
+  private readonly apiClient = inject(ApiClientService);
+
+  getProductions(): Observable<readonly Production[]> {
+    return this.apiClient.get<readonly Production[]>(`${environment.apiGatewayUrl}/api/productions`);
   }
 
-  getProductions(): Observable<readonly ProductionViewModel[]> {
-    return of(DEMO_PRODUCTIONS);
-  }
-
-  getInventory(): Observable<any> {
-    return of(DEMO_INVENTORY);
-  }
-
-  getAuditActivity(): Observable<readonly any[]> {
-    return of(DEMO_AUDIT);
+  getCatalogServices(): Observable<readonly CatalogService[]> {
+    return this.apiClient.get<readonly CatalogService[]>(`${environment.apiGatewayUrl}/api/catalog/services`);
   }
 }
