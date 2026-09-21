@@ -1,29 +1,34 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Reports } from './reports';
 
-describe('Reports', () => {
+describe('Reports Component', () => {
   let fixture: ComponentFixture<Reports>;
+
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [Reports] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [Reports],
+      providers: [provideRouter([])]
+    }).compileComponents();
+
     fixture = TestBed.createComponent(Reports);
     fixture.detectChanges();
   });
-  it('provides an accessible data table matching the future ECharts series', () => {
-    const data = fixture.componentInstance.chartOption()?.series[0].data;
-    const cells = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('.chart-data tbody tr td:last-child'),
-    ).map((cell) => Number(cell.textContent));
-    expect(cells).toEqual(data);
-    expect(cells.reduce((sum, value) => sum + value, 0)).toBe(fixture.componentInstance.total());
-    expect(fixture.nativeElement.querySelector('.bar-chart').getAttribute('aria-label')).toContain(
-      'demo',
-    );
-  });
-  it('distinguishes the monthly illustration from the sample event listing', () => {
 
-    expect(fixture.nativeElement.textContent).toContain('independientes del listado');
-    expect(fixture.componentInstance.stateCounts().reduce((sum: number, item: any) => sum + item.count, 0)).toBe(
-      fixture.componentInstance.productionsCount(),
-    );
+  it('renders pending state for reports without fake metrics or data services', () => {
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Reportes');
+    expect(text).toContain('Los indicadores analíticos estarán disponibles cuando el servicio de reportería sea habilitado.');
+  });
+
+  it('displays the module pending icon', () => {
+    const icon = fixture.nativeElement.querySelector('emx-icon[name="chart"]');
+    expect(icon).toBeTruthy();
+  });
+
+  it('provides a link back to the dashboard', () => {
+    const link = fixture.nativeElement.querySelector('a[routerLink="/dashboard"]');
+    expect(link).toBeTruthy();
+    expect(link.textContent).toContain('Ir al Dashboard');
   });
 });
