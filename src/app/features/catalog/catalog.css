@@ -21,44 +21,13 @@
   width: 26px;
   height: 26px;
 }
-.resource-art[data-category='Iluminación'] {
-  background: #fff5e5;
-  border-color: #f6e9cd;
-  color: #9b722d;
-}
-.resource-art[data-category='Escenario'] {
-  background: #edf5f1;
-  border-color: #deebe4;
-  color: #4a7a63;
-}
-.resource-art[data-category='Servicios'] {
-  background: #f3edfa;
-  border-color: #e9dff4;
-  color: #82609e;
-}
-.stock-track {
-  height: 4px;
-  width: 54px;
-  background: #e9edf3;
-  border-radius: 8px;
-  margin-top: 6px;
-  overflow: hidden;
-}
-.stock-track span {
-  display: block;
-  background: #648cec;
-  height: 100%;
-}
 .catalog-table td:last-child .badge {
   display: inline-block;
   margin-top: 4px;
   font-size: 9px;
 }
-.catalog-table th:nth-child(n+3),
-.catalog-table td:nth-child(n+3) {
+.catalog-table th:nth-child(n+2),
+.catalog-table td:nth-child(n+2) {
   text-align: right;
   font-variant-numeric: tabular-nums;
-}
-.catalog-table .stock-track {
-  margin-left: auto;
 }

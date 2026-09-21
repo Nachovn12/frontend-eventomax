@@ -1,16 +1,14 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { DEMO_EQUIPMENT, DEMO_INVENTORY } from '../../demo/eventomax.fixtures';
-import { Equipment } from './models/equipment.model';
-import { InventorySummary } from './models/inventory.model';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { CatalogService } from './models/catalog-service.model';
+import { ApiClientService } from '../../core/http/api-client.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class CatalogDataService {
-  getEquipment(): Observable<readonly Equipment[]> {
-    return of(DEMO_EQUIPMENT);
-  }
+  private readonly apiClient = inject(ApiClientService);
 
-  getInventory(): Observable<InventorySummary> {
-    return of(DEMO_INVENTORY);
+  getServices(): Observable<readonly CatalogService[]> {
+    return this.apiClient.get<readonly CatalogService[]>(`${environment.apiGatewayUrl}/api/catalog/services`);
   }
 }
