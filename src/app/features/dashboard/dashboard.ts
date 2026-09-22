@@ -4,9 +4,16 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
 import { DashboardDataService } from './dashboard-data.service';
-import { Icon } from '../../shared/ui/icon';
+import {
+  LucideCalendarDays,
+  LucideClock3,
+  LucideActivity,
+  LucidePackage,
+  LucideArrowRight,
+  LucideBox,
+  LucideInfo
+} from '@lucide/angular';
 import { ProductionTable } from '../../shared/ui/production-table';
-import { StatusChip } from '../../shared/ui/status-chip';
 import { BehaviorSubject, catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { Production } from '../../core/models/production.model';
 import { CatalogService } from '../catalog/models/catalog-service.model';
@@ -14,7 +21,17 @@ import { CatalogService } from '../catalog/models/catalog-service.model';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, Icon, ProductionTable, StatusChip],
+  imports: [
+    RouterLink,
+    ProductionTable,
+    LucideCalendarDays,
+    LucideClock3,
+    LucideActivity,
+    LucidePackage,
+    LucideArrowRight,
+    LucideBox,
+    LucideInfo
+  ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -61,16 +61,18 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--text-light);
-  background: var(--bg-root);
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--border-base);
+  background: transparent;
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  letter-spacing: 0.01em;
 }
 
 .emx-workspace .data-table td {
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
   padding: 16px 24px;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-main);
+  vertical-align: middle;
 }
 
 .emx-workspace .data-table tr:last-child td {
@@ -78,20 +80,24 @@
 }
 
 .emx-workspace .data-table tbody tr {
-  transition: background-color 0.1s ease;
+  transition: background-color 0.15s ease;
+}
+
+.emx-workspace .data-table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.015);
 }
 
 .emx-workspace .data-table strong {
   display: block;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-main);
 }
 
 .emx-workspace .cell-meta {
   display: block;
   font-size: 13px;
-  color: var(--text-muted);
-  margin-top: 4px;
+  color: #9ca3af;
+  margin-top: 2px;
 }
 
 .emx-workspace .event-cell {
@@ -102,14 +108,14 @@
 
 .emx-workspace .event-monogram {
   display: flex;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   align-items: center;
   justify-content: center;
   background: var(--brand-accent-bg);
   color: var(--brand-accent);
   border-radius: var(--radius-md);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -118,9 +124,9 @@
 .emx-workspace .status-chip {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: 2px 8px;
   border-radius: 99px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
   background: var(--status-neutral-bg);

@@ -30,7 +30,7 @@ describe('AppShell', () => {
   it('renders the brand and the current account without exposing tokens', () => {
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelector('.brand-text')?.textContent).toBe('EventoMax');
-    expect(element.querySelector('.user-name-role')?.textContent).toBe('Persona de Prueba · Sin rol asignado');
+    expect(element.querySelector('.user-name-role')?.textContent?.trim()).toBe('Persona De Prueba');
   });
   it.each([
     [AppRole.Admin, ['/dashboard', '/productions', '/catalog', '/reports']],

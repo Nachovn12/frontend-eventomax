@@ -5,18 +5,55 @@ import {
   computed,
   signal,
   ViewEncapsulation,
+  afterNextRender,
+  DestroyRef,
+  HostListener,
+  ElementRef,
 } from '@angular/core';
+import {
+  LucideLayoutDashboard,
+  LucideCalendarDays,
+  LucidePackage,
+  LucideChartNoAxesColumn,
+  LucideShield,
+  LucidePanelLeftClose,
+  LucidePanelLeftOpen,
+  LucideLogOut,
+  LucideMenu,
+  LucideX,
+  LucideChevronDown,
+  LucideChevronRight
+} from '@lucide/angular';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { TitleCasePipe } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/auth/auth.service';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
-import { Icon } from '../../shared/ui/icon';
+
+const SIDEBAR_STORAGE_KEY = 'emx-sidebar-collapsed';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    TitleCasePipe,
+    LucideLayoutDashboard,
+    LucideCalendarDays,
+    LucidePackage,
+    LucideChartNoAxesColumn,
+    LucideShield,
+    LucidePanelLeftClose,
+    LucidePanelLeftOpen,
+    LucideLogOut,
+    LucideMenu,
+    LucideX,
+    LucideChevronDown,
+    LucideChevronRight
+  ],
   templateUrl: './app-shell.html',
   styleUrls: [
     './app-shell.css',
@@ -32,7 +69,16 @@ import { Icon } from '../../shared/ui/icon';
 export class AppShell {
   private readonly auth = inject(AuthService);
   private readonly authz = inject(AuthorizationService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly el = inject(ElementRef);
+
   readonly menuOpen = signal(false);
+  readonly sidebarCollapsed = signal(false);
+  readonly accountMenuOpen = signal(false);
+
+  /** True when viewport is in the "medium" range (768–1199px) */
+  readonly isMediumViewport = signal(false);
+
   readonly userName =
     this.auth.getAccount()?.name || this.auth.getAccount()?.username || 'Usuario EventoMax';
   readonly initials = this.userName
@@ -68,6 +114,15 @@ export class AppShell {
 
   readonly currentSection = signal('Dashboard');
 
+  /** Labels for sidebar nav items (used as tooltips when collapsed) */
+  readonly navLabels = {
+    dashboard: 'Dashboard',
+    productions: 'Producciones',
+    catalog: 'Catálogo',
+    reports: 'Reportes',
+    audit: 'Auditoría',
+  };
+
   constructor() {
     const router = inject(Router);
     router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
@@ -80,15 +135,71 @@ export class AppShell {
       else if (url.includes('/audit')) section = 'Auditoría';
       this.currentSection.set(section);
     });
+
+    // Restore sidebar state from localStorage & setup viewport listener
+    afterNextRender(() => {
+      // Restore persisted state
+      const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+      if (stored === 'true') {
+        this.sidebarCollapsed.set(true);
+      }
+
+      // Medium viewport detection (768–1199px)
+      if (typeof window.matchMedia === 'function') {
+        const mql = window.matchMedia('(min-width: 768px) and (max-width: 1199px)');
+        const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+          this.isMediumViewport.set(e.matches);
+          // Auto-collapse on medium viewport if no user preference stored
+          if (e.matches && stored === null) {
+            this.sidebarCollapsed.set(true);
+          }
+        };
+        handler(mql);
+        mql.addEventListener('change', handler as (e: MediaQueryListEvent) => void);
+        this.destroyRef.onDestroy(() =>
+          mql.removeEventListener('change', handler as (e: MediaQueryListEvent) => void),
+        );
+      }
+    });
+  }
+
+  toggleSidebar(): void {
+    const next = !this.sidebarCollapsed();
+    this.sidebarCollapsed.set(next);
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
   }
 
   skipToContent(event: Event, main: HTMLElement): void {
     event.preventDefault();
     main.focus();
   }
+
+  toggleAccountMenu(): void {
+    this.accountMenuOpen.update(v => !v);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (this.accountMenuOpen() && !target.closest('.topbar-meta')) {
+      this.accountMenuOpen.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.accountMenuOpen()) {
+      this.accountMenuOpen.set(false);
+    }
+    if (this.menuOpen()) {
+      this.closeMenu();
+    }
+  }
+
   onLogout(): void {
     this.auth.logout();
   }
+
   closeMenu(trigger?: HTMLButtonElement): void {
     if (this.menuOpen()) {
       this.menuOpen.set(false);

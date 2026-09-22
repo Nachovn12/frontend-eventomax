@@ -6,68 +6,167 @@
     flex-direction: column;
   }
   .topbar {
-    min-height: 64px;
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border-base);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    min-height: 56px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
     padding: 0 32px;
+  }
+  .topbar-inner {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
   }
   .breadcrumb {
-    font-size: 13px;
-    color: var(--text-muted);
+    font-size: 14px;
+    color: var(--text-light);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
   }
-  .breadcrumb span {
-    margin: 0 12px;
-    color: var(--border-dark);
+  .breadcrumb-icon {
+    width: 14px;
+    height: 14px;
+    color: rgba(0, 0, 0, 0.3);
   }
   .breadcrumb strong {
     color: var(--text-main);
-    font-weight: 500;
+    font-weight: 600;
   }
   .topbar-meta {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 16px;
   }
 
-  .topbar-user {
+  .account-trigger {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    min-height: 36px;
+    border-radius: 10px;
+    padding: 3px 6px 3px 3px;
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+  .account-trigger:hover, .account-trigger:focus-visible, .account-trigger[aria-expanded="true"] {
+    background: rgba(0, 0, 0, 0.035);
+  }
+  .account-trigger:active {
+    background: rgba(0, 0, 0, 0.06);
   }
   .user-name-role {
-    color: var(--text-muted);
+    color: var(--text-main);
     font-size: 13px;
     font-weight: 500;
   }
   .user-avatar {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     font-size: 11px;
     display: grid;
     place-items: center;
     border-radius: 99px;
-    background: var(--status-info-bg);
-    color: var(--status-info);
+    background: #eef2ff;
+    color: #4338ca;
     font-weight: 600;
     flex-shrink: 0;
+  }
+  .trigger-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--text-light);
+    margin-left: 2px;
+  }
+
+  .account-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--bg-surface);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+    z-index: 100;
+    animation: menu-fade-in 150ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  @keyframes menu-fade-in {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .account-menu-header {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .account-menu-header strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.2;
+  }
+  .account-menu-header span {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .account-menu-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.06);
+    margin: 4px 0;
+  }
+
+  .account-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 150ms ease, color 150ms ease;
+  }
+  .account-menu-item:hover, .account-menu-item:focus-visible {
+    background: rgba(0, 0, 0, 0.04);
+  }
+  .account-menu-item .menu-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--text-light);
   }
   .shell-main {
     padding: 32px;
     flex: 1;
     min-width: 0;
   }
-  .workspace-footer {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 0 32px 24px;
-    font-size: 12px;
-    color: var(--text-light);
-  }
+
   .mobile-toggle {
     display: none;
   }
@@ -84,27 +183,52 @@
     top: 12px;
   }
 
+  /* ── Desktop large: sidebar expanded by default ── */
   @media (max-width: 1200px) {
-    .shell-sidebar {
-      width: 220px;
-    }
     .shell-main {
       padding: 26px 22px;
     }
     .topbar {
-      padding-inline: 22px;
+      padding: 0 22px;
     }
   }
+
+  /* ── Mobile: hamburger menu, no sidebar ── */
   @media (max-width: 760px) {
     &.shell-layout {
-      display: block;
+      display: flex;
+      flex-direction: column;
     }
-    .shell-sidebar {
+
+    /* Override collapse on mobile — always full-width overlay */
+    .shell-sidebar,
+    .shell-sidebar.is-collapsed {
       position: static;
       width: 100%;
       height: auto;
       overflow: visible;
+      transition: none;
     }
+
+    .shell-sidebar.is-collapsed .sidebar-nav,
+    .shell-sidebar.is-collapsed .sidebar-footer {
+      /* Reset collapsed styles for mobile overlay */
+    }
+
+    .shell-sidebar.is-collapsed .nav-link,
+    .shell-sidebar.is-collapsed .btn-logout,
+    .shell-sidebar.is-collapsed .collapse-toggle {
+      justify-content: flex-start;
+      padding: 0 12px;
+      width: 100%;
+      height: 44px;
+    }
+
+    .shell-sidebar.is-collapsed .sidebar-header {
+      padding: 16px 20px;
+      justify-content: space-between;
+    }
+
     .sidebar-header {
       padding: 16px 20px;
       display: flex;
@@ -144,25 +268,24 @@
     .sidebar-footer {
       margin-top: 16px;
     }
+
+    /* Hide desktop toggles on mobile — not needed */
+    .collapse-toggle, .desktop-toggle {
+      display: none;
+    }
+
     .topbar {
       min-height: 56px;
       padding: 0 16px;
     }
-    .topbar-user {
+    .user-name-role {
       display: none;
     }
     .breadcrumb {
       font-size: 12px;
     }
-    .breadcrumb span {
-      margin: 0 8px;
-    }
     .shell-main {
       padding: 24px 16px;
     }
-    .workspace-footer {
-      padding: 0 16px 24px;
-      flex-wrap: wrap;
     }
-  }
 }

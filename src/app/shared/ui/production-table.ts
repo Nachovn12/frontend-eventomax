@@ -31,7 +31,7 @@ import { Icon } from './icon';
                   <span class="event-monogram" aria-hidden="true">{{ event.name.slice(0, 1) }}</span>
                   <div>
                     <strong>{{ event.name }}</strong>
-                    <span class="cell-meta">ID: {{ event.id }} · {{ event.organizerId }}</span>
+                    <span class="cell-meta">{{ event.organizerId }}</span>
                   </div>
                 </div>
               </td>

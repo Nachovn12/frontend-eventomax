@@ -1,79 +1,136 @@
-<div class="shell-layout emx-workspace">
+<div class="shell-layout emx-workspace" [class.sidebar-collapsed]="sidebarCollapsed()">
   <a class="skip-link" href="#main-content" (click)="skipToContent($event, mainContent)">Saltar al contenido</a>
-  <aside class="shell-sidebar" (keydown.escape)="closeMenu(menuToggle)">
+  <aside class="shell-sidebar" [class.is-collapsed]="sidebarCollapsed()" (keydown.escape)="closeMenu(menuToggle)">
     <div class="sidebar-header">
-      <a class="brand" routerLink="/dashboard" aria-label="EventoMax, inicio">
-        <img class="brand-mark" src="/branding/eventomax/symbols/eventomax-symbol-dark.svg" alt="" aria-hidden="true" />
-        <span>
-          <span class="brand-text">Evento<span>Max</span></span>
-          <span class="brand-caption">OPERACIONES DE EVENTOS</span>
-        </span>
-      </a>
+      <div class="header-content">
+        <a class="brand" routerLink="/dashboard" aria-label="EventoMax, inicio">
+          <img class="brand-mark" src="/branding/eventomax/symbols/eventomax-symbol-dark.svg" alt="" aria-hidden="true" />
+          @if (!sidebarCollapsed()) {
+            <span>
+              <span class="brand-text">Evento<span>Max</span></span>
+              <span class="brand-caption">OPERACIONES DE EVENTOS</span>
+            </span>
+          }
+        </a>
+        <button type="button" class="collapse-toggle desktop-toggle" (click)="toggleSidebar()" [attr.aria-label]="sidebarCollapsed() ? 'Expandir menú' : 'Colapsar menú'" [attr.title]="sidebarCollapsed() ? 'Expandir menú' : 'Colapsar menú'">
+          @if (sidebarCollapsed()) {
+            <svg lucidePanelLeftOpen class="nav-icon" />
+          } @else {
+            <svg lucidePanelLeftClose class="nav-icon" />
+          }
+        </button>
+      </div>
       <button #menuToggle type="button" class="mobile-toggle" aria-controls="sidebar-content" [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(!menuOpen())" [attr.aria-label]="menuOpen() ? 'Cerrar menú' : 'Abrir menú'">
-        <emx-icon [name]="menuOpen() ? 'close' : 'menu'" />
+        @if (menuOpen()) {
+          <svg lucideX class="nav-icon" />
+        } @else {
+          <svg lucideMenu class="nav-icon" />
+        }
       </button>
     </div>
     <div id="sidebar-content" class="sidebar-content" [class.is-open]="menuOpen()">
       <nav class="sidebar-nav" aria-label="Navegación principal">
-        <p class="nav-section">OPERACIÓN</p>
-        <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" (click)="closeMenu(menuToggle)">
-          <emx-icon name="dashboard" /> Dashboard
+        @if (!sidebarCollapsed()) {
+          <p class="nav-section">OPERACIÓN</p>
+        }
+        <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCollapsed() ? navLabels.dashboard : null" (click)="closeMenu(menuToggle)">
+          <svg lucideLayoutDashboard class="nav-icon" />
+          @if (!sidebarCollapsed()) {
+            <span>Dashboard</span>
+          }
         </a>
         @if (canViewProductions()) {
-          <a routerLink="/productions" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" (click)="closeMenu(menuToggle)">
-            <emx-icon name="calendar" /> Producciones
+          <a routerLink="/productions" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCollapsed() ? navLabels.productions : null" (click)="closeMenu(menuToggle)">
+            <svg lucideCalendarDays class="nav-icon" />
+            @if (!sidebarCollapsed()) {
+              <span>Producciones</span>
+            }
           </a>
         }
         @if (canViewCatalog()) {
-          <a routerLink="/catalog" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" (click)="closeMenu(menuToggle)">
-            <emx-icon name="box" /> Catálogo
+          <a routerLink="/catalog" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCollapsed() ? navLabels.catalog : null" (click)="closeMenu(menuToggle)">
+            <svg lucidePackage class="nav-icon" />
+            @if (!sidebarCollapsed()) {
+              <span>Catálogo</span>
+            }
           </a>
         }
         @if (canViewReports() || isAuditor()) {
-          <p class="nav-section secondary">ANÁLISIS Y CONTROL</p>
+          @if (!sidebarCollapsed()) {
+            <p class="nav-section secondary">ANÁLISIS Y CONTROL</p>
+          } @else {
+            <div class="nav-divider" aria-hidden="true"></div>
+          }
         }
         @if (canViewReports()) {
-          <a routerLink="/reports" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" (click)="closeMenu(menuToggle)">
-            <emx-icon name="chart" /> Reportes
+          <a routerLink="/reports" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCollapsed() ? navLabels.reports : null" (click)="closeMenu(menuToggle)">
+            <svg lucideChartNoAxesColumn class="nav-icon" />
+            @if (!sidebarCollapsed()) {
+              <span>Reportes</span>
+            }
           </a>
         }
         @if (isAuditor()) {
-          <a routerLink="/audit" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" (click)="closeMenu(menuToggle)">
-            <emx-icon name="shield" /> Auditoría
+          <a routerLink="/audit" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCollapsed() ? navLabels.audit : null" (click)="closeMenu(menuToggle)">
+            <svg lucideShield class="nav-icon" />
+            @if (!sidebarCollapsed()) {
+              <span>Auditoría</span>
+            }
           </a>
         }
       </nav>
       <div class="sidebar-footer">
-        <div class="workspace-label">
+        <div class="workspace-label" [attr.title]="sidebarCollapsed() ? 'Espacio de trabajo' : null">
           <span class="workspace-avatar">EM</span>
-          <div class="workspace-info">
-            <strong>Espacio de trabajo</strong>
-            <span>Gestión de producciones</span>
-          </div>
+          @if (!sidebarCollapsed()) {
+            <div class="workspace-info">
+              <strong>Espacio de trabajo</strong>
+              <span>Gestión de producciones</span>
+            </div>
+          }
           <span class="workspace-dot" aria-hidden="true"></span>
         </div>
-        <button type="button" class="btn-logout" (click)="onLogout()">
-          <emx-icon name="logout" /> Cerrar sesión
+        <button type="button" class="btn-logout" [attr.title]="sidebarCollapsed() ? 'Cerrar sesión' : null" (click)="onLogout()">
+          <svg lucideLogOut class="nav-icon" />
+          @if (!sidebarCollapsed()) {
+            <span>Cerrar sesión</span>
+          }
         </button>
       </div>
     </div>
   </aside>
   <div class="shell-workspace">
     <header class="topbar">
-      <div class="topbar-context">
-        <span class="breadcrumb">EventoMax <span>/</span> <strong>{{ currentSection() }}</strong></span>
-      </div>
-      <div class="topbar-meta">
-        <div class="topbar-user">
-          <span class="user-avatar" aria-hidden="true">{{ initials }}</span>
-          <span class="user-name-role">{{ userName }} &middot; {{ displayRole() }}</span>
+      <div class="topbar-inner">
+        <div class="topbar-context">
+          <span class="breadcrumb">
+            EventoMax
+            <svg lucideChevronRight class="breadcrumb-icon" />
+            <strong>{{ currentSection() }}</strong>
+          </span>
+        </div>
+        <div class="topbar-meta">
+          <button type="button" class="account-trigger" (click)="toggleAccountMenu()" [attr.aria-expanded]="accountMenuOpen()">
+            <span class="user-avatar" aria-hidden="true">{{ initials }}</span>
+            <span class="user-name-role">{{ userName | titlecase }}</span>
+            <svg lucideChevronDown class="trigger-icon" />
+          </button>
+          @if (accountMenuOpen()) {
+            <div class="account-menu">
+              <div class="account-menu-header">
+                <strong>{{ userName | titlecase }}</strong>
+                <span>{{ displayRole() }}</span>
+              </div>
+              <div class="account-menu-divider"></div>
+              <button type="button" class="account-menu-item" (click)="onLogout()">
+                <svg lucideLogOut class="menu-icon" />
+                Cerrar sesión
+              </button>
+            </div>
+          }
         </div>
       </div>
     </header>
     <main #mainContent id="main-content" class="shell-main" tabindex="-1"><router-outlet /></main>
-    <footer class="workspace-footer">
-      <span>EventoMax &middot; Operaciones de eventos</span>
-      <span>&copy; 2026 EventoMax</span>
-    </footer>
   </div>
 </div>

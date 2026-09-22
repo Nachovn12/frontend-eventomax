@@ -32,24 +32,6 @@ describe('Dashboard', () => {
     }).compileComponents();
   });
 
-  it.each([
-    [AppRole.Admin, ['/productions', '/catalog', '/reports']],
-    [AppRole.Productor, ['/productions', '/catalog']],
-    [AppRole.Organizador, []],
-    [AppRole.Auditor, ['/audit']],
-  ])('only provides permitted quick actions to %s', async (role, expected) => {
-    roles.set([role]);
-    fixture = TestBed.createComponent(Dashboard);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const links = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('.quick-action'),
-    ).map((link) => link.getAttribute('href'));
-    expect(links).toEqual(expected);
-  });
-
   it('renders loading state initially, then real operational metrics', async () => {
     roles.set([AppRole.Admin]);
     dataServiceMock.getProductions.mockReturnValue(of([
@@ -67,9 +49,10 @@ describe('Dashboard', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Producciones totales2');
-    expect(text).toContain('Solicitudes pendientes1');
-    expect(text).toContain('Servicios de catálogo1/2');
+    expect(text).toContain('Producciones2');
+    expect(text).toContain('Pendientes1');
+    expect(text).toContain('En operación0');
+    expect(text).toContain('Servicios activos 1/2');
   });
 
   it('orders upcoming productions chronologically and takes first 4', async () => {
