@@ -31,7 +31,7 @@ describe('Productions', () => {
     fixture = TestBed.createComponent(Productions);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Cargando producciones...');
+    expect(fixture.nativeElement.querySelector('.skeleton')).toBeTruthy();
 
     productionsSubject.next(mockProductions);
     fixture.detectChanges();
@@ -68,7 +68,7 @@ describe('Productions', () => {
     retryBtn.click();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Cargando producciones...');
+    expect(fixture.nativeElement.querySelector('.skeleton')).toBeTruthy();
     productionsSubject.next(mockProductions);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -83,9 +83,10 @@ describe('Productions', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const input: HTMLInputElement = fixture.nativeElement.querySelector('#production-search');
-    input.value = '  AURA ';
-    input.dispatchEvent(new Event('input'));
+    const searchInput: HTMLInputElement = fixture.nativeElement.querySelector('input[type="search"]');
+    searchInput.value = 'Lanz';
+    searchInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
 
     const select: HTMLSelectElement = fixture.nativeElement.querySelector('#production-status');
     select.value = 'CONFIRMADO';
@@ -99,7 +100,7 @@ describe('Productions', () => {
     select.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Sin coincidencias');
+    expect(fixture.nativeElement.textContent).toContain('No encontramos producciones');
 
     fixture.nativeElement.querySelector('.empty-state button').click();
     fixture.detectChanges();

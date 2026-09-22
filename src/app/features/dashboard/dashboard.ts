@@ -10,8 +10,7 @@ import {
   LucideActivity,
   LucidePackage,
   LucideArrowRight,
-  LucideBox,
-  LucideInfo
+  LucideCircleAlert
 } from '@lucide/angular';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { BehaviorSubject, catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
@@ -29,8 +28,7 @@ import { CatalogService } from '../catalog/models/catalog-service.model';
     LucideActivity,
     LucidePackage,
     LucideArrowRight,
-    LucideBox,
-    LucideInfo
+    LucideCircleAlert
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',

@@ -61,14 +61,14 @@
       <div class="empty-state" role="status">
         <span class="icon-tile"><emx-icon name="box" /></span>
         <h3>Cargando catálogo...</h3>
-        <p>Conectando con el servidor.</p>
+        <p>Obteniendo los servicios disponibles.</p>
       </div>
     } @else if (isError()) {
       <div class="empty-state" role="alert">
-        <span class="icon-tile amber"><emx-icon name="info" /></span>
+        <div class="empty-icon-wrapper amber" aria-hidden="true"><svg lucideCircleAlert strokeWidth="1.75" /></div>
         <h3>No pudimos cargar el catálogo</h3>
-        <p>Ocurrió un error al intentar conectar con el servidor.</p>
-        <button type="button" class="btn-primary" (click)="retry(); searchInput.focus()">
+        <p>No fue posible obtener la información en este momento.</p>
+        <button type="button" class="btn-system" (click)="retry()">
           Reintentar
         </button>
       </div>
@@ -83,7 +83,7 @@
         <span class="icon-tile"><emx-icon name="search" /></span>
         <h3>Sin coincidencias</h3>
         <p>Cambia la búsqueda o limpia los filtros para explorar el catálogo.</p>
-        <button type="button" class="btn-primary" (click)="clearFilters(); searchInput.focus()">
+        <button type="button" class="btn-system" (click)="clearFilters(); searchInput.focus()">
           Mostrar todos los recursos
         </button>
       </div>

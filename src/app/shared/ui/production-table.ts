@@ -15,6 +15,12 @@ import { Icon } from './icon';
         <caption class="sr-only">
           {{ caption() }}
         </caption>
+        <colgroup>
+          <col style="width: 35%; min-width: 260px;" />
+          <col style="width: 25%; min-width: 180px;" />
+          <col style="width: 20%; min-width: 160px;" />
+          <col style="width: 20%; min-width: 140px;" />
+        </colgroup>
         <thead>
           <tr>
             <th scope="col">Producción</th>
@@ -31,15 +37,15 @@ import { Icon } from './icon';
                   <span class="event-monogram" aria-hidden="true">{{ event.name.slice(0, 1) }}</span>
                   <div>
                     <strong>{{ event.name }}</strong>
-                    <span class="cell-meta">{{ event.organizerId }}</span>
+                    <span class="cell-meta" style="font-size: 12px; opacity: 0.85; font-weight: 400;">{{ event.organizerId }}</span>
                   </div>
                 </div>
               </td>
               <td>
-                <span class="cell-meta venue">{{ event.location }}</span>
+                <span class="venue-text" style="color: var(--text-muted); font-weight: 400;">{{ event.location }}</span>
               </td>
-              <td>
-                <strong>{{ event.scheduledAt | date:'dd MMM yyyy' }}</strong>
+              <td style="font-variant-numeric: tabular-nums;">
+                <strong style="font-weight: 500;">{{ event.scheduledAt | date:'dd MMM yyyy' }}</strong>
                 <span class="cell-meta">{{ event.scheduledAt | date:'HH:mm' }} h</span>
               </td>
               <td><emx-status [status]="event.status" /></td>

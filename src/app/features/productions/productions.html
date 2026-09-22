@@ -3,109 +3,139 @@
     <div>
       <p class="eyebrow">PLANIFICACIÓN Y COORDINACIÓN</p>
       <h1 class="page-title">Producciones</h1>
-      <p class="page-description">
-        De la solicitud al último aplauso. Toda la operación en un lugar.
-      </p>
+      <p class="page-description">Consulta y seguimiento de las producciones registradas.</p>
     </div>
   </header>
 
-  <section class="metric-grid" aria-label="Totales de producciones">
-    <article class="metric-card">
-      <div class="metric-top">
-        Total de producciones <span class="icon-tile"><emx-icon name="calendar" /></span>
+  @if (isLoading()) {
+    <section class="metric-grid" aria-busy="true" aria-label="Cargando métricas">
+      <article class="metric-card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
+      <article class="metric-card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
+      <article class="metric-card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
+      <article class="metric-card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
+    </section>
+
+    <section class="panel" aria-busy="true">
+      <div class="panel-heading">
+        <div>
+          <h2>Agenda de producciones</h2>
+          <p>Fechas, estados y ubicaciones de las producciones registradas.</p>
+        </div>
       </div>
-      <strong class="metric-value">{{ total() }}</strong>
-      <p class="metric-foot">Histórico de la cuenta</p>
-    </article>
-    <article class="metric-card">
-      <div class="metric-top">
-        En operación <span class="icon-tile green"><emx-icon name="stage" /></span>
+      <div class="toolbar">
+        <div class="skeleton skeleton-toolbar"></div>
       </div>
-      <strong class="metric-value">{{ active() }}</strong>
-      <p class="metric-foot">Montaje y ejecución</p>
-    </article>
-    <article class="metric-card">
-      <div class="metric-top">
-        Por confirmar <span class="icon-tile amber"><emx-icon name="clock" /></span>
+      <div class="panel-body">
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text medium"></div>
       </div>
-      <strong class="metric-value">{{ pending() }}</strong>
-      <p class="metric-foot">Solicitudes recibidas</p>
-    </article>
-    <article class="metric-card">
-      <div class="metric-top">
-        Finalizadas <span class="icon-tile purple"><emx-icon name="check" /></span>
-      </div>
-      <strong class="metric-value">{{ closed() }}</strong>
-      <p class="metric-foot">Producción cerrada</p>
-    </article>
-  </section>
-  <section class="panel">
-    <div class="panel-heading">
-      <div>
-        <h2>Agenda de producciones</h2>
-        <p>
-          Fechas, estados y ubicaciones de los eventos registrados
-        </p>
-      </div>
-    </div>
-    <div class="toolbar">
-      <label class="field grow" for="production-search"
-        >Buscar producción<input
-          id="production-search"
-          #searchInput
-          type="search"
-          [formControl]="search"
-          placeholder="Nombre, organizador, ubicación o ID" /></label
-      ><label class="field" for="production-status"
-        >Estado<select id="production-status" [formControl]="status">
-          <option value="">Todos los estados</option>
-          @for (item of statuses(); track item) {
-            <option [value]="item">{{ getLabel(item) }}</option>
-          }
-        </select></label
-      ><button class="btn" type="button" (click)="clearFilters(); searchInput.focus()">
-        Limpiar filtros
+    </section>
+  } @else if (isError()) {
+    <div class="empty-state" role="alert">
+      <div class="empty-icon-wrapper amber" aria-hidden="true"><svg lucideCircleAlert strokeWidth="1.75" /></div>
+      <h3>No pudimos cargar las producciones</h3>
+      <p>No fue posible obtener la información en este momento.</p>
+      <button type="button" class="btn-system" (click)="retry()">
+        Reintentar
       </button>
     </div>
-    @if (isLoading()) {
-      <div class="empty-state" role="status">
-        <span class="icon-tile"><emx-icon name="calendar" /></span>
-        <h3>Cargando producciones...</h3>
-        <p>Conectando con el servidor.</p>
+  } @else {
+    <section class="metric-grid" aria-label="Resumen operativo">
+      <article class="metric-card">
+        <div class="metric-top">
+          <span>Producciones</span>
+          <svg lucideCalendarDays class="metric-icon" strokeWidth="2" />
+        </div>
+        <strong class="metric-value">{{ total() }}</strong>
+        <p class="metric-foot">Producciones registradas</p>
+      </article>
+      <article class="metric-card">
+        <div class="metric-top">
+          <span>Por confirmar</span>
+          <svg lucideClock3 class="metric-icon amber" strokeWidth="2" />
+        </div>
+        <strong class="metric-value">{{ pending() }}</strong>
+        <p class="metric-foot">Solicitudes recibidas</p>
+      </article>
+      <article class="metric-card">
+        <div class="metric-top">
+          <span>En operación</span>
+          <svg lucideActivity class="metric-icon green" strokeWidth="2" />
+        </div>
+        <strong class="metric-value">{{ active() }}</strong>
+        <p class="metric-foot">Montaje y ejecución</p>
+      </article>
+      <article class="metric-card">
+        <div class="metric-top">
+          <span>Finalizadas</span>
+          <svg lucideCircleCheck class="metric-icon purple" strokeWidth="2" />
+        </div>
+        <strong class="metric-value">{{ closed() }}</strong>
+        <p class="metric-foot">Producciones cerradas</p>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Agenda de producciones</h2>
+          <p>Fechas, estados y ubicaciones de las producciones registradas.</p>
+        </div>
       </div>
-    } @else if (isError()) {
-      <div class="empty-state" role="alert">
-        <span class="icon-tile amber"><emx-icon name="info" /></span>
-        <h3>No pudimos cargar las producciones</h3>
-        <p>Ocurrió un error al intentar conectar con el servidor.</p>
-        <button type="button" class="btn-primary" (click)="retry(); searchInput.focus()">
-          Reintentar
-        </button>
+
+      <div class="toolbar">
+        <label class="field search-field grow" for="production-search">
+          <span class="sr-only">Buscar producción</span>
+          <svg lucideSearch class="field-icon" strokeWidth="2.5" />
+          <input
+            id="production-search"
+            #searchInput
+            type="search"
+            [formControl]="search"
+            placeholder="Buscar por nombre, organizador o ubicación" />
+        </label>
+        <label class="field select-field" for="production-status">
+          <span class="sr-only">Estado</span>
+          <select id="production-status" [formControl]="status">
+            <option value="">Todos los estados</option>
+            @for (item of statuses(); track item) {
+              <option [value]="item">{{ getLabel(item) }}</option>
+            }
+          </select>
+        </label>
+        @if (hasActiveFilters()) {
+          <button class="btn-clear" type="button" (click)="clearFilters(); searchInput.focus()">
+            Limpiar filtros
+          </button>
+        }
       </div>
-    } @else if (total() === 0) {
-      <div class="empty-state">
-        <span class="icon-tile"><emx-icon name="calendar" /></span>
-        <h3>No hay producciones registradas</h3>
-        <p>
-          Cuando se creen producciones, podrás consultar sus fechas y avances en este espacio.
-        </p>
-      </div>
-    } @else if (rows().length === 0) {
-      <div class="empty-state" role="status">
-        <span class="icon-tile"><emx-icon name="search" /></span>
-        <h3>Sin coincidencias</h3>
-        <p>Prueba con otro nombre, ubicación o estado para encontrar una producción.</p>
-        <button type="button" class="btn-primary" (click)="clearFilters(); searchInput.focus()">
-          Limpiar filtros
-        </button>
-      </div>
-    } @else {
-      <emx-production-table [rows]="rows()" caption="Agenda de producciones" />
-    }
-    <div class="panel-footer">
-      <span role="status">{{ rows().length }} de {{ total() }} producciones visibles</span
-      ><span>Registros actualizados</span>
-    </div>
-  </section>
+
+      @if (total() === 0) {
+        <div class="empty-state">
+          <div class="empty-icon-wrapper" aria-hidden="true"><svg lucideCalendarX2 strokeWidth="1.75" /></div>
+          <h3>No hay producciones registradas</h3>
+          <p>Cuando existan producciones disponibles, aparecerán en esta agenda.</p>
+        </div>
+      } @else if (rows().length === 0) {
+        <div class="empty-state" role="status">
+          <div class="empty-icon-wrapper" aria-hidden="true"><svg lucideSearch strokeWidth="1.75" /></div>
+          <h3>No encontramos producciones</h3>
+          <p>Prueba con otro nombre, ubicación o estado.</p>
+          <button type="button" class="btn-system" (click)="clearFilters(); searchInput.focus()">
+            Limpiar filtros
+          </button>
+        </div>
+      } @else {
+        <emx-production-table [rows]="rows()" caption="Agenda de producciones" />
+      }
+
+      @if (total() > 0) {
+        <div class="panel-footer">
+          <span role="status">{{ rows().length }} de {{ total() }} producciones visibles</span>
+        </div>
+      }
+    </section>
+  }
   <span class="sr-only" role="status">{{ announcement() }}</span>
 </div>

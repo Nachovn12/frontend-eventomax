@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/c
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Icon } from '../../shared/ui/icon';
+import { LucideCircleAlert } from '@lucide/angular';
 import { CatalogDataService } from './catalog-data.service';
 import { CatalogService } from './models/catalog-service.model';
 import { BehaviorSubject, of } from 'rxjs';
@@ -11,7 +12,7 @@ import { CurrencyPipe } from '@angular/common';
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [ReactiveFormsModule, Icon, CurrencyPipe],
+  imports: [ReactiveFormsModule, Icon, LucideCircleAlert, CurrencyPipe],
   templateUrl: './catalog.html',
   styleUrl: './catalog.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
