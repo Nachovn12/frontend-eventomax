@@ -31,7 +31,8 @@ describe('Productions', () => {
     fixture = TestBed.createComponent(Productions);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Cargando producciones...');
+    expect(fixture.nativeElement.querySelector('.skeleton')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
 
     productionsSubject.next(mockProductions);
     fixture.detectChanges();
@@ -48,6 +49,8 @@ describe('Productions', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('No hay producciones registradas');
+    expect(Array.from(fixture.nativeElement.querySelectorAll('.metric-value'),
+      (node: any) => node.textContent)).toEqual(['0', '0', '0', '0']);
   });
 
   it('shows error state and allows retry', async () => {
@@ -59,6 +62,8 @@ describe('Productions', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('No pudimos cargar las producciones');
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
 
     // Create a new subject for the retry
     productionsSubject = new Subject<readonly Production[]>();
@@ -68,7 +73,7 @@ describe('Productions', () => {
     retryBtn.click();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Cargando producciones...');
+    expect(fixture.nativeElement.querySelector('.skeleton')).toBeTruthy();
     productionsSubject.next(mockProductions);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -83,9 +88,10 @@ describe('Productions', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const input: HTMLInputElement = fixture.nativeElement.querySelector('#production-search');
-    input.value = '  AURA ';
-    input.dispatchEvent(new Event('input'));
+    const searchInput: HTMLInputElement = fixture.nativeElement.querySelector('input[type="search"]');
+    searchInput.value = 'Lanz';
+    searchInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
 
     const select: HTMLSelectElement = fixture.nativeElement.querySelector('#production-status');
     select.value = 'CONFIRMADO';
@@ -99,12 +105,13 @@ describe('Productions', () => {
     select.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Sin coincidencias');
+    expect(fixture.nativeElement.textContent).toContain('No encontramos producciones');
 
     fixture.nativeElement.querySelector('.empty-state button').click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(2);
+    expect(document.activeElement).toBe(searchInput);
   });
 
   it('sorts rows chronologically', async () => {

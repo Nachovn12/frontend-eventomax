@@ -18,17 +18,18 @@ describe('Reports Component', () => {
   it('renders pending state for reports without fake metrics or data services', () => {
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Reportes y analítica');
-    expect(text).toContain('La reportería avanzada se habilitará en una siguiente etapa de la plataforma.');
+    expect(text).toContain('La reportería avanzada estará disponible en una siguiente etapa.');
+    expect(text).toContain('Los indicadores operacionales disponibles actualmente se encuentran en el Panel de control.');
   });
 
   it('displays the module pending icon', () => {
-    const icon = fixture.nativeElement.querySelector('emx-icon[name="chart"]');
-    expect(icon).toBeTruthy();
+    const svg = fixture.nativeElement.querySelector('svg[lucideChartNoAxesCombined]');
+    expect(svg).toBeTruthy();
   });
 
   it('provides a link back to the dashboard', () => {
     const link = fixture.nativeElement.querySelector('a[routerLink="/dashboard"]');
     expect(link).toBeTruthy();
-    expect(link.textContent).toContain('Volver al panel');
+    expect(link.textContent).toContain('Ir al panel →');
   });
 });

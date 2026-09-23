@@ -11,8 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { MsalBroadcastService } from '@azure/msal-angular';
-import { EventMessage, InteractionStatus } from '@azure/msal-browser';
-import { filter } from 'rxjs/operators';
+import { InteractionStatus } from '@azure/msal-browser';
 
 import { AuthService } from '../../../core/auth/auth.service';
 
@@ -34,7 +33,7 @@ export class Login implements OnInit {
   readonly isLoading = signal(true);
 
   /** Error message to display. */
-  readonly errorMsg = signal<string | null>(null);
+  readonly errorMsg = this.auth.loginError;
 
   /** Carousel state */
   readonly slides = [
@@ -61,31 +60,29 @@ export class Login implements OnInit {
   readonly activeSlide = signal(0);
   readonly currentSlide = computed(() => this.slides[this.activeSlide()]);
   ngOnInit(): void {
-    this.broadcastService.msalSubject$
-      .pipe(
-        filter((msg: EventMessage) => !!msg.error),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe(() => {
-        this.errorMsg.set('No pudimos iniciar sesión. Verifica tu cuenta corporativa e inténtalo nuevamente.');
-      });
-
     this.broadcastService.inProgress$
       .pipe(
-        filter((status: InteractionStatus) => status === InteractionStatus.None),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(() => {
-        this.isLoading.set(false);
+      .subscribe((status) => {
+        this.isLoading.set(status !== InteractionStatus.None);
+        if (status !== InteractionStatus.None) return;
+
         if (this.auth.isAuthenticated()) {
           this.router.navigate(['/dashboard']);
         }
       });
   }
 
-  onLogin(): void {
-    this.errorMsg.set(null);
-    this.auth.login();
+  async onLogin(): Promise<void> {
+    if (this.isLoading()) return;
+    this.isLoading.set(true);
+    try {
+      await this.auth.login();
+    } catch {
+      // Initialization can fail before MSAL emits an interaction event.
+      this.isLoading.set(false);
+    }
   }
 
   goToSlide(index: number): void {

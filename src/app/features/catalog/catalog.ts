@@ -1,7 +1,16 @@
 import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Icon } from '../../shared/ui/icon';
+import {
+  LucidePackage,
+  LucideCircleCheck,
+  LucideCirclePause,
+  LucideSearch,
+  LucideChevronDown,
+  LucidePackageOpen,
+  LucideSearchX,
+  LucideCircleAlert,
+} from '@lucide/angular';
 import { CatalogDataService } from './catalog-data.service';
 import { CatalogService } from './models/catalog-service.model';
 import { BehaviorSubject, of } from 'rxjs';
@@ -11,7 +20,18 @@ import { CurrencyPipe } from '@angular/common';
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [ReactiveFormsModule, Icon, CurrencyPipe],
+  imports: [
+    ReactiveFormsModule,
+    CurrencyPipe,
+    LucidePackage,
+    LucideCircleCheck,
+    LucideCirclePause,
+    LucideSearch,
+    LucideChevronDown,
+    LucidePackageOpen,
+    LucideSearchX,
+    LucideCircleAlert,
+  ],
   templateUrl: './catalog.html',
   styleUrl: './catalog.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,13 +42,17 @@ export class Catalog {
 
   private readonly catalogState = toSignal(
     this.retrySubject.pipe(
-      switchMap(() => this.dataService.getServices().pipe(
-        map((data) => ({ data, loading: false, error: false })),
-        catchError(() => of({ data: [] as readonly CatalogService[], loading: false, error: true })),
-        startWith({ data: [] as readonly CatalogService[], loading: true, error: false })
-      ))
+      switchMap(() =>
+        this.dataService.getServices().pipe(
+          map((data) => ({ data, loading: false, error: false })),
+          catchError(() =>
+            of({ data: [] as readonly CatalogService[], loading: false, error: true }),
+          ),
+          startWith({ data: [] as readonly CatalogService[], loading: true, error: false }),
+        ),
+      ),
     ),
-    { initialValue: { data: [], loading: true, error: false } }
+    { initialValue: { data: [], loading: true, error: false } },
   );
 
   readonly isLoading = computed(() => this.catalogState().loading);
@@ -36,8 +60,10 @@ export class Catalog {
   private readonly allServices = computed(() => this.catalogState().data);
 
   readonly total = computed(() => this.allServices().length);
-  readonly activeCount = computed(() => this.allServices().filter((s) => s.active).length);
-  readonly inactiveCount = computed(() => this.allServices().filter((s) => !s.active).length);
+  readonly activeCount = computed(() => this.allServices().filter((s) => s.active === true).length);
+  readonly inactiveCount = computed(
+    () => this.allServices().filter((s) => s.active === false).length,
+  );
 
   readonly search = new FormControl('', { nonNullable: true });
   readonly status = new FormControl('', { nonNullable: true });
@@ -45,12 +71,15 @@ export class Catalog {
   private readonly query = toSignal(this.search.valueChanges, { initialValue: '' });
   private readonly selectedStatus = toSignal(this.status.valueChanges, { initialValue: '' });
 
+  readonly hasActiveFilters = computed(
+    () => this.query().trim() !== '' || this.selectedStatus() !== '',
+  );
+
   readonly rows = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('es');
     return this.allServices().filter((item) => {
       const matchesStatus =
-        !this.selectedStatus() ||
-        (this.selectedStatus() === 'active' ? item.active : !item.active);
+        !this.selectedStatus() || (this.selectedStatus() === 'active' ? item.active : !item.active);
       return (
         matchesStatus &&
         [String(item.id), item.name, item.description || ''].some((value) =>

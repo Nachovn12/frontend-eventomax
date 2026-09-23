@@ -1,3 +1,27 @@
+@layer theme, base, components, utilities;
+
+/* Keep the existing CSS reset; intentionally omit Tailwind Preflight. */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@import 'shadow-plugin';
+@import './styles/system-states.css';
+
+/* Opt in only to these surfaces; do not scan existing classes as utilities. */
+@source inline("smooth-shadow-ring-xs smooth-shadow-ring-sm smooth-shadow-ring-md hover:smooth-shadow-ring-sm hover:smooth-shadow-ring-md");
+
+@import './styles/elevation.css';
+
 body {
   margin: 0;
 }
+
+/* Global skip link */
+.skip-link {
+    position: fixed;
+    top: -100px;
+    left: 16px;
+    z-index: 100;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+  }

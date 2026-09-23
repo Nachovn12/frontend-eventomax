@@ -5,7 +5,7 @@ import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
 import { Dashboard } from './dashboard';
 import { DashboardDataService } from './dashboard-data.service';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 import { Production } from '../../core/models/production.model';
 import { CatalogService } from '../catalog/models/catalog-service.model';
 
@@ -32,24 +32,6 @@ describe('Dashboard', () => {
     }).compileComponents();
   });
 
-  it.each([
-    [AppRole.Admin, ['/productions', '/catalog', '/reports']],
-    [AppRole.Productor, ['/productions', '/catalog']],
-    [AppRole.Organizador, []],
-    [AppRole.Auditor, ['/audit']],
-  ])('only provides permitted quick actions to %s', async (role, expected) => {
-    roles.set([role]);
-    fixture = TestBed.createComponent(Dashboard);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const links = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('.quick-action'),
-    ).map((link) => link.getAttribute('href'));
-    expect(links).toEqual(expected);
-  });
-
   it('renders loading state initially, then real operational metrics', async () => {
     roles.set([AppRole.Admin]);
     dataServiceMock.getProductions.mockReturnValue(of([
@@ -67,9 +49,10 @@ describe('Dashboard', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Producciones totales2');
-    expect(text).toContain('Solicitudes pendientes1');
-    expect(text).toContain('Servicios de catálogo1/2');
+    expect(text).toContain('Producciones2');
+    expect(text).toContain('Pendientes1');
+    expect(text).toContain('En operación0');
+    expect(text).toContain('Servicios activos 1/2');
   });
 
   it('orders upcoming productions chronologically and takes first 4', async () => {
@@ -119,6 +102,34 @@ describe('Dashboard', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('No pudimos cargar tu panel');
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
+    dataServiceMock.getProductions.mockReturnValue(of([]));
+    fixture.nativeElement.querySelector('[role="alert"] button').click();
+    fixture.detectChanges();
+    expect(dataServiceMock.getProductions).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('.metric-value')).toHaveLength(4);
+  });
+
+  it('keeps metrics hidden until both API requests complete', () => {
+    roles.set([AppRole.Admin]);
+    const productions = new Subject<readonly Production[]>();
+    const catalog = new Subject<readonly CatalogService[]>();
+    dataServiceMock.getProductions.mockReturnValue(productions);
+    dataServiceMock.getCatalogServices.mockReturnValue(catalog);
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.skeleton')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
+    productions.next([]);
+    productions.complete();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
+    catalog.error(new Error('Catalog unavailable'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
   });
 
   it('auditor does not fetch any API data and shows safe state', async () => {

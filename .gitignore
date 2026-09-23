@@ -61,3 +61,8 @@ Thumbs.db
 
 # Package artifacts
 *.tgz
+
+# Local AI / agent tooling
+.agents/
+AGENTS.md
+skills-lock.json

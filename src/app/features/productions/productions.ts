@@ -3,15 +3,33 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, of } from 'rxjs';
 import { switchMap, map, catchError, startWith } from 'rxjs/operators';
+import {
+  LucideCalendarDays,
+  LucideClock3,
+  LucideActivity,
+  LucideCircleCheck,
+  LucideSearch,
+  LucideCalendarX2,
+  LucideCircleAlert
+} from '@lucide/angular';
 import { ProductionStatus } from '../../core/models/production.model';
-import { Icon } from '../../shared/ui/icon';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { ProductionsDataService } from './productions-data.service';
 
 @Component({
   selector: 'app-productions',
   standalone: true,
-  imports: [ReactiveFormsModule, Icon, ProductionTable],
+  imports: [
+    ReactiveFormsModule,
+    ProductionTable,
+    LucideCalendarDays,
+    LucideClock3,
+    LucideActivity,
+    LucideCircleCheck,
+    LucideSearch,
+    LucideCalendarX2,
+    LucideCircleAlert
+  ],
   templateUrl: './productions.html',
   styleUrl: './productions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,6 +61,8 @@ export class Productions {
 
   private readonly query = toSignal(this.search.valueChanges, { initialValue: '' });
   private readonly selectedStatus = toSignal(this.status.valueChanges, { initialValue: '' });
+
+  readonly hasActiveFilters = computed(() => this.query().trim() !== '' || this.selectedStatus() !== '');
 
   readonly announcement = signal('');
 

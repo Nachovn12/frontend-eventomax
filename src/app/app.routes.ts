@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { MsalGuard } from '@azure/msal-angular';
 
 import { roleGuard } from './core/auth/guards/role.guard';
+import { featureGuard } from './core/auth/guards/feature.guard';
 import { AppRole } from './core/auth/models/app-role';
 
 export const routes: Routes = [
@@ -21,8 +22,9 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard').then(m => m.Dashboard),
-        canActivate: [MsalGuard, roleGuard],
+        canActivate: [MsalGuard, roleGuard, featureGuard],
         data: {
+          feature: 'dashboard',
           roles: [
             AppRole.Admin,
             AppRole.Productor,
@@ -34,8 +36,9 @@ export const routes: Routes = [
       {
         path: 'productions',
         loadComponent: () => import('./features/productions/productions').then(m => m.Productions),
-        canActivate: [MsalGuard, roleGuard],
+        canActivate: [MsalGuard, roleGuard, featureGuard],
         data: {
+          feature: 'productions',
           roles: [
             AppRole.Admin,
             AppRole.Productor,
@@ -46,8 +49,9 @@ export const routes: Routes = [
       {
         path: 'catalog',
         loadComponent: () => import('./features/catalog/catalog').then(m => m.Catalog),
-        canActivate: [MsalGuard, roleGuard],
+        canActivate: [MsalGuard, roleGuard, featureGuard],
         data: {
+          feature: 'catalog',
           roles: [
             AppRole.Admin,
             AppRole.Productor,
@@ -57,16 +61,18 @@ export const routes: Routes = [
       {
         path: 'reports',
         loadComponent: () => import('./features/reports/reports').then(m => m.Reports),
-        canActivate: [MsalGuard, roleGuard],
+        canActivate: [MsalGuard, roleGuard, featureGuard],
         data: {
+          feature: 'reports',
           roles: [AppRole.Admin]
         }
       },
       {
         path: 'audit',
         loadComponent: () => import('./features/audit/audit').then(m => m.Audit),
-        canActivate: [MsalGuard, roleGuard],
+        canActivate: [MsalGuard, roleGuard, featureGuard],
         data: {
+          feature: 'audit',
           roles: [
             AppRole.Admin,
             AppRole.Auditor
@@ -75,5 +81,8 @@ export const routes: Routes = [
       }
     ]
   },
-  { path: '**', redirectTo: 'login' },
+  {
+    path: '**',
+    loadComponent: () => import('./features/errors/not-found/not-found').then(m => m.NotFound)
+  },
 ];
