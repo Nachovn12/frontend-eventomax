@@ -1,0 +1,29 @@
+<main class="not-found-page">
+  <div class="not-found-container">
+    <div class="not-found-brand">
+      <img src="/branding/eventomax/logos/eventomax-logo-dark.svg" alt="EventoMax" class="not-found-logo">
+    </div>
+
+    <div class="not-found-eyebrow">ERROR &middot; 404</div>
+
+    <div class="not-found-code">404</div>
+
+    <div class="not-found-content">
+      <h1 class="not-found-title">Página no encontrada</h1>
+      <p class="not-found-description">
+        No pudimos encontrar esta página.<br>
+        La dirección puede ser incorrecta, haber cambiado o ya no estar disponible.
+      </p>
+    </div>
+
+    <div class="not-found-actions">
+      <button type="button" class="not-found-back" (click)="goBack()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        Volver
+      </button>
+      <a routerLink="/dashboard" class="not-found-home">
+        Ir al panel
+      </a>
+    </div>
+  </div>
+</main>

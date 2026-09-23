@@ -32,6 +32,7 @@ describe('Productions', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.skeleton')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
 
     productionsSubject.next(mockProductions);
     fixture.detectChanges();
@@ -48,6 +49,8 @@ describe('Productions', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('No hay producciones registradas');
+    expect(Array.from(fixture.nativeElement.querySelectorAll('.metric-value'),
+      (node: any) => node.textContent)).toEqual(['0', '0', '0', '0']);
   });
 
   it('shows error state and allows retry', async () => {
@@ -59,6 +62,8 @@ describe('Productions', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('No pudimos cargar las producciones');
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
 
     // Create a new subject for the retry
     productionsSubject = new Subject<readonly Production[]>();
@@ -106,6 +111,7 @@ describe('Productions', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(2);
+    expect(document.activeElement).toBe(searchInput);
   });
 
   it('sorts rows chronologically', async () => {

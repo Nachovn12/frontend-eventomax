@@ -5,7 +5,7 @@ import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
 import { Dashboard } from './dashboard';
 import { DashboardDataService } from './dashboard-data.service';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 import { Production } from '../../core/models/production.model';
 import { CatalogService } from '../catalog/models/catalog-service.model';
 
@@ -102,6 +102,34 @@ describe('Dashboard', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('No pudimos cargar tu panel');
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
+    dataServiceMock.getProductions.mockReturnValue(of([]));
+    fixture.nativeElement.querySelector('[role="alert"] button').click();
+    fixture.detectChanges();
+    expect(dataServiceMock.getProductions).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('.metric-value')).toHaveLength(4);
+  });
+
+  it('keeps metrics hidden until both API requests complete', () => {
+    roles.set([AppRole.Admin]);
+    const productions = new Subject<readonly Production[]>();
+    const catalog = new Subject<readonly CatalogService[]>();
+    dataServiceMock.getProductions.mockReturnValue(productions);
+    dataServiceMock.getCatalogServices.mockReturnValue(catalog);
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.skeleton')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
+    productions.next([]);
+    productions.complete();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
+    catalog.error(new Error('Catalog unavailable'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.metric-value')).toBeNull();
   });
 
   it('auditor does not fetch any API data and shows safe state', async () => {

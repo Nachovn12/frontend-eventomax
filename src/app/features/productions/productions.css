@@ -42,16 +42,21 @@
   height: 40px;
   min-height: 40px;
   box-sizing: border-box;
-  border: 1px solid var(--border-base);
+  border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 10px;
   font-size: 13px;
   font-weight: 400;
   color: var(--text-main);
   background: var(--bg-surface);
-  transition: all 150ms ease;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
   outline: none;
   font-family: inherit;
   line-height: normal;
+}
+
+.toolbar input[type="search"]:hover,
+.toolbar select:hover {
+  border-color: rgba(15, 23, 42, 0.22);
 }
 
 .toolbar input[type="search"] {
@@ -76,8 +81,16 @@
 
 .toolbar input[type="search"]:focus,
 .toolbar select:focus {
-  border-color: var(--brand-accent);
-  box-shadow: 0 0 0 3px var(--brand-accent-bg);
+  outline: none;
+  border-color: #0071e3;
+  box-shadow: none; /* No ring on mouse click */
+}
+
+.toolbar input[type="search"]:focus-visible,
+.toolbar select:focus-visible {
+  border-color: #0071e3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.14);
+  outline: none;
 }
 
 .btn-clear {
@@ -96,6 +109,16 @@
 .btn-clear:hover {
   background: var(--bg-surface-hover);
   color: var(--text-main);
+}
+
+@media (pointer: coarse) {
+  .field, .toolbar input[type="search"], .toolbar select, .btn-clear {
+    min-height: 44px;
+    height: 44px;
+  }
+  .toolbar input[type="search"], .toolbar select {
+    font-size: 16px;
+  }
 }
 
 

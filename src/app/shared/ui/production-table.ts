@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ProductionViewModel } from '../../core/models/production.model';
 import { StatusChip } from './status-chip';
-import { Icon } from './icon';
 
 @Component({
   selector: 'emx-production-table',

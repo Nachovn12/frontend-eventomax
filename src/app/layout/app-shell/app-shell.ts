@@ -4,6 +4,7 @@ import {
   inject,
   computed,
   signal,
+  effect,
   ViewEncapsulation,
   afterNextRender,
   DestroyRef,
@@ -27,6 +28,7 @@ import {
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { TitleCasePipe } from '@angular/common';
 import { filter } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/auth/auth.service';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
@@ -62,6 +64,7 @@ const SIDEBAR_STORAGE_KEY = 'emx-sidebar-collapsed';
     '../../shared/ui/workspace.css',
     '../../shared/ui/workspace-tables.css',
     '../../shared/ui/workspace-forms.css',
+    '../../../styles/system-states.css',
   ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,6 +78,8 @@ export class AppShell {
   readonly menuOpen = signal(false);
   readonly sidebarCollapsed = signal(false);
   readonly accountMenuOpen = signal(false);
+  readonly isMobileViewport = signal(false);
+  readonly sidebarCompact = computed(() => this.sidebarCollapsed() && !this.isMobileViewport());
 
   /** True when viewport is in the "medium" range (768–1199px) */
   readonly isMediumViewport = signal(false);
@@ -106,11 +111,25 @@ export class AppShell {
   readonly isAdmin = computed(() => this.authz.roles().includes(AppRole.Admin));
   readonly isProductor = computed(() => this.authz.roles().includes(AppRole.Productor));
   readonly isOrganizador = computed(() => this.authz.roles().includes(AppRole.Organizador));
+
+  // Dynamic section titles
+  readonly operationSectionTitle = computed(() => this.isOrganizador() ? 'MIS EVENTOS' : 'OPERACIÓN');
+
+  // Feature Flags (EP1)
+  readonly features = {
+    dashboard: true,
+    productions: true,
+    catalog: true,
+    reports: false,
+    audit: false
+  };
+
   readonly canViewProductions = computed(
-    () => this.isAdmin() || this.isProductor() || this.isOrganizador(),
+    () => (this.isAdmin() || this.isProductor() || this.isOrganizador()) && this.features.productions,
   );
-  readonly canViewCatalog = computed(() => this.isAdmin() || this.isProductor());
-  readonly canViewReports = computed(() => this.isAdmin());
+  readonly canViewCatalog = computed(() => (this.isAdmin() || this.isProductor()) && this.features.catalog);
+  readonly canViewReports = computed(() => this.isAdmin() && this.features.reports);
+  readonly canViewAudit = computed(() => (this.isAdmin() || this.isAuditor()) && this.features.audit);
 
   readonly currentSection = signal('Dashboard');
 
@@ -125,7 +144,7 @@ export class AppShell {
 
   constructor() {
     const router = inject(Router);
-    router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
+    router.events.pipe(filter(e => e instanceof NavigationEnd), takeUntilDestroyed()).subscribe(() => {
       const url = router.url;
       let section = 'Operación';
       if (url.includes('/dashboard')) section = 'Dashboard';
@@ -134,6 +153,17 @@ export class AppShell {
       else if (url.includes('/reports')) section = 'Reportes';
       else if (url.includes('/audit')) section = 'Auditoría';
       this.currentSection.set(section);
+    });
+
+    effect(() => {
+      const open = this.menuOpen();
+      if (typeof document !== 'undefined') {
+        if (open) {
+          document.body.style.overflow = 'hidden';
+        } else {
+          document.body.style.overflow = '';
+        }
+      }
     });
 
     // Restore sidebar state from localStorage & setup viewport listener
@@ -146,11 +176,19 @@ export class AppShell {
 
       // Medium viewport detection (768–1199px)
       if (typeof window.matchMedia === 'function') {
+        const mobile = window.matchMedia('(max-width: 767px)');
+        const onMobileChange = (event: MediaQueryListEvent | MediaQueryList) => {
+          this.isMobileViewport.set(event.matches);
+          this.menuOpen.set(false);
+        };
+        onMobileChange(mobile);
+        mobile.addEventListener('change', onMobileChange);
+        this.destroyRef.onDestroy(() => mobile.removeEventListener('change', onMobileChange));
         const mql = window.matchMedia('(min-width: 768px) and (max-width: 1199px)');
         const handler = (e: MediaQueryListEvent | MediaQueryList) => {
           this.isMediumViewport.set(e.matches);
           // Auto-collapse on medium viewport if no user preference stored
-          if (e.matches && stored === null) {
+          if (e.matches && localStorage.getItem(SIDEBAR_STORAGE_KEY) === null) {
             this.sidebarCollapsed.set(true);
           }
         };
@@ -178,6 +216,13 @@ export class AppShell {
     this.accountMenuOpen.update(v => !v);
   }
 
+  onAccountFocusOut(event: FocusEvent): void {
+    if (event.relatedTarget instanceof Node &&
+        !(event.currentTarget as HTMLElement).contains(event.relatedTarget)) {
+      this.accountMenuOpen.set(false);
+    }
+  }
+
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
     const target = event.target as HTMLElement;
@@ -190,9 +235,10 @@ export class AppShell {
   onEscape(): void {
     if (this.accountMenuOpen()) {
       this.accountMenuOpen.set(false);
+      this.el.nativeElement.querySelector('.account-trigger')?.focus();
     }
     if (this.menuOpen()) {
-      this.closeMenu();
+      this.closeMenu(this.el.nativeElement.querySelector('.mobile-toggle-btn'));
     }
   }
 

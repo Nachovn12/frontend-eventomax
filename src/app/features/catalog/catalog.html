@@ -3,131 +3,198 @@
     <div>
       <p class="eyebrow">RECURSOS PARA CADA PRODUCCIÓN</p>
       <h1 class="page-title">Catálogo de servicios</h1>
-      <p class="page-description">Consulta el catálogo de servicios disponibles para los eventos.</p>
+      <p class="page-description">
+        Consulta los servicios disponibles en el catálogo y sus tarifas.
+      </p>
     </div>
   </header>
 
-  <section class="metric-grid" aria-label="Métricas de catálogo">
-    <article class="metric-card">
-      <div class="metric-top">
-        Total de servicios <span class="icon-tile"><emx-icon name="box" /></span>
+  @if (isLoading()) {
+    <div class="catalog-loading" aria-busy="true" aria-label="Cargando catálogo">
+      <div class="metric-grid catalog-metrics" aria-hidden="true">
+        @for (card of [1, 2, 3]; track card) {
+          <div class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+            <div class="skeleton skeleton-text medium"></div>
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+          </div>
+        }
       </div>
-      <strong class="metric-value">{{ total() }}</strong>
-      <p class="metric-foot">Servicios registrados</p>
-    </article>
-    <article class="metric-card">
-      <div class="metric-top">
-        Activos <span class="icon-tile green"><emx-icon name="check" /></span>
-      </div>
-      <strong class="metric-value">{{ activeCount() }}</strong>
-      <p class="metric-foot">Servicios en operación</p>
-    </article>
-    <article class="metric-card">
-      <div class="metric-top">
-        Inactivos <span class="icon-tile amber"><emx-icon name="clock" /></span>
-      </div>
-      <strong class="metric-value">{{ inactiveCount() }}</strong>
-      <p class="metric-foot">Servicios no disponibles</p>
-    </article>
-  </section>
-
-  <section class="panel">
-    <div class="panel-heading">
-      <div>
-        <h2>Servicios ofrecidos</h2>
-        <p>Listado oficial de servicios y tarifas</p>
+      <div class="panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel" aria-hidden="true">
+        <div class="panel-heading">
+          <div class="catalog-loading-heading">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+          </div>
+        </div>
+        <div class="catalog-toolbar">
+          <div class="skeleton skeleton-toolbar"></div>
+        </div>
+        @for (row of [1, 2, 3]; track row) {
+          <div class="catalog-loading-row">
+            <div class="skeleton skeleton-text medium"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text short"></div>
+          </div>
+        }
       </div>
     </div>
-    <div class="toolbar">
-      <label class="field grow" for="catalog-search"
-        >Buscar servicio<input
-          #searchInput
-          type="search"
-          id="catalog-search"
-          [formControl]="search"
-          placeholder="Nombre, descripción o ID…" /></label
-      ><label class="field" for="catalog-status"
-        >Estado<select id="catalog-status" [formControl]="status">
-          <option value="">Todos los servicios</option>
-          <option value="active">Activos</option>
-          <option value="inactive">Inactivos</option>
-        </select></label
-      ><button type="button" class="btn" (click)="clearFilters(); searchInput.focus()">
-        Limpiar
-      </button>
+  } @else if (isError()) {
+    <div class="empty-state smooth-shadow-ring-xs" role="alert">
+      <div class="empty-icon-wrapper amber" aria-hidden="true">
+        <svg lucideCircleAlert strokeWidth="1.75" />
+      </div>
+      <h2>No pudimos cargar el catálogo</h2>
+      <p>No fue posible obtener la información en este momento.</p>
+      <button type="button" class="btn-system" (click)="retry()">Reintentar</button>
     </div>
+  } @else {
+    <section class="metric-grid catalog-metrics" aria-label="Métricas de catálogo">
+      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+        <div class="metric-top">
+          <span>Total de servicios</span>
+          <svg lucidePackage class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
+        </div>
+        <strong class="metric-value">{{ total() }}</strong>
+        <p class="metric-foot">Servicios registrados</p>
+      </article>
+      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+        <div class="metric-top">
+          <span>Activos</span>
+          <svg lucideCircleCheck class="metric-icon green" strokeWidth="1.75" aria-hidden="true" />
+        </div>
+        <strong class="metric-value">{{ activeCount() }}</strong>
+        <p class="metric-foot">Servicios activos en catálogo</p>
+      </article>
+      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+        <div class="metric-top">
+          <span>Inactivos</span>
+          <svg lucideCirclePause class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
+        </div>
+        <strong class="metric-value">{{ inactiveCount() }}</strong>
+        <p class="metric-foot">Servicios inactivos en catálogo</p>
+      </article>
+    </section>
 
-    @if (isLoading()) {
-      <div class="empty-state" role="status">
-        <span class="icon-tile"><emx-icon name="box" /></span>
-        <h3>Cargando catálogo...</h3>
-        <p>Obteniendo los servicios disponibles.</p>
+    <section class="panel catalog-panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel" aria-labelledby="catalog-services-heading">
+      <div class="panel-heading">
+        <div>
+          <h2 id="catalog-services-heading">Servicios</h2>
+          <p>Consulta las características y tarifas del catálogo.</p>
+        </div>
       </div>
-    } @else if (isError()) {
-      <div class="empty-state" role="alert">
-        <div class="empty-icon-wrapper amber" aria-hidden="true"><svg lucideCircleAlert strokeWidth="1.75" /></div>
-        <h3>No pudimos cargar el catálogo</h3>
-        <p>No fue posible obtener la información en este momento.</p>
-        <button type="button" class="btn-system" (click)="retry()">
-          Reintentar
-        </button>
-      </div>
-    } @else if (total() === 0) {
-      <div class="empty-state">
-        <span class="icon-tile"><emx-icon name="box" /></span>
-        <h3>Catálogo vacío</h3>
-        <p>Aún no hay servicios registrados en la plataforma.</p>
-      </div>
-    } @else if (rows().length === 0) {
-      <div class="empty-state" role="status">
-        <span class="icon-tile"><emx-icon name="search" /></span>
-        <h3>Sin coincidencias</h3>
-        <p>Cambia la búsqueda o limpia los filtros para explorar el catálogo.</p>
-        <button type="button" class="btn-system" (click)="clearFilters(); searchInput.focus()">
-          Mostrar todos los recursos
-        </button>
-      </div>
-    } @else {
-      <div class="table-scroll" role="region" aria-label="Catálogo de servicios" tabindex="0">
-        <table class="data-table catalog-table">
-          <caption class="sr-only">
-            Listado de servicios y tarifas.
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Servicio</th>
-              <th scope="col">Tarifa</th>
-              <th scope="col">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of rows(); track item.id) {
-              <tr>
-                <td>
-                  <div class="resource-cell">
-                    <div>
-                      <strong>{{ item.name }}</strong>
-                      <span class="cell-meta">ID: {{ item.id }} · {{ item.description }}</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <strong>{{ item.rate | currency:'CLP':'symbol-narrow':'1.0-0' }} CLP</strong>
-                </td>
-                <td>
-                  <span class="badge" [class.available]="item.active" [class.danger]="!item.active">
-                    {{ item.active ? 'Activo' : 'Inactivo' }}
-                  </span>
-                </td>
+
+      @if (total() > 0) {
+        <div class="catalog-toolbar" role="search" aria-label="Filtrar servicios">
+          <div class="catalog-search">
+            <label class="sr-only" for="catalog-search">Buscar servicio</label>
+            <svg lucideSearch class="catalog-field-icon" strokeWidth="1.75" aria-hidden="true" />
+            <input
+              #searchInput
+              id="catalog-search"
+              type="search"
+              [formControl]="search"
+              placeholder="Buscar por nombre o descripción"
+            />
+          </div>
+          <div class="catalog-select">
+            <label class="sr-only" for="catalog-status">Estado</label>
+            <select id="catalog-status" [formControl]="status">
+              <option value="">Todos los estados</option>
+              <option value="active">Activos</option>
+              <option value="inactive">Inactivos</option>
+            </select>
+            <svg
+              lucideChevronDown
+              class="catalog-field-icon"
+              strokeWidth="1.75"
+              aria-hidden="true"
+            />
+          </div>
+          @if (hasActiveFilters()) {
+            <button
+              type="button"
+              class="catalog-clear"
+              (click)="clearFilters(); searchInput.focus()"
+            >
+              Limpiar filtros
+            </button>
+          }
+        </div>
+
+        @if (rows().length === 0) {
+          <div class="empty-state empty-state-panel">
+            <div class="empty-icon-wrapper" aria-hidden="true">
+              <svg lucideSearchX strokeWidth="1.75" />
+            </div>
+            <h3>No encontramos servicios</h3>
+            <p>Prueba con otro nombre, descripción o estado.</p>
+            <button type="button" class="btn-system" (click)="clearFilters(); searchInput.focus()">
+              Limpiar filtros
+            </button>
+          </div>
+        } @else {
+          <table class="data-table catalog-table" role="table">
+            <caption class="sr-only">
+              Servicios del catálogo, tarifas y estados.
+            </caption>
+            <colgroup>
+              <col class="catalog-service-column" />
+              <col class="catalog-rate-column" />
+              <col class="catalog-status-column" />
+            </colgroup>
+            <thead role="rowgroup">
+              <tr role="row">
+                <th scope="col" role="columnheader">Servicio</th>
+                <th scope="col" role="columnheader">Tarifa</th>
+                <th scope="col" role="columnheader">Estado</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody role="rowgroup">
+              @for (item of rows(); track item.id) {
+                <tr role="row">
+                  <td class="catalog-service-cell" role="cell">
+                    <strong class="catalog-service-name">{{ item.name }}</strong>
+                    @if (item.description) {
+                      <p class="catalog-description" [title]="item.description">
+                        {{ item.description }}
+                      </p>
+                    }
+                  </td>
+                  <td class="catalog-rate-cell" role="cell">
+                    <span class="catalog-mobile-label" aria-hidden="true">Tarifa</span>
+                    <!-- CLP is the frontend presentation convention, not a field from the API. -->
+                    <strong
+                      >{{ item.rate | currency: 'CLP' : 'symbol-narrow' : '1.0-2' }}
+                      <span class="catalog-currency">CLP</span></strong
+                    >
+                  </td>
+                  <td class="catalog-status-cell" role="cell">
+                    <span class="catalog-status" [class.catalog-status-active]="item.active">
+                      {{ item.active ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      } @else {
+        <div class="empty-state empty-state-panel">
+          <div class="empty-icon-wrapper" aria-hidden="true">
+            <svg lucidePackageOpen strokeWidth="1.75" />
+          </div>
+          <h3>No hay servicios registrados</h3>
+          <p>Los servicios disponibles aparecerán aquí cuando sean registrados.</p>
+        </div>
+      }
+
+      <div class="panel-footer">
+        <span role="status" aria-atomic="true"
+          >{{ rows().length }} de {{ total() }} servicios visibles</span
+        >
       </div>
-    }
-    <div class="panel-footer">
-      <span role="status">{{ rows().length }} de {{ total() }} referencias visibles</span
-      ><span>Registros actualizados</span>
-    </div>
-  </section>
+    </section>
+  }
+  <span class="sr-only" role="status">{{ isLoading() ? 'Cargando catálogo.' : '' }}</span>
 </div>

@@ -9,13 +9,13 @@
 
   @if (isLoading()) {
     <section class="metric-grid" aria-busy="true" aria-label="Cargando métricas">
-      <article class="metric-card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
-      <article class="metric-card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
-      <article class="metric-card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
-      <article class="metric-card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
+      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
+      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
+      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
+      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
     </section>
 
-    <section class="panel" aria-busy="true">
+    <section class="panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel" aria-busy="true">
       <div class="panel-heading">
         <div>
           <h2>Agenda de producciones</h2>
@@ -32,7 +32,7 @@
       </div>
     </section>
   } @else if (isError()) {
-    <div class="empty-state" role="alert">
+    <div class="empty-state smooth-shadow-ring-xs" role="alert">
       <div class="empty-icon-wrapper amber" aria-hidden="true"><svg lucideCircleAlert strokeWidth="1.75" /></div>
       <h3>No pudimos cargar las producciones</h3>
       <p>No fue posible obtener la información en este momento.</p>
@@ -42,7 +42,7 @@
     </div>
   } @else {
     <section class="metric-grid" aria-label="Resumen operativo">
-      <article class="metric-card">
+      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
         <div class="metric-top">
           <span>Producciones</span>
           <svg lucideCalendarDays class="metric-icon" strokeWidth="2" />
@@ -50,7 +50,7 @@
         <strong class="metric-value">{{ total() }}</strong>
         <p class="metric-foot">Producciones registradas</p>
       </article>
-      <article class="metric-card">
+      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
         <div class="metric-top">
           <span>Por confirmar</span>
           <svg lucideClock3 class="metric-icon amber" strokeWidth="2" />
@@ -58,7 +58,7 @@
         <strong class="metric-value">{{ pending() }}</strong>
         <p class="metric-foot">Solicitudes recibidas</p>
       </article>
-      <article class="metric-card">
+      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
         <div class="metric-top">
           <span>En operación</span>
           <svg lucideActivity class="metric-icon green" strokeWidth="2" />
@@ -66,7 +66,7 @@
         <strong class="metric-value">{{ active() }}</strong>
         <p class="metric-foot">Montaje y ejecución</p>
       </article>
-      <article class="metric-card">
+      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
         <div class="metric-top">
           <span>Finalizadas</span>
           <svg lucideCircleCheck class="metric-icon purple" strokeWidth="2" />
@@ -76,7 +76,7 @@
       </article>
     </section>
 
-    <section class="panel">
+    <section class="panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel">
       <div class="panel-heading">
         <div>
           <h2>Agenda de producciones</h2>
@@ -112,13 +112,13 @@
       </div>
 
       @if (total() === 0) {
-        <div class="empty-state">
+        <div class="empty-state smooth-shadow-ring-xs">
           <div class="empty-icon-wrapper" aria-hidden="true"><svg lucideCalendarX2 strokeWidth="1.75" /></div>
           <h3>No hay producciones registradas</h3>
           <p>Cuando existan producciones disponibles, aparecerán en esta agenda.</p>
         </div>
       } @else if (rows().length === 0) {
-        <div class="empty-state" role="status">
+        <div class="empty-state smooth-shadow-ring-xs" role="status">
           <div class="empty-icon-wrapper" aria-hidden="true"><svg lucideSearch strokeWidth="1.75" /></div>
           <h3>No encontramos producciones</h3>
           <p>Prueba con otro nombre, ubicación o estado.</p>

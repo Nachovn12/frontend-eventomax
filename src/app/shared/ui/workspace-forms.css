@@ -20,20 +20,31 @@
 .emx-workspace input,
 .emx-workspace select {
   min-height: 36px;
-  border: 1px solid var(--border-dark);
-  border-radius: var(--radius-md);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
   padding: 8px 12px;
   color: var(--text-main);
   background: var(--bg-surface);
   box-shadow: var(--shadow-sm);
   font-size: 13px;
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  outline: none;
+  transition: background-color var(--emx-motion-fast) var(--emx-ease-out), border-color var(--emx-motion-fast) var(--emx-ease-out), box-shadow var(--emx-motion-fast) var(--emx-ease-out);
+}
+.emx-workspace input:hover,
+.emx-workspace select:hover {
+  border-color: rgba(15, 23, 42, 0.22);
 }
 .emx-workspace input:focus,
 .emx-workspace select:focus {
   outline: none;
-  border-color: var(--brand-accent);
-  box-shadow: 0 0 0 3px var(--brand-accent-bg);
+  border-color: #0071e3;
+  /* Mantiene la sombra original sin agregar el halo en click */
+  box-shadow: var(--shadow-sm);
+}
+.emx-workspace input:focus-visible,
+.emx-workspace select:focus-visible {
+  border-color: #0071e3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.14);
 }
 .emx-workspace input::placeholder {
   color: var(--text-light);
@@ -91,16 +102,6 @@
   }
 }
 @media (max-width: 1100px) {
-  .emx-workspace .metric-grid {
-    flex-wrap: wrap;
-  }
-  .emx-workspace .metric-card {
-    flex: 1 1 40%;
-    border-bottom: 1px solid var(--border-base);
-  }
-  .emx-workspace .metric-card:nth-child(2) {
-    border-right: none;
-  }
   .emx-workspace .split-grid {
     grid-template-columns: 1fr;
   }
@@ -113,13 +114,6 @@
     align-items: start;
     flex-direction: column;
     gap: 16px;
-  }
-  .emx-workspace .metric-card {
-    flex: 1 1 100%;
-    border-right: none;
-  }
-  .emx-workspace .metric-card:last-child {
-    border-bottom: none;
   }
   .emx-workspace .toolbar {
     padding-inline: 16px;

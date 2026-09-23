@@ -1,101 +1,89 @@
-<div class="shell-layout emx-workspace" [class.sidebar-collapsed]="sidebarCollapsed()">
+<div class="shell-layout emx-workspace" [class.sidebar-collapsed]="sidebarCompact()">
   <a class="skip-link" href="#main-content" (click)="skipToContent($event, mainContent)">Saltar al contenido</a>
-  <aside class="shell-sidebar" [class.is-collapsed]="sidebarCollapsed()" (keydown.escape)="closeMenu(menuToggle)">
+
+  <header class="mobile-header">
+    <a class="brand" routerLink="/dashboard" aria-label="EventoMax, inicio">
+      <img class="brand-mark" src="/branding/eventomax/symbols/eventomax-symbol-dark.svg" alt="" aria-hidden="true" />
+      <span>
+        <span class="brand-text">Evento<span>Max</span></span>
+        <span class="brand-caption">OPERACIONES DE EVENTOS</span>
+      </span>
+    </a>
+    <button type="button" class="mobile-toggle-btn" aria-controls="sidebar-content" [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(true)" aria-label="Abrir menúú">
+      <svg lucideMenu class="nav-icon" />
+    </button>
+  </header>
+
+  @if (menuOpen()) {
+    <div class="mobile-backdrop" aria-hidden="true" (click)="closeMenu()"></div>
+  }
+
+  <aside class="shell-sidebar" [class.is-collapsed]="sidebarCompact()" [class.is-open]="menuOpen()" (keydown.escape)="closeMenu()">
     <div class="sidebar-header">
       <div class="header-content">
         <a class="brand" routerLink="/dashboard" aria-label="EventoMax, inicio">
           <img class="brand-mark" src="/branding/eventomax/symbols/eventomax-symbol-dark.svg" alt="" aria-hidden="true" />
-          @if (!sidebarCollapsed()) {
-            <span>
-              <span class="brand-text">Evento<span>Max</span></span>
-              <span class="brand-caption">OPERACIONES DE EVENTOS</span>
-            </span>
-          }
+          <span class="brand-copy">
+            <span class="brand-text">Evento<span>Max</span></span>
+            <span class="brand-caption">OPERACIONES DE EVENTOS</span>
+          </span>
         </a>
-        <button type="button" class="collapse-toggle desktop-toggle" (click)="toggleSidebar()" [attr.aria-label]="sidebarCollapsed() ? 'Expandir menú' : 'Colapsar menú'" [attr.title]="sidebarCollapsed() ? 'Expandir menú' : 'Colapsar menú'">
-          @if (sidebarCollapsed()) {
+        <button type="button" class="collapse-toggle desktop-toggle" aria-controls="sidebar-content" [attr.aria-expanded]="!sidebarCompact()" (click)="toggleSidebar()" [attr.aria-label]="sidebarCompact() ? 'Expandir menúú' : 'Colapsar menúú'" [attr.title]="sidebarCompact() ? 'Expandir menúú' : 'Colapsar menúþ'">
+          @if (sidebarCompact()) {
             <svg lucidePanelLeftOpen class="nav-icon" />
           } @else {
             <svg lucidePanelLeftClose class="nav-icon" />
           }
         </button>
       </div>
-      <button #menuToggle type="button" class="mobile-toggle" aria-controls="sidebar-content" [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(!menuOpen())" [attr.aria-label]="menuOpen() ? 'Cerrar menú' : 'Abrir menú'">
-        @if (menuOpen()) {
-          <svg lucideX class="nav-icon" />
-        } @else {
-          <svg lucideMenu class="nav-icon" />
-        }
+      <button #menuToggle type="button" class="mobile-toggle" aria-controls="sidebar-content" [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(false)" aria-label="Cerrar menúú">
+        <svg lucideX class="nav-icon" />
       </button>
     </div>
     <div id="sidebar-content" class="sidebar-content" [class.is-open]="menuOpen()">
       <nav class="sidebar-nav" aria-label="Navegación principal">
-        @if (!sidebarCollapsed()) {
-          <p class="nav-section">OPERACIÓN</p>
-        }
-        <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCollapsed() ? navLabels.dashboard : null" (click)="closeMenu(menuToggle)">
+        <p class="nav-section brand-copy">{{ operationSectionTitle() }}</p>
+        <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCompact() ? navLabels.dashboard : null" (click)="closeMenu(menuToggle)">
           <svg lucideLayoutDashboard class="nav-icon" />
-          @if (!sidebarCollapsed()) {
-            <span>Dashboard</span>
-          }
+          <span class="nav-label brand-copy">Dashboard</span>
         </a>
         @if (canViewProductions()) {
-          <a routerLink="/productions" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCollapsed() ? navLabels.productions : null" (click)="closeMenu(menuToggle)">
+          <a routerLink="/productions" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCompact() ? navLabels.productions : null" (click)="closeMenu(menuToggle)">
             <svg lucideCalendarDays class="nav-icon" />
-            @if (!sidebarCollapsed()) {
-              <span>Producciones</span>
-            }
+            <span class="nav-label brand-copy">Producciones</span>
           </a>
         }
         @if (canViewCatalog()) {
-          <a routerLink="/catalog" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCollapsed() ? navLabels.catalog : null" (click)="closeMenu(menuToggle)">
+          <a routerLink="/catalog" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCompact() ? navLabels.catalog : null" (click)="closeMenu(menuToggle)">
             <svg lucidePackage class="nav-icon" />
-            @if (!sidebarCollapsed()) {
-              <span>Catálogo</span>
-            }
+            <span class="nav-label brand-copy">Catálogo</span>
           </a>
         }
-        @if (canViewReports() || isAuditor()) {
-          @if (!sidebarCollapsed()) {
-            <p class="nav-section secondary">ANÁLISIS Y CONTROL</p>
-          } @else {
-            <div class="nav-divider" aria-hidden="true"></div>
-          }
+        @if (canViewReports() || canViewAudit()) {
+          <p class="nav-section secondary brand-copy">ANÁLISIS Y CONTROL</p>
+          <div class="nav-divider" aria-hidden="true" [style.display]="sidebarCompact() ? 'block' : 'none'"></div>
         }
         @if (canViewReports()) {
-          <a routerLink="/reports" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCollapsed() ? navLabels.reports : null" (click)="closeMenu(menuToggle)">
+          <a routerLink="/reports" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCompact() ? navLabels.reports : null" (click)="closeMenu(menuToggle)">
             <svg lucideChartNoAxesColumn class="nav-icon" />
-            @if (!sidebarCollapsed()) {
-              <span>Reportes</span>
-            }
+            <span class="nav-label brand-copy">Reportes</span>
           </a>
         }
-        @if (isAuditor()) {
-          <a routerLink="/audit" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCollapsed() ? navLabels.audit : null" (click)="closeMenu(menuToggle)">
+        @if (canViewAudit()) {
+          <a routerLink="/audit" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCompact() ? navLabels.audit : null" (click)="closeMenu(menuToggle)">
             <svg lucideShield class="nav-icon" />
-            @if (!sidebarCollapsed()) {
-              <span>Auditoría</span>
-            }
+            <span class="nav-label brand-copy">Auditoría</span>
           </a>
         }
       </nav>
       <div class="sidebar-footer">
-        <div class="workspace-label" [attr.title]="sidebarCollapsed() ? 'Espacio de trabajo' : null">
+        <div class="workspace-label" [attr.title]="sidebarCompact() ? 'Espacio de trabajo · Gestión de producciones' : null">
           <span class="workspace-avatar">EM</span>
-          @if (!sidebarCollapsed()) {
-            <div class="workspace-info">
-              <strong>Espacio de trabajo</strong>
-              <span>Gestión de producciones</span>
-            </div>
-          }
-          <span class="workspace-dot" aria-hidden="true"></span>
+          <div class="workspace-info brand-copy">
+            <strong>Espacio de trabajo</strong>
+            <span>Gestión de producciones</span>
+          </div>
         </div>
-        <button type="button" class="btn-logout" [attr.title]="sidebarCollapsed() ? 'Cerrar sesión' : null" (click)="onLogout()">
-          <svg lucideLogOut class="nav-icon" />
-          @if (!sidebarCollapsed()) {
-            <span>Cerrar sesión</span>
-          }
-        </button>
       </div>
     </div>
   </aside>
@@ -109,14 +97,14 @@
             <strong>{{ currentSection() }}</strong>
           </span>
         </div>
-        <div class="topbar-meta">
-          <button type="button" class="account-trigger" (click)="toggleAccountMenu()" [attr.aria-expanded]="accountMenuOpen()">
+        <div class="topbar-meta" (focusout)="onAccountFocusOut($event)">
+          <button type="button" class="account-trigger" [attr.aria-label]="'Cuenta de ' + userName" [attr.aria-controls]="accountMenuOpen() ? 'account-menu' : null" (click)="toggleAccountMenu()" [attr.aria-expanded]="accountMenuOpen()">
             <span class="user-avatar" aria-hidden="true">{{ initials }}</span>
             <span class="user-name-role">{{ userName | titlecase }}</span>
             <svg lucideChevronDown class="trigger-icon" />
           </button>
           @if (accountMenuOpen()) {
-            <div class="account-menu">
+            <div id="account-menu" class="account-menu smooth-shadow-ring-md">
               <div class="account-menu-header">
                 <strong>{{ userName | titlecase }}</strong>
                 <span>{{ displayRole() }}</span>

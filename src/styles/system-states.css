@@ -1,6 +1,6 @@
 /* SYSTEM STATES — Loading, Error, Empty
    Shared by Dashboard, Productions, Catalog.
-   Loaded once from the global stylesheet.
+   Loaded via app-shell alongside workspace.css (ViewEncapsulation.None).
    All selectors scoped under .emx-workspace to match the variable scope. */
 
 /* ── Empty / Error Panel ── */
@@ -10,10 +10,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 24px;
+  padding: 48px 24px;
   text-align: center;
   background: var(--bg-surface);
-  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 14px;
   min-height: 260px;
   color: var(--text-muted);
@@ -32,7 +31,6 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  flex-shrink: 0;
   border-radius: 12px;
   background: var(--brand-accent-bg);
   color: var(--brand-accent);
@@ -41,7 +39,12 @@
 
 .emx-workspace .empty-icon-wrapper.amber {
   background: rgba(245, 158, 11, 0.08);
-  color: #b45309;
+  color: #d97706;
+}
+
+.emx-workspace .empty-icon-wrapper.purple {
+  background: var(--status-purple-bg);
+  color: var(--status-purple);
 }
 
 .emx-workspace .empty-icon-wrapper svg {
@@ -57,7 +60,6 @@
   font-weight: 600;
   color: var(--text-main);
   margin: 0 0 8px 0; /* title → description */
-  line-height: 1.5;
 }
 
 .emx-workspace .empty-state p,
@@ -73,24 +75,13 @@
   margin-bottom: 0;
 }
 
-.emx-workspace .empty-state .icon-tile,
-.emx-workspace .state-icon {
-  width: 40px;
-  height: 40px;
-  font-size: 20px;
-  border-radius: var(--radius-md);
-  margin-bottom: 24px;
-}
-
 /* ── System Action Button (Apple-inspired) ── */
 .emx-workspace .btn-system {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 38px;
-  padding: 8px 18px;
-  font-family: inherit;
-  line-height: 1.5;
+  padding-inline: 18px;
   border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
@@ -98,7 +89,7 @@
   background: var(--brand-primary);
   border: none;
   cursor: pointer;
-  transition: filter 140ms ease, transform 100ms ease;
+  transition: background-color 140ms ease, transform var(--emx-motion-fast) var(--emx-ease-out), filter 140ms ease;
   text-decoration: none;
 }
 
@@ -108,6 +99,7 @@
 
 .emx-workspace .btn-system:active {
   transform: scale(0.98);
+  transition-duration: 100ms;
 }
 
 .emx-workspace .btn-system:focus-visible {
@@ -115,19 +107,9 @@
   outline-offset: 2px;
 }
 
-@media (pointer: coarse) {
-  .emx-workspace .btn-system {
-    min-height: 44px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion) {
   .emx-workspace .btn-system {
     transition: none;
-  }
-
-  .emx-workspace .btn-system:active {
-    transform: none;
   }
 }
 
@@ -136,10 +118,10 @@
   background: linear-gradient(90deg, var(--bg-surface-hover) 25%, #f1f3f5 50%, var(--bg-surface-hover) 75%);
   background-size: 400% 100%;
   border-radius: var(--radius-sm);
-  animation: skeleton-loading 2s infinite ease-in-out;
+  animation: skeleton-loading 2s infinite linear;
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion) {
   .emx-workspace .skeleton {
     animation: none;
     background: var(--bg-surface-hover);
