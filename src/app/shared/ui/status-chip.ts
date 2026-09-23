@@ -10,5 +10,16 @@ import { ProductionStatus } from '../../core/models/production.model';
 })
 export class StatusChip {
   readonly status = input.required<ProductionStatus>();
-  readonly label = computed(() => this.status() === 'EN_EJECUCION' ? 'EN_EJECUCIÓN' : this.status());
+  readonly label = computed(() => {
+    const s = this.status();
+    switch (s) {
+      case 'SOLICITADO': return 'Solicitado';
+      case 'CONFIRMADO': return 'Confirmado';
+      case 'EN_MONTAJE': return 'En montaje';
+      case 'EN_EJECUCION': return 'En ejecución';
+      case 'CERRADO': return 'Cerrado';
+      case 'CANCELADO': return 'Cancelado';
+      default: return s;
+    }
+  });
 }

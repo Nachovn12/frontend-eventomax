@@ -1,0 +1,58 @@
+/*
+ * EventoMax — Elevation & Motion
+ *
+ * La geometría pertenece al componente.
+ * shadow-plugin controla la elevación.
+ * Este archivo controla solamente movimiento e interacción.
+ */
+
+.emx-elevate-kpi,
+.emx-elevate-panel,
+.emx-elevate-action {
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* KPI: movimiento perceptible pero contenido */
+@media (hover: hover) and (pointer: fine) {
+  .emx-elevate-kpi:hover {
+    transform: translateY(-2px);
+  }
+
+  /*
+   * Paneles grandes:
+   * shadow evoluciona mediante la utilidad hover de Tailwind,
+   * pero no desplazamos toda una tabla o data-grid.
+   */
+  .emx-elevate-panel:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Solo para elementos realmente interactivos/clickeables */
+  .emx-elevate-action:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.emx-elevate-kpi:active,
+.emx-elevate-action:active {
+  transform: translateY(0) scale(0.995);
+}
+
+/* Accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .emx-elevate-kpi,
+  .emx-elevate-panel,
+  .emx-elevate-action {
+    transition: box-shadow 120ms ease;
+  }
+
+  .emx-elevate-kpi:hover,
+  .emx-elevate-panel:hover,
+  .emx-elevate-action:hover,
+  .emx-elevate-kpi:active,
+  .emx-elevate-action:active {
+    transform: none;
+  }
+}

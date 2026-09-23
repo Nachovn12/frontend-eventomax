@@ -1,9 +1,12 @@
-import { Injectable, inject } from '@angular/core';
-import { MsalService } from '@azure/msal-angular';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MsalBroadcastService, MsalService } from '@azure/msal-angular';
 import {
   AccountInfo,
   AuthenticationResult,
   EndSessionRequest,
+  EventType,
+  InteractionType,
   RedirectRequest,
   SilentRequest,
 } from '@azure/msal-browser';
@@ -26,13 +29,40 @@ import { environment } from '../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly msal = inject(MsalService);
+  private readonly broadcast = inject(MsalBroadcastService);
+  private readonly loginErrorState = signal<string | null>(null);
+  readonly loginError = this.loginErrorState.asReadonly();
+
+  constructor() {
+    // App injects this service before processing the redirect. Retain failures
+    // even when the lazy login component has not subscribed yet.
+    this.broadcast.msalSubject$
+      .pipe(takeUntilDestroyed(inject(DestroyRef)))
+      .subscribe((event) => {
+        if (event.eventType === EventType.ACQUIRE_TOKEN_FAILURE && event.interactionType === InteractionType.Redirect) {
+          this.setLoginError();
+        } else if (event.eventType === EventType.LOGIN_SUCCESS || event.eventType === EventType.LOGOUT_SUCCESS) {
+          this.loginErrorState.set(null);
+        }
+      });
+  }
+
+  private setLoginError(): void {
+    this.loginErrorState.set('No pudimos iniciar sesión. Verifica tu cuenta corporativa e inténtalo nuevamente.');
+  }
 
   /** Redirect to Microsoft Entra ID requesting the eventomax-api scope. */
-  login(): void {
+  async login(): Promise<void> {
+    this.loginErrorState.set(null);
     const request: RedirectRequest = {
       scopes: [environment.apiScope],
     };
-    this.msal.loginRedirect(request);
+    try {
+      await firstValueFrom(this.msal.loginRedirect(request));
+    } catch (error) {
+      this.setLoginError();
+      throw error;
+    }
   }
 
   /** Logs out the current active account. */

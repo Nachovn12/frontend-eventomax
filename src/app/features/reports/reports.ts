@@ -1,11 +1,11 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Icon } from '../../shared/ui/icon';
+import { LucideChartNoAxesCombined } from '@lucide/angular';
 
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, LucideChartNoAxesCombined],
   templateUrl: './reports.html',
   styleUrl: './reports.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
