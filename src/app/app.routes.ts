@@ -81,6 +81,7 @@ export const routes: Routes = [
       }
     ]
   },
+  { path: 'index.html', redirectTo: 'login', pathMatch: 'full' },
   {
     path: '**',
     loadComponent: () => import('./features/errors/not-found/not-found').then(m => m.NotFound)

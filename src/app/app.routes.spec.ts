@@ -18,3 +18,19 @@ describe('Protected workspace routes', () => {
     expect(route?.data?.['roles']).toEqual(roles);
   });
 });
+
+describe('Root and fallback routes', () => {
+  it('redirects index.html to login', () => {
+    const route = routes.find(r => r.path === 'index.html');
+    expect(route).toBeTruthy();
+    expect(route?.redirectTo).toBe('login');
+    expect(route?.pathMatch).toBe('full');
+  });
+
+  it('keeps wildcard ** for unknown URLs', () => {
+    const route = routes.find(r => r.path === '**');
+    expect(route).toBeTruthy();
+    // Assuming wildcard route loads NotFound component, we can check it has loadComponent
+    expect(route?.loadComponent).toBeDefined();
+  });
+});
