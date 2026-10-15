@@ -134,3 +134,19 @@
     min-width: auto;
   }
 }
+
+
+/* EMX-124 / EMX-128: formularios EP2, sin modificar las tablas existentes. */
+.ep2-actions { margin-bottom: 24px; }
+.ep2-heading { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.ep2-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); align-items: end; gap: 12px; padding: 16px 24px; }
+.ep2-form label { display: grid; gap: 6px; color: var(--text-main); font-size: 13px; font-weight: 600; }
+.ep2-form input, .ep2-form select { min-width: 0; width: 100%; height: 42px; border: 1px solid var(--border-base); border-radius: 9px; padding: 8px 10px; color: var(--text-main); background: var(--bg-surface); font: inherit; }
+.ep2-form input:focus-visible, .ep2-form select:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
+.ep2-form .btn-system { min-height: 42px; }
+.ep2-inline { border-top: 1px solid var(--border-base); }
+.ep2-notice { margin: 12px 24px; padding: 12px; border-radius: 8px; background: var(--bg-surface-hover); }
+.ep2-error { color: #991b1b; }
+.ep2-detail { display: grid; gap: 4px; padding: 12px 24px; font-size: 13px; }
+.ep2-detail span, .ep2-footnote { color: var(--text-muted); }
+.ep2-footnote { padding: 0 24px 16px; font-size: 12px; }

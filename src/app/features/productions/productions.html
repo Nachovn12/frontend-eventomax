@@ -41,6 +41,84 @@
       </button>
     </div>
   } @else {
+
+    @if (canCreate() || canUpdate()) {
+      <section class="panel ep2-actions smooth-shadow-ring-xs" aria-labelledby="production-actions-title">
+        <div class="panel-heading ep2-heading">
+          <div>
+            <h2 id="production-actions-title">Gestión de producciones</h2>
+            <p>Operaciones protegidas mediante Microsoft Entra ID, API Gateway y BFF.</p>
+          </div>
+          @if (canCreate()) {
+            <button type="button" class="btn-system" (click)="showCreate.set(!showCreate())">
+              {{ showCreate() ? 'Cerrar formulario' : 'Nueva producción' }}
+            </button>
+          }
+        </div>
+        @if (operationError()) { <p role="alert" class="ep2-notice ep2-error">{{ operationError() }}</p> }
+        @if (operationSuccess()) { <p role="status" class="ep2-notice">{{ operationSuccess() }}</p> }
+
+        @if (canCreate() && showCreate()) {
+          <form class="ep2-form" [formGroup]="createForm" (ngSubmit)="submitCreate()" aria-label="Crear producción">
+            <label>Organizador ID
+              <input formControlName="organizerId" maxlength="255" required autocomplete="off" />
+            </label>
+            <label>Nombre del evento
+              <input formControlName="name" maxlength="150" required />
+            </label>
+            <label>Fecha programada
+              <input formControlName="scheduledAt" type="datetime-local" required />
+            </label>
+            <label>Ubicación
+              <input formControlName="location" maxlength="255" required />
+            </label>
+            <button class="btn-system" type="submit" [disabled]="saving() || createForm.invalid">Crear evento</button>
+          </form>
+        }
+
+        <div class="ep2-form ep2-inline">
+          <label>Consultar detalle
+            <select id="production-detail-id" [formControl]="detailId">
+              <option value="">Seleccionar producción</option>
+              @for (item of rows(); track item.id) {
+                <option [value]="item.id">{{ item.id }} — {{ item.name }}</option>
+              }
+            </select>
+          </label>
+          <button type="button" class="btn-system" [disabled]="!detailId.value" (click)="consultDetail()">Ver detalle</button>
+        </div>
+        @if (detail(); as selected) {
+          <div class="ep2-detail" aria-live="polite">
+            <strong>#{{ selected.id }} — {{ selected.name }}</strong>
+            <span>{{ selected.location }} · {{ selected.scheduledAt }} · {{ getLabel(selected.status) }}</span>
+          </div>
+        }
+        @if (canUpdate()) {
+          <form class="ep2-form ep2-inline" (ngSubmit)="submitStatus()" aria-label="Cambiar estado">
+            <label>Producción
+              <select id="production-update-id" [formControl]="updateId" required>
+                <option value="">Seleccionar producción</option>
+                @for (item of rows(); track item.id) {
+                  <option [value]="item.id">#{{ item.id }} — {{ item.name }}</option>
+                }
+              </select>
+            </label>
+            <label>Nuevo estado
+              <select id="production-next-status" [formControl]="nextStatus">
+                @for (item of statuses(); track item) {
+                  @if (item !== 'SOLICITADO') {
+                    <option [value]="item">{{ getLabel(item) }}</option>
+                  }
+                }
+              </select>
+            </label>
+            <button type="submit" class="btn-system" [disabled]="saving() || !updateId.value">Actualizar estado</button>
+          </form>
+          <p class="ep2-footnote">Las transiciones válidas y las reservas de inventario son verificadas por el backend.</p>
+        }
+      </section>
+    }
+
     <section class="metric-grid" aria-label="Resumen operativo">
       <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
         <div class="metric-top">

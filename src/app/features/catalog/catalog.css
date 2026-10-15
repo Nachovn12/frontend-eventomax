@@ -305,3 +305,17 @@
     border: 1px solid CanvasText;
   }
 }
+
+
+/* EMX-125 / EMX-133: administración de catálogo disponible solo para Admin. */
+.ep2-catalog-editor { margin-bottom: 24px; }
+.ep2-catalog-heading { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.ep2-catalog-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; padding: 16px 24px; align-items: end; }
+.ep2-catalog-form label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-main); }
+.ep2-catalog-form input, .ep2-catalog-form select { width: 100%; min-width: 0; min-height: 42px; padding: 8px 10px; border: 1px solid var(--border-base); border-radius: 9px; color: var(--text-main); background: var(--bg-surface); font: inherit; }
+.ep2-catalog-form input:focus-visible, .ep2-catalog-form select:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
+.ep2-catalog-buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ep2-catalog-buttons button { min-height: 42px; }
+.ep2-catalog-message { padding: 10px 24px; font-size: 13px; }
+.ep2-catalog-error { color: #991b1b; }
+.ep2-catalog-table-action { margin-top: 8px; }

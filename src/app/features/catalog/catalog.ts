@@ -1,5 +1,5 @@
-import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   LucidePackage,
@@ -12,10 +12,13 @@ import {
   LucideCircleAlert,
 } from '@lucide/angular';
 import { CatalogDataService } from './catalog-data.service';
-import { CatalogService } from './models/catalog-service.model';
+import { CatalogService, CatalogServiceUpsertRequest } from './models/catalog-service.model';
 import { BehaviorSubject, of } from 'rxjs';
 import { switchMap, map, catchError, startWith } from 'rxjs/operators';
 import { CurrencyPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
+import { AuthorizationService } from '../../core/auth/authorization.service';
+import { AppRole } from '../../core/auth/models/app-role';
 
 @Component({
   selector: 'app-catalog',
@@ -88,6 +91,101 @@ export class Catalog {
       );
     });
   });
+
+
+  private readonly authz = inject(AuthorizationService);
+  readonly canManage = computed(() => this.authz.hasRole(AppRole.Admin) && this.authz.hasScope('access_as_user'));
+  readonly showEditor = signal(false);
+  readonly editingService = signal<CatalogService | null>(null);
+  readonly saving = signal(false);
+  readonly saveError = signal('');
+  readonly saveMessage = signal('');
+
+  readonly serviceForm = new FormGroup({
+    name: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
+    description: new FormControl('', { nonNullable: true, validators: Validators.maxLength(500) }),
+    rate: new FormControl(0, { nonNullable: true, validators: [Validators.required, Validators.min(0.01)] }),
+    active: new FormControl(true, { nonNullable: true }),
+  });
+
+  openCreate(): void {
+    if (!this.canManage()) return;
+    this.editingService.set(null);
+    this.serviceForm.reset({ name: '', description: '', rate: 0, active: true });
+    this.saveError.set('');
+    this.saveMessage.set('');
+    this.showEditor.set(true);
+  }
+
+  openEdit(item: CatalogService): void {
+    if (!this.canManage()) return;
+    this.editingService.set(item);
+    this.serviceForm.setValue({
+      name: item.name,
+      description: item.description ?? '',
+      rate: item.rate,
+      active: item.active
+    });
+    this.saveError.set('');
+    this.saveMessage.set('');
+    this.showEditor.set(true);
+  }
+
+  closeEditor(): void {
+    if (this.saving()) return;
+    this.showEditor.set(false);
+    this.editingService.set(null);
+  }
+
+  submitService(): void {
+    if (!this.canManage() || this.saving()) return;
+    this.serviceForm.markAllAsTouched();
+    if (this.serviceForm.invalid) return;
+    const input = this.serviceForm.getRawValue();
+    if (!Number.isFinite(input.rate) || input.rate <= 0 || Math.abs(input.rate * 100 - Math.round(input.rate * 100)) > 1e-6) {
+      this.saveError.set('Ingresa una tarifa positiva con máximo dos decimales.');
+      return;
+    }
+    const request: CatalogServiceUpsertRequest = {
+      name: input.name.trim(),
+      description: input.description.trim() || null,
+      rate: input.rate,
+      active: input.active
+    };
+    if (!request.name) {
+      this.saveError.set('El nombre del servicio es obligatorio.');
+      return;
+    }
+    const existing = this.editingService();
+    this.saving.set(true);
+    this.saveError.set('');
+    this.saveMessage.set('');
+    const request$ = existing
+      ? this.dataService.updateService(existing.id, request)
+      : this.dataService.createService(request);
+    request$.subscribe({
+      next: (result) => {
+        this.saving.set(false);
+        this.showEditor.set(false);
+        this.editingService.set(null);
+        this.saveMessage.set(`Servicio #${result.id} guardado correctamente.`);
+        this.retry();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.saveError.set(this.saveErrorText(error));
+      }
+    });
+  }
+
+  private saveErrorText(error: HttpErrorResponse): string {
+    if (error.status === 0) return 'API Gateway no está disponible. Revisa la conexión y el despliegue.';
+    if (error.status === 401) return 'Inicia sesión nuevamente para gestionar el catálogo.';
+    if (error.status === 403) return 'Solo Admin puede crear o actualizar servicios.';
+    if (error.status === 400) return 'El backend rechazó los datos. Revisa nombre y tarifa.';
+    if (error.status === 404) return 'El servicio ya no existe. Actualiza el listado.';
+    return 'No se pudo guardar el servicio. Intenta nuevamente.';
+  }
 
   clearFilters(): void {
     this.search.setValue('');
