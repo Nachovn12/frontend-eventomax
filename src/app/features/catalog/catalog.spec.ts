@@ -4,6 +4,7 @@ import { registerLocaleData } from '@angular/common';
 import localeEsCL from '@angular/common/locales/es-CL';
 import { Subject } from 'rxjs';
 import { Catalog } from './catalog';
+import { AuthorizationService } from '../../core/auth/authorization.service';
 import { CatalogDataService } from './catalog-data.service';
 import { CatalogService } from './models/catalog-service.model';
 
@@ -27,6 +28,7 @@ describe('Catalog', () => {
       imports: [Catalog],
       providers: [
         { provide: CatalogDataService, useValue: dataServiceMock },
+        { provide: AuthorizationService, useValue: { hasRole: () => false, hasScope: () => false } },
         { provide: LOCALE_ID, useValue: 'es-CL' },
       ],
     }).compileComponents();
