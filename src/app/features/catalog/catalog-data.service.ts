@@ -1,9 +1,28 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { CatalogService, CatalogServiceUpsertRequest } from './models/catalog-service.model';
-import { Equipment, CreateEquipmentRequest, EquipmentReservationItem } from './models/equipment.model';
+import { Equipment, CreateEquipmentRequest, EquipmentReservationItem, BackendEquipmentResponse } from './models/equipment.model';
 import { ApiClientService } from '../../core/http/api-client.service';
 import { environment } from '../../../environments/environment';
+
+function mapEquipmentResponse(raw: BackendEquipmentResponse): Equipment {
+  const available = raw.availableQty ?? raw.availableQuantity ?? 0;
+  const reserved = raw.reservedQty ?? 0;
+  const total = raw.totalQuantity ?? (available + reserved);
+  const active = raw.active ?? true;
+  return {
+    id: raw.id,
+    name: raw.name,
+    description: raw.description ?? null,
+    category: raw.category ?? null,
+    active,
+    availableQty: available,
+    reservedQty: reserved,
+    totalQuantity: total,
+    availableQuantity: available,
+    status: active ? (available > 0 ? 'DISPONIBLE' : 'AGOTADO') : 'INACTIVO',
+  };
+}
 
 @Injectable({ providedIn: 'root' })
 export class CatalogDataService {
@@ -22,11 +41,21 @@ export class CatalogDataService {
   }
 
   getEquipment(): Observable<readonly Equipment[]> {
-    return this.apiClient.get<readonly Equipment[]>(`${environment.apiGatewayUrl}/api/catalog/equipment`);
+    return this.apiClient.get<readonly BackendEquipmentResponse[]>(`${environment.apiGatewayUrl}/api/catalog/equipment`).pipe(
+      map((items) => (items || []).map(mapEquipmentResponse))
+    );
   }
 
   createEquipment(request: CreateEquipmentRequest): Observable<Equipment> {
-    return this.apiClient.post<Equipment>(`${environment.apiGatewayUrl}/api/catalog/equipment`, request);
+    const payload = {
+      name: request.name.trim(),
+      description: request.description ? request.description.trim() : null,
+      active: request.active ?? true,
+      initialAvailableQty: request.initialAvailableQty,
+    };
+    return this.apiClient.post<BackendEquipmentResponse>(`${environment.apiGatewayUrl}/api/catalog/equipment`, payload).pipe(
+      map(mapEquipmentResponse)
+    );
   }
 
   getReservationsByProduction(productionId: number): Observable<readonly EquipmentReservationItem[]> {

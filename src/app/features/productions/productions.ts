@@ -237,7 +237,9 @@ export class Productions {
 
   getEquipmentName(eqId: number): string {
     const eq = this.availableEquipment().find(e => e.id === eqId);
-    return eq ? `${eq.name} (${eq.category})` : `Equipo #${eqId}`;
+    if (!eq) return `Equipo #${eqId}`;
+    const detail = eq.description || eq.category;
+    return detail ? `${eq.name} (${detail})` : eq.name;
   }
 
   submitStatus(): void {

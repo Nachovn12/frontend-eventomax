@@ -140,8 +140,8 @@
                     <select id="equipment-select" [formControl]="selectedEquipmentId">
                       <option value="">Seleccionar equipo</option>
                       @for (eq of availableEquipment(); track eq.id) {
-                        <option [value]="eq.id" [disabled]="eq.availableQuantity <= 0">
-                          {{ eq.name }} ({{ eq.category }}) — Disp: {{ eq.availableQuantity }}
+                        <option [value]="eq.id" [disabled]="(eq.availableQty ?? eq.availableQuantity) <= 0">
+                          {{ eq.name }}{{ (eq.description || eq.category) ? ' (' + (eq.description || eq.category) + ')' : '' }} — Disp: {{ eq.availableQty ?? eq.availableQuantity }}
                         </option>
                       }
                     </select>

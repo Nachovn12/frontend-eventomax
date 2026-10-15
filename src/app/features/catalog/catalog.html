@@ -344,13 +344,19 @@
           @if (showEquipmentEditor()) {
             <form class="ep2-catalog-form" [formGroup]="equipmentForm" (ngSubmit)="submitEquipment()" aria-label="Formulario de equipo">
               <label>Nombre del equipo
-                <input formControlName="name" placeholder="Ej: Parlante Line Array" maxlength="150" required />
+                <input formControlName="name" placeholder="Ej: Foco LED Prueba EP2" maxlength="150" required />
               </label>
-              <label>Categoría
-                <input formControlName="category" placeholder="Ej: Audio, Iluminación, Video" maxlength="100" required />
+              <label>Descripción
+                <input formControlName="description" placeholder="Ej: Equipo de iluminación" maxlength="500" />
               </label>
-              <label>Cantidad total
-                <input type="number" min="1" step="1" formControlName="totalQuantity" required />
+              <label>Cantidad inicial disponible
+                <input type="number" min="0" step="1" formControlName="initialAvailableQty" required />
+              </label>
+              <label>Estado
+                <select formControlName="active">
+                  <option [ngValue]="true">Activo</option>
+                  <option [ngValue]="false">Inactivo</option>
+                </select>
               </label>
               <div class="ep2-catalog-buttons">
                 <button type="submit" class="btn-system" [disabled]="savingEquipment() || equipmentForm.invalid">
@@ -381,16 +387,15 @@
                 id="equipment-search"
                 type="search"
                 [formControl]="equipmentSearch"
-                placeholder="Buscar por nombre o categoría"
+                placeholder="Buscar por nombre o descripción"
               />
             </div>
             <div class="catalog-select">
-              <label class="sr-only" for="equipment-category">Categoría</label>
-              <select id="equipment-category" [formControl]="equipmentCategory">
-                <option value="">Todas las categorías</option>
-                @for (cat of equipmentCategories(); track cat) {
-                  <option [value]="cat">{{ cat }}</option>
-                }
+              <label class="sr-only" for="equipment-status">Estado</label>
+              <select id="equipment-status" [formControl]="equipmentStatus">
+                <option value="">Todos los estados</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
               </select>
               <svg
                 lucideChevronDown
@@ -416,7 +421,7 @@
                 <svg lucideSearchX strokeWidth="1.75" />
               </div>
               <h3>No encontramos equipos</h3>
-              <p>Prueba con otro nombre o categoría.</p>
+              <p>Prueba con otro nombre o descripción.</p>
               <button type="button" class="btn-system" (click)="clearEquipmentFilters(); equipmentSearchInput.focus()">
                 Limpiar filtros
               </button>
@@ -428,8 +433,8 @@
               </caption>
               <colgroup>
                 <col style="width: 10%;" />
-                <col style="width: 40%;" />
-                <col style="width: 20%;" />
+                <col style="width: 35%;" />
+                <col style="width: 25%;" />
                 <col style="width: 15%;" />
                 <col style="width: 15%;" />
               </colgroup>
@@ -437,7 +442,7 @@
                 <tr role="row">
                   <th scope="col" role="columnheader">ID</th>
                   <th scope="col" role="columnheader">Equipo</th>
-                  <th scope="col" role="columnheader">Categoría</th>
+                  <th scope="col" role="columnheader">Descripción</th>
                   <th scope="col" role="columnheader">Disponibilidad</th>
                   <th scope="col" role="columnheader">Estado</th>
                 </tr>
@@ -449,17 +454,21 @@
                     <td class="catalog-service-cell" role="cell">
                       <strong class="catalog-service-name">{{ item.name }}</strong>
                     </td>
-                    <td role="cell">{{ item.category }}</td>
+                    <td role="cell">
+                      <span class="catalog-description" [title]="item.description || ''">
+                        {{ item.description || '—' }}
+                      </span>
+                    </td>
                     <td class="catalog-rate-cell" role="cell">
-                      <strong>{{ item.availableQuantity }} / {{ item.totalQuantity }}</strong>
+                      <strong>{{ item.availableQty }} disp. / {{ item.reservedQty }} res.</strong>
                     </td>
                     <td class="catalog-status-cell" role="cell">
                       <span
                         class="catalog-status"
-                        [class.catalog-status-active]="item.availableQuantity > 0"
-                        [class.badge-depleted]="item.availableQuantity === 0"
+                        [class.catalog-status-active]="item.active && item.availableQty > 0"
+                        [class.badge-depleted]="item.active && item.availableQty === 0"
                       >
-                        {{ item.availableQuantity > 0 ? 'DISPONIBLE' : 'AGOTADO' }}
+                        {{ !item.active ? 'INACTIVO' : (item.availableQty > 0 ? 'DISPONIBLE' : 'AGOTADO') }}
                       </span>
                     </td>
                   </tr>

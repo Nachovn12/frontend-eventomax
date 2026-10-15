@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal, Signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -16,12 +16,24 @@ import {
 import { CatalogDataService } from './catalog-data.service';
 import { CatalogService, CatalogServiceUpsertRequest } from './models/catalog-service.model';
 import { Equipment, CreateEquipmentRequest } from './models/equipment.model';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, of, Observable } from 'rxjs';
 import { switchMap, map, catchError, startWith } from 'rxjs/operators';
 import { CurrencyPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
+
+interface CatalogServicesState {
+  readonly data: readonly CatalogService[];
+  readonly loading: boolean;
+  readonly error: boolean;
+}
+
+interface EquipmentState {
+  readonly data: readonly Equipment[];
+  readonly loading: boolean;
+  readonly error: boolean;
+}
 
 @Component({
   selector: 'app-catalog',
@@ -57,29 +69,29 @@ export class Catalog {
   // --- Services state ---
   private readonly retrySubject = new BehaviorSubject<void>(undefined);
 
-  private readonly catalogState = toSignal(
+  private readonly catalogState: Signal<CatalogServicesState> = toSignal(
     this.retrySubject.pipe(
       switchMap(() =>
         this.dataService.getServices().pipe(
-          map((data) => ({ data, loading: false, error: false })),
-          catchError(() =>
+          map((data): CatalogServicesState => ({ data, loading: false, error: false })),
+          catchError((): Observable<CatalogServicesState> =>
             of({ data: [] as readonly CatalogService[], loading: false, error: true }),
           ),
-          startWith({ data: [] as readonly CatalogService[], loading: true, error: false }),
+          startWith<CatalogServicesState>({ data: [] as readonly CatalogService[], loading: true, error: false }),
         ),
       ),
     ),
-    { initialValue: { data: [], loading: true, error: false } },
+    { initialValue: { data: [] as readonly CatalogService[], loading: true, error: false } },
   );
 
   readonly isLoading = computed(() => this.catalogState().loading);
   readonly isError = computed(() => this.catalogState().error);
-  private readonly allServices = computed(() => this.catalogState().data);
+  private readonly allServices: Signal<readonly CatalogService[]> = computed(() => this.catalogState().data);
 
   readonly total = computed(() => this.allServices().length);
-  readonly activeCount = computed(() => this.allServices().filter((s) => s.active === true).length);
+  readonly activeCount = computed(() => this.allServices().filter((s: CatalogService) => s.active === true).length);
   readonly inactiveCount = computed(
-    () => this.allServices().filter((s) => s.active === false).length,
+    () => this.allServices().filter((s: CatalogService) => s.active === false).length,
   );
 
   readonly search = new FormControl('', { nonNullable: true });
@@ -92,9 +104,9 @@ export class Catalog {
     () => this.query().trim() !== '' || this.selectedStatus() !== '',
   );
 
-  readonly rows = computed(() => {
+  readonly rows: Signal<readonly CatalogService[]> = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('es');
-    return this.allServices().filter((item) => {
+    return this.allServices().filter((item: CatalogService) => {
       const matchesStatus =
         !this.selectedStatus() || (this.selectedStatus() === 'active' ? item.active : !item.active);
       return (
@@ -211,55 +223,52 @@ export class Catalog {
   // --- Equipment & Inventory state ---
   private readonly equipmentRetrySubject = new BehaviorSubject<void>(undefined);
 
-  private readonly equipmentState = toSignal(
+  private readonly equipmentState: Signal<EquipmentState> = toSignal(
     this.equipmentRetrySubject.pipe(
       switchMap(() =>
         this.dataService.getEquipment().pipe(
-          map((data) => ({ data, loading: false, error: false })),
-          catchError(() =>
+          map((data): EquipmentState => ({ data, loading: false, error: false })),
+          catchError((): Observable<EquipmentState> =>
             of({ data: [] as readonly Equipment[], loading: false, error: true }),
           ),
-          startWith({ data: [] as readonly Equipment[], loading: true, error: false }),
+          startWith<EquipmentState>({ data: [] as readonly Equipment[], loading: true, error: false }),
         ),
       ),
     ),
-    { initialValue: { data: [], loading: true, error: false } },
+    { initialValue: { data: [] as readonly Equipment[], loading: true, error: false } },
   );
 
   readonly isEquipmentLoading = computed(() => this.equipmentState().loading);
   readonly isEquipmentError = computed(() => this.equipmentState().error);
-  private readonly allEquipment = computed(() => this.equipmentState().data);
+  private readonly allEquipment: Signal<readonly Equipment[]> = computed(() => this.equipmentState().data);
 
   readonly totalEquipment = computed(() => this.allEquipment().length);
   readonly totalStockAvailable = computed(() =>
-    this.allEquipment().reduce((acc, eq) => acc + (eq.availableQuantity || 0), 0),
+    this.allEquipment().reduce((acc, eq: Equipment) => acc + (eq.availableQty ?? eq.availableQuantity ?? 0), 0),
   );
   readonly totalStockReserved = computed(() =>
-    this.allEquipment().reduce((acc, eq) => acc + Math.max(0, (eq.totalQuantity || 0) - (eq.availableQuantity || 0)), 0),
+    this.allEquipment().reduce((acc, eq: Equipment) => acc + (eq.reservedQty ?? 0), 0),
   );
 
   readonly equipmentSearch = new FormControl('', { nonNullable: true });
-  readonly equipmentCategory = new FormControl('', { nonNullable: true });
+  readonly equipmentStatus = new FormControl('', { nonNullable: true });
 
   private readonly equipmentQuery = toSignal(this.equipmentSearch.valueChanges, { initialValue: '' });
-  private readonly selectedCategory = toSignal(this.equipmentCategory.valueChanges, { initialValue: '' });
-
-  readonly equipmentCategories = computed(() => {
-    const categories = new Set(this.allEquipment().map((eq) => eq.category).filter(Boolean));
-    return Array.from(categories).sort();
-  });
+  private readonly selectedEquipmentStatus = toSignal(this.equipmentStatus.valueChanges, { initialValue: '' });
 
   readonly hasActiveEquipmentFilters = computed(
-    () => this.equipmentQuery().trim() !== '' || this.selectedCategory() !== '',
+    () => this.equipmentQuery().trim() !== '' || this.selectedEquipmentStatus() !== '',
   );
 
-  readonly equipmentRows = computed(() => {
+  readonly equipmentRows: Signal<readonly Equipment[]> = computed(() => {
     const query = this.equipmentQuery().trim().toLocaleLowerCase('es');
-    return this.allEquipment().filter((item) => {
-      const matchesCategory = !this.selectedCategory() || item.category === this.selectedCategory();
+    return this.allEquipment().filter((item: Equipment) => {
+      const matchesStatus =
+        !this.selectedEquipmentStatus() ||
+        (this.selectedEquipmentStatus() === 'active' ? item.active : !item.active);
       return (
-        matchesCategory &&
-        [String(item.id), item.name, item.category || ''].some((value) =>
+        matchesStatus &&
+        [String(item.id), item.name, item.description || ''].some((value) =>
           value.toLocaleLowerCase('es').includes(query),
         )
       );
@@ -274,13 +283,14 @@ export class Catalog {
 
   readonly equipmentForm = new FormGroup({
     name: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
-    category: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),
-    totalQuantity: new FormControl(1, { nonNullable: true, validators: [Validators.required, Validators.min(1)] }),
+    description: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
+    initialAvailableQty: new FormControl(1, { nonNullable: true, validators: [Validators.required, Validators.min(0)] }),
+    active: new FormControl(true, { nonNullable: true }),
   });
 
   openCreateEquipment(): void {
     if (!this.canManage()) return;
-    this.equipmentForm.reset({ name: '', category: '', totalQuantity: 1 });
+    this.equipmentForm.reset({ name: '', description: '', initialAvailableQty: 1, active: true });
     this.saveEquipmentError.set('');
     this.saveEquipmentMessage.set('');
     this.showEquipmentEditor.set(true);
@@ -297,17 +307,18 @@ export class Catalog {
     if (this.equipmentForm.invalid) return;
 
     const input = this.equipmentForm.getRawValue();
-    if (!Number.isSafeInteger(input.totalQuantity) || input.totalQuantity < 1) {
-      this.saveEquipmentError.set('Ingresa una cantidad entera positiva mayor o igual a 1.');
+    if (!Number.isSafeInteger(input.initialAvailableQty) || input.initialAvailableQty < 0) {
+      this.saveEquipmentError.set('Ingresa una cantidad inicial entera mayor o igual a 0.');
       return;
     }
     const request: CreateEquipmentRequest = {
       name: input.name.trim(),
-      category: input.category.trim(),
-      totalQuantity: input.totalQuantity,
+      description: input.description.trim() || null,
+      active: input.active,
+      initialAvailableQty: input.initialAvailableQty,
     };
-    if (!request.name || !request.category) {
-      this.saveEquipmentError.set('El nombre y la categoría son obligatorios.');
+    if (!request.name) {
+      this.saveEquipmentError.set('El nombre del equipo es obligatorio.');
       return;
     }
 
@@ -319,7 +330,7 @@ export class Catalog {
       next: (result) => {
         this.savingEquipment.set(false);
         this.showEquipmentEditor.set(false);
-        this.saveEquipmentMessage.set(`Equipo #${result.id} (${result.name}) creado correctamente con stock ${result.totalQuantity}.`);
+        this.saveEquipmentMessage.set(`Equipo #${result.id} (${result.name}) creado correctamente con stock inicial ${result.availableQty}.`);
         this.retryEquipment();
       },
       error: (error: HttpErrorResponse) => {
@@ -333,13 +344,13 @@ export class Catalog {
     if (error.status === 0) return 'API Gateway no está disponible. Revisa la conexión y el despliegue.';
     if (error.status === 401) return 'Inicia sesión nuevamente para gestionar equipos.';
     if (error.status === 403) return 'Solo Admin puede registrar nuevos equipos.';
-    if (error.status === 400) return 'El backend rechazó los datos del equipo. Revisa nombre, categoría y stock.';
+    if (error.status === 400) return 'El backend rechazó los datos del equipo. Revisa nombre y stock inicial.';
     return 'No se pudo crear el equipo. Intenta nuevamente.';
   }
 
   clearEquipmentFilters(): void {
     this.equipmentSearch.setValue('');
-    this.equipmentCategory.setValue('');
+    this.equipmentStatus.setValue('');
   }
 
   retryEquipment(): void {

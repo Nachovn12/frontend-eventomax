@@ -32,7 +32,7 @@ describe('Catalog', () => {
     dataServiceMock = {
       getServices: vi.fn(() => servicesSubject.asObservable()),
       getEquipment: vi.fn(() => of([])),
-      createEquipment: vi.fn(() => of({ id: 10, name: 'Test', category: 'Audio', totalQuantity: 5, availableQuantity: 5, status: 'DISPONIBLE' })),
+      createEquipment: vi.fn(() => of({ id: 10, name: 'Test', description: 'Audio', active: true, availableQty: 5, reservedQty: 0, totalQuantity: 5, availableQuantity: 5, status: 'DISPONIBLE' })),
       createService: vi.fn(),
       updateService: vi.fn(),
     };
@@ -219,8 +219,8 @@ describe('Catalog', () => {
 
   it('switches to equipment tab and renders equipment inventory', async () => {
     const mockEquipment = [
-      { id: 1, name: 'Parlante Line Array', category: 'Audio', totalQuantity: 10, availableQuantity: 8, status: 'DISPONIBLE' },
-      { id: 2, name: 'Foco LED', category: 'Iluminación', totalQuantity: 4, availableQuantity: 0, status: 'AGOTADO' },
+      { id: 1, name: 'Parlante Line Array', description: 'Sistema de audio', active: true, availableQty: 8, reservedQty: 2, totalQuantity: 10, availableQuantity: 8, status: 'DISPONIBLE' },
+      { id: 2, name: 'Foco LED', description: 'Foco robótico', active: true, availableQty: 0, reservedQty: 4, totalQuantity: 4, availableQuantity: 0, status: 'AGOTADO' },
     ];
     dataServiceMock.getEquipment.mockReturnValue(of(mockEquipment));
     fixture.componentInstance.retryEquipment();

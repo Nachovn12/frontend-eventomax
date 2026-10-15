@@ -1,7 +1,11 @@
 export interface Equipment {
   readonly id: number;
   readonly name: string;
-  readonly category: string;
+  readonly description?: string | null;
+  readonly category?: string | null;
+  readonly active: boolean;
+  readonly availableQty: number;
+  readonly reservedQty: number;
   readonly totalQuantity: number;
   readonly availableQuantity: number;
   readonly status: string;
@@ -9,8 +13,9 @@ export interface Equipment {
 
 export interface CreateEquipmentRequest {
   readonly name: string;
-  readonly category: string;
-  readonly totalQuantity: number;
+  readonly description?: string | null;
+  readonly active: boolean;
+  readonly initialAvailableQty: number;
 }
 
 export interface EquipmentReservationItem {
@@ -19,5 +24,18 @@ export interface EquipmentReservationItem {
   readonly equipmentName: string;
   readonly quantity: number;
   readonly status: string;
+}
+
+export interface BackendEquipmentResponse {
+  readonly id: number;
+  readonly name: string;
+  readonly description?: string | null;
+  readonly category?: string | null;
+  readonly active?: boolean | null;
+  readonly availableQty?: number | null;
+  readonly reservedQty?: number | null;
+  readonly totalQuantity?: number | null;
+  readonly availableQuantity?: number | null;
+  readonly status?: string | null;
 }
 

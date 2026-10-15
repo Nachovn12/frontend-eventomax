@@ -20,7 +20,7 @@ describe('Catalog EP2 actions', () => {
       createService: vi.fn(() => of(service)),
       updateService: vi.fn(() => of(service)),
       getEquipment: vi.fn(() => of([])),
-      createEquipment: vi.fn(() => of({ id: 1, name: 'Parlante', category: 'Audio', totalQuantity: 5, availableQuantity: 5, status: 'DISPONIBLE' })),
+      createEquipment: vi.fn(() => of({ id: 1, name: 'Parlante', description: 'Audio', active: true, availableQty: 5, reservedQty: 0, totalQuantity: 5, availableQuantity: 5, status: 'DISPONIBLE' })),
     };
     await TestBed.configureTestingModule({
       imports: [Catalog],
@@ -88,14 +88,16 @@ describe('Catalog EP2 actions', () => {
 
     admin.component.equipmentForm.setValue({
       name: 'Parlante Line Array',
-      category: 'Audio',
-      totalQuantity: 10,
+      description: 'Sistema PA',
+      initialAvailableQty: 10,
+      active: true,
     });
     admin.component.submitEquipment();
     expect(admin.api.createEquipment).toHaveBeenCalledWith({
       name: 'Parlante Line Array',
-      category: 'Audio',
-      totalQuantity: 10,
+      description: 'Sistema PA',
+      active: true,
+      initialAvailableQty: 10,
     });
     expect(admin.component.saveEquipmentMessage()).toContain('creado correctamente');
   });

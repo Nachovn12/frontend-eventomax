@@ -70,27 +70,39 @@ describe('CatalogDataService', () => {
   });
 
   it('requests equipment inventory from the configured API Gateway URL', () => {
-    const mockEquipment = [
-      { id: 1, name: 'Parlante Line Array', category: 'Audio', totalQuantity: 10, availableQuantity: 8, status: 'DISPONIBLE' },
+    const rawBackend = [
+      { id: 1, name: 'Parlante Line Array', description: 'Audio PA', active: true, availableQty: 8, reservedQty: 2 },
     ];
     service.getEquipment().subscribe((data) => {
-      expect(data).toEqual(mockEquipment);
+      expect(data).toHaveLength(1);
+      expect(data[0].id).toBe(1);
+      expect(data[0].name).toBe('Parlante Line Array');
+      expect(data[0].description).toBe('Audio PA');
+      expect(data[0].active).toBe(true);
+      expect(data[0].availableQty).toBe(8);
+      expect(data[0].reservedQty).toBe(2);
+      expect(data[0].totalQuantity).toBe(10);
+      expect(data[0].availableQuantity).toBe(8);
+      expect(data[0].status).toBe('DISPONIBLE');
     });
     const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/catalog/equipment`);
     expect(req.request.method).toBe('GET');
-    req.flush(mockEquipment);
+    req.flush(rawBackend);
   });
 
   it('creates equipment through the protected Gateway route', () => {
-    const request = { name: 'Foco LED RGB', category: 'Iluminación', totalQuantity: 20 };
+    const request = { name: 'Foco LED RGB', description: 'Equipo de iluminación', active: true, initialAvailableQty: 20 };
     service.createEquipment(request).subscribe((data) => {
       expect(data.id).toBe(2);
+      expect(data.name).toBe('Foco LED RGB');
+      expect(data.availableQty).toBe(20);
       expect(data.totalQuantity).toBe(20);
+      expect(data.status).toBe('DISPONIBLE');
     });
     const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/catalog/equipment`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
-    req.flush({ id: 2, ...request, availableQuantity: 20, status: 'DISPONIBLE' });
+    req.flush({ id: 2, name: 'Foco LED RGB', description: 'Equipo de iluminación', active: true, availableQty: 20, reservedQty: 0 });
   });
 
   it('queries reservations for a production from the Gateway route', () => {
