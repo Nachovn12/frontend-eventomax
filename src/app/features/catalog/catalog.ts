@@ -142,7 +142,7 @@ export class Catalog {
     this.serviceForm.markAllAsTouched();
     if (this.serviceForm.invalid) return;
     const input = this.serviceForm.getRawValue();
-    if (!Number.isFinite(input.rate) || input.rate <= 0 || !Number.isInteger(input.rate * 100)) {
+    if (!Number.isFinite(input.rate) || input.rate <= 0 || Math.abs(input.rate * 100 - Math.round(input.rate * 100)) > 1e-6) {
       this.saveError.set('Ingresa una tarifa positiva con máximo dos decimales.');
       return;
     }
