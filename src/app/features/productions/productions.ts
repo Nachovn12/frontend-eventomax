@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed, signal, inject } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, of } from 'rxjs';
 import { switchMap, map, catchError, startWith } from 'rxjs/operators';
@@ -12,7 +12,10 @@ import {
   LucideCalendarX2,
   LucideCircleAlert
 } from '@lucide/angular';
-import { ProductionStatus } from '../../core/models/production.model';
+import { HttpErrorResponse } from '@angular/common/http';
+import { AuthorizationService } from '../../core/auth/authorization.service';
+import { AppRole } from '../../core/auth/models/app-role';
+import { Production, ProductionStatus } from '../../core/models/production.model';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { ProductionsDataService } from './productions-data.service';
 
@@ -84,6 +87,102 @@ export class Productions {
   ).length);
   readonly pending = computed(() => this.allProductions().filter((item) => item.status === 'SOLICITADO').length);
   readonly closed = computed(() => this.allProductions().filter((item) => item.status === 'CERRADO').length);
+
+
+  private readonly authz = inject(AuthorizationService);
+  readonly canCreate = computed(() => this.authz.hasAnyRole([AppRole.Productor, AppRole.Organizador]) && this.authz.hasScope('access_as_user'));
+  readonly canUpdate = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]) && this.authz.hasScope('access_as_user'));
+  readonly showCreate = signal(false);
+  readonly saving = signal(false);
+  readonly operationError = signal('');
+  readonly operationSuccess = signal('');
+  readonly detail = signal<Production | null>(null);
+  readonly detailId = new FormControl('', { nonNullable: true });
+  readonly updateId = new FormControl('', { nonNullable: true });
+  readonly nextStatus = new FormControl<ProductionStatus>('CONFIRMADO', { nonNullable: true });
+  readonly createForm = new FormGroup({
+    organizerId: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
+    name: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
+    scheduledAt: new FormControl('', { nonNullable: true, validators: Validators.required }),
+    location: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
+  });
+
+  private errorMessage(error: HttpErrorResponse): string {
+    if (error.status === 0) return 'No se pudo conectar con API Gateway. Comprueba tu conexión y el despliegue cloud.';
+    if (error.status === 401) return 'Tu sesión expiró o el token no es válido. Inicia sesión nuevamente.';
+    if (error.status === 403) return 'No tienes permisos para realizar esta operación.';
+    if (error.status === 409) return 'La transición no está permitida para el estado actual de la producción.';
+    if (error.status === 400) return 'Los datos enviados no cumplen las validaciones del backend.';
+    if (error.status === 404) return 'La producción ya no existe.';
+    return 'No fue posible completar la operación. Inténtalo nuevamente.';
+  }
+
+  submitCreate(): void {
+    if (!this.canCreate() || this.saving()) return;
+    this.createForm.markAllAsTouched();
+    if (this.createForm.invalid) return;
+    const request = this.createForm.getRawValue();
+    if (!Number.isFinite(Date.parse(request.scheduledAt)) || new Date(request.scheduledAt).getTime() < Date.now()) {
+      this.operationError.set('Ingresa una fecha programada actual o futura.');
+      return;
+    }
+    this.saving.set(true);
+    this.operationError.set('');
+    this.operationSuccess.set('');
+    this.dataService.createProduction({
+      organizerId: request.organizerId.trim(),
+      name: request.name.trim(),
+      scheduledAt: request.scheduledAt,
+      location: request.location.trim()
+    }).subscribe({
+      next: (production) => {
+        this.saving.set(false);
+        this.operationSuccess.set(`Producción #${production.id} creada correctamente.`);
+        this.createForm.reset();
+        this.showCreate.set(false);
+        this.retry();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.operationError.set(this.errorMessage(error));
+      }
+    });
+  }
+
+  consultDetail(): void {
+    const id = Number(this.detailId.value);
+    if (!Number.isSafeInteger(id) || id < 1) return;
+    this.operationError.set('');
+    this.detail.set(null);
+    this.dataService.getProduction(id).subscribe({
+      next: (result) => this.detail.set(result),
+      error: (error: HttpErrorResponse) => this.operationError.set(this.errorMessage(error))
+    });
+  }
+
+  submitStatus(): void {
+    if (!this.canUpdate() || this.saving()) return;
+    const id = Number(this.updateId.value);
+    if (!Number.isSafeInteger(id) || id < 1) {
+      this.operationError.set('Selecciona una producción.');
+      return;
+    }
+    this.saving.set(true);
+    this.operationError.set('');
+    this.operationSuccess.set('');
+    this.dataService.updateStatus(id, { status: this.nextStatus.value }).subscribe({
+      next: (production) => {
+        this.saving.set(false);
+        this.operationSuccess.set(`Producción #${production.id} actualizada a ${production.status}.`);
+        this.detail.set(production);
+        this.retry();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.operationError.set(this.errorMessage(error));
+      }
+    });
+  }
 
   getLabel(status: string): string {
     return status === 'EN_EJECUCION' ? 'EN_EJECUCIÓN' : status;
