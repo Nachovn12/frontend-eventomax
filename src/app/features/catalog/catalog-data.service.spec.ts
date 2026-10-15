@@ -48,4 +48,25 @@ describe('CatalogDataService', () => {
 
     req.flush(mockResponse);
   });
+
+  it('creates catalog services through the protected Gateway route', () => {
+    const request = { name: 'Audio', description: 'Consola', rate: 1000.25, active: true };
+    service.createService(request).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/catalog/services`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(request);
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ id: 5, ...request });
+  });
+
+  it('updates catalog services through the protected Gateway route', () => {
+    const request = { name: 'Audio', description: null, rate: 1100, active: false };
+    service.updateService(5, request).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/catalog/services/5`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(request);
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ id: 5, ...request });
+  });
+
 });
