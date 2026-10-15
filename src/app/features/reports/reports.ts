@@ -9,6 +9,7 @@ import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
 import { ReportKpisResponse, ReportRange } from './models/report.model';
 import { ReportsDataService } from './reports-data.service';
+import { StatusDistributionChart } from './status-distribution-chart';
 
 interface ReportViewState {
   readonly data: ReportKpisResponse | null;
@@ -19,7 +20,7 @@ interface ReportViewState {
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule],
+  imports: [DatePipe, ReactiveFormsModule, StatusDistributionChart],
   templateUrl: './reports.html',
   styleUrl: './reports.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
