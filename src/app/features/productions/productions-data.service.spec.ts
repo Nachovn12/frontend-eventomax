@@ -92,4 +92,15 @@ describe('ProductionsDataService', () => {
     req.flush({ id: 7, status: 'EN_MONTAJE' });
   });
 
+  it('updates status with reservation items when confirming', () => {
+    const updateRequest = {
+      status: 'CONFIRMADO' as const,
+      items: [{ equipmentId: 1, quantity: 2 }]
+    };
+    service.updateStatus(7, updateRequest).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions/7/status`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(updateRequest);
+    req.flush({ id: 7, status: 'CONFIRMADO' });
+  });
 });

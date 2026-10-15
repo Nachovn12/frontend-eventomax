@@ -91,30 +91,97 @@
           <div class="ep2-detail" aria-live="polite">
             <strong>#{{ selected.id }} — {{ selected.name }}</strong>
             <span>{{ selected.location }} · {{ selected.scheduledAt }} · {{ getLabel(selected.status) }}</span>
+            @if (productionReservations().length > 0) {
+              <div class="ep2-reservations-detail">
+                <p><strong>Equipos reservados para este evento:</strong></p>
+                <ul class="ep2-reservations-list">
+                  @for (r of productionReservations(); track r.reservationId) {
+                    <li>{{ r.equipmentName }} — Cantidad: <strong>{{ r.quantity }}</strong> ({{ r.status }})</li>
+                  }
+                </ul>
+              </div>
+            }
           </div>
         }
         @if (canUpdate()) {
           <form class="ep2-form ep2-inline" (ngSubmit)="submitStatus()" aria-label="Cambiar estado">
-            <label>Producción
-              <select id="production-update-id" [formControl]="updateId" required>
-                <option value="">Seleccionar producción</option>
-                @for (item of rows(); track item.id) {
-                  <option [value]="item.id">#{{ item.id }} — {{ item.name }}</option>
-                }
-              </select>
-            </label>
-            <label>Nuevo estado
-              <select id="production-next-status" [formControl]="nextStatus">
-                @for (item of statuses(); track item) {
-                  @if (item !== 'SOLICITADO') {
-                    <option [value]="item">{{ getLabel(item) }}</option>
+            <div class="ep2-form-row">
+              <label>Producción
+                <select id="production-update-id" [formControl]="updateId" required>
+                  <option value="">Seleccionar producción</option>
+                  @for (item of rows(); track item.id) {
+                    <option [value]="item.id">#{{ item.id }} — {{ item.name }} ({{ item.status }})</option>
                   }
+                </select>
+              </label>
+              <label>Nuevo estado
+                <select id="production-next-status" [formControl]="nextStatus">
+                  @for (item of statuses(); track item) {
+                    @if (item !== 'SOLICITADO') {
+                      <option [value]="item">{{ getLabel(item) }}</option>
+                    }
+                  }
+                </select>
+              </label>
+              <button type="submit" class="btn-system" [disabled]="saving() || !updateId.value">
+                {{ saving() ? 'Guardando…' : 'Actualizar estado' }}
+              </button>
+            </div>
+
+            @if (nextStatus.value === 'CONFIRMADO') {
+              <div class="ep2-reservation-picker">
+                <h4>Asignación obligatoria de equipos e inventario</h4>
+                <p>Para confirmar el evento, asigna las unidades de equipos necesarias del inventario.</p>
+                @if (reservationInputError()) {
+                  <p class="ep2-reservation-error" role="alert">{{ reservationInputError() }}</p>
                 }
-              </select>
-            </label>
-            <button type="submit" class="btn-system" [disabled]="saving() || !updateId.value">Actualizar estado</button>
+                <div class="ep2-reservation-controls">
+                  <label>Equipo
+                    <select id="equipment-select" [formControl]="selectedEquipmentId">
+                      <option value="">Seleccionar equipo</option>
+                      @for (eq of availableEquipment(); track eq.id) {
+                        <option [value]="eq.id" [disabled]="eq.availableQuantity <= 0">
+                          {{ eq.name }} ({{ eq.category }}) — Disp: {{ eq.availableQuantity }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+                  <label>Cantidad
+                    <input id="equipment-qty" type="number" min="1" [formControl]="selectedQuantity" />
+                  </label>
+                  <button type="button" class="btn-system" (click)="addReservationItem()">Agregar ítem</button>
+                </div>
+
+                @if (reservationItems().length > 0) {
+                  <div class="ep2-reservation-table-wrapper" style="margin-top: 12px;">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th>Equipo</th>
+                          <th>Cantidad</th>
+                          <th>Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (item of reservationItems(); track item.equipmentId; let idx = $index) {
+                          <tr>
+                            <td>{{ getEquipmentName(item.equipmentId) }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>
+                              <button type="button" class="btn-clear" (click)="removeReservationItem(idx)">Quitar</button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <p class="ep2-warning-hint">Agrega al menos un equipo antes de presionar "Actualizar estado".</p>
+                }
+              </div>
+            }
           </form>
-          <p class="ep2-footnote">Las transiciones válidas y las reservas de inventario son verificadas por el backend.</p>
+          <p class="ep2-footnote">Las transiciones válidas y las reservas de inventario son verificadas por el backend con locks distribuidos.</p>
         }
       </section>
     }

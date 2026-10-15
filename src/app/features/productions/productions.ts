@@ -15,9 +15,11 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
-import { Production, ProductionStatus } from '../../core/models/production.model';
+import { Production, ProductionStatus, ProductionReservationItemRequest } from '../../core/models/production.model';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { ProductionsDataService } from './productions-data.service';
+import { CatalogDataService } from '../catalog/catalog-data.service';
+import { Equipment, EquipmentReservationItem } from '../catalog/models/equipment.model';
 
 @Component({
   selector: 'app-productions',
@@ -39,6 +41,7 @@ import { ProductionsDataService } from './productions-data.service';
 })
 export class Productions {
   private readonly dataService = inject(ProductionsDataService);
+  private readonly catalogDataService = inject(CatalogDataService);
 
   readonly statuses = toSignal(this.dataService.getStatuses(), { initialValue: [] });
 
@@ -88,7 +91,6 @@ export class Productions {
   readonly pending = computed(() => this.allProductions().filter((item) => item.status === 'SOLICITADO').length);
   readonly closed = computed(() => this.allProductions().filter((item) => item.status === 'CERRADO').length);
 
-
   private readonly authz = inject(AuthorizationService);
   readonly canCreate = computed(() => this.authz.hasAnyRole([AppRole.Productor, AppRole.Organizador]) && this.authz.hasScope('access_as_user'));
   readonly canUpdate = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]) && this.authz.hasScope('access_as_user'));
@@ -100,6 +102,18 @@ export class Productions {
   readonly detailId = new FormControl('', { nonNullable: true });
   readonly updateId = new FormControl('', { nonNullable: true });
   readonly nextStatus = new FormControl<ProductionStatus>('CONFIRMADO', { nonNullable: true });
+
+  // Reservation items for CONFIRMADO transition & Detail inquiry
+  readonly availableEquipment = toSignal(
+    this.catalogDataService.getEquipment().pipe(catchError(() => of([] as readonly Equipment[]))),
+    { initialValue: [] as readonly Equipment[] }
+  );
+  readonly reservationItems = signal<ProductionReservationItemRequest[]>([]);
+  readonly productionReservations = signal<readonly EquipmentReservationItem[]>([]);
+  readonly selectedEquipmentId = new FormControl<string>('', { nonNullable: true });
+  readonly selectedQuantity = new FormControl<number>(1, { nonNullable: true });
+  readonly reservationInputError = signal('');
+
   readonly createForm = new FormGroup({
     organizerId: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
     name: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
@@ -111,8 +125,16 @@ export class Productions {
     if (error.status === 0) return 'No se pudo conectar con API Gateway. Comprueba tu conexión y el despliegue cloud.';
     if (error.status === 401) return 'Tu sesión expiró o el token no es válido. Inicia sesión nuevamente.';
     if (error.status === 403) return 'No tienes permisos para realizar esta operación.';
-    if (error.status === 409) return 'La transición no está permitida para el estado actual de la producción.';
-    if (error.status === 400) return 'Los datos enviados no cumplen las validaciones del backend.';
+    if (error.status === 409) {
+      return (error.error && typeof error.error === 'object' && error.error.message)
+        ? error.error.message
+        : 'La transición no está permitida para el estado actual de la producción.';
+    }
+    if (error.status === 400) {
+      return (error.error && typeof error.error === 'object' && error.error.message)
+        ? error.error.message
+        : 'Los datos enviados no cumplen las validaciones del backend.';
+    }
     if (error.status === 404) return 'La producción ya no existe.';
     return 'No fue posible completar la operación. Inténtalo nuevamente.';
   }
@@ -154,10 +176,68 @@ export class Productions {
     if (!Number.isSafeInteger(id) || id < 1) return;
     this.operationError.set('');
     this.detail.set(null);
+    this.productionReservations.set([]);
     this.dataService.getProduction(id).subscribe({
-      next: (result) => this.detail.set(result),
+      next: (result) => {
+        this.detail.set(result);
+        this.catalogDataService.getReservationsByProduction(id).subscribe({
+          next: (res) => this.productionReservations.set(res),
+          error: () => this.productionReservations.set([]),
+        });
+      },
       error: (error: HttpErrorResponse) => this.operationError.set(this.errorMessage(error))
     });
+  }
+
+  addReservationItem(): void {
+    const rawId = this.selectedEquipmentId.value;
+    const eqId = Number(rawId);
+    const qty = Number(this.selectedQuantity.value);
+    this.reservationInputError.set('');
+
+    if (!rawId || !Number.isSafeInteger(eqId) || eqId < 1) {
+      this.reservationInputError.set('Selecciona un equipo válido.');
+      return;
+    }
+    const eq = this.availableEquipment().find(e => e.id === eqId);
+    if (!eq) {
+      this.reservationInputError.set('Equipo no encontrado en inventario.');
+      return;
+    }
+    if (!Number.isSafeInteger(qty) || qty < 1) {
+      this.reservationInputError.set('La cantidad debe ser un entero positivo.');
+      return;
+    }
+    if (qty > eq.availableQuantity) {
+      this.reservationInputError.set(`Stock insuficiente: solo hay ${eq.availableQuantity} disponibles.`);
+      return;
+    }
+
+    const current = this.reservationItems();
+    const existingIdx = current.findIndex(i => i.equipmentId === eqId);
+    if (existingIdx >= 0) {
+      const newTotal = current[existingIdx].quantity + qty;
+      if (newTotal > eq.availableQuantity) {
+        this.reservationInputError.set(`Stock insuficiente acumulado: máximo ${eq.availableQuantity}.`);
+        return;
+      }
+      const updated = [...current];
+      updated[existingIdx] = { equipmentId: eqId, quantity: newTotal };
+      this.reservationItems.set(updated);
+    } else {
+      this.reservationItems.set([...current, { equipmentId: eqId, quantity: qty }]);
+    }
+    this.selectedQuantity.setValue(1);
+  }
+
+  removeReservationItem(index: number): void {
+    const current = this.reservationItems();
+    this.reservationItems.set(current.filter((_, i) => i !== index));
+  }
+
+  getEquipmentName(eqId: number): string {
+    const eq = this.availableEquipment().find(e => e.id === eqId);
+    return eq ? `${eq.name} (${eq.category})` : `Equipo #${eqId}`;
   }
 
   submitStatus(): void {
@@ -167,14 +247,34 @@ export class Productions {
       this.operationError.set('Selecciona una producción.');
       return;
     }
+
+    const next = this.nextStatus.value;
+    let items: ProductionReservationItemRequest[] | undefined;
+
+    if (next === 'CONFIRMADO') {
+      if (this.reservationItems().length === 0) {
+        this.operationError.set('Debes asignar al menos un ítem de equipamiento para confirmar la producción.');
+        return;
+      }
+      items = this.reservationItems();
+    }
+
     this.saving.set(true);
     this.operationError.set('');
     this.operationSuccess.set('');
-    this.dataService.updateStatus(id, { status: this.nextStatus.value }).subscribe({
+
+    this.dataService.updateStatus(id, { status: next, items }).subscribe({
       next: (production) => {
         this.saving.set(false);
         this.operationSuccess.set(`Producción #${production.id} actualizada a ${production.status}.`);
         this.detail.set(production);
+        this.reservationItems.set([]);
+        if (next === 'CONFIRMADO') {
+          this.catalogDataService.getReservationsByProduction(id).subscribe({
+            next: (res) => this.productionReservations.set(res),
+            error: () => this.productionReservations.set([]),
+          });
+        }
         this.retry();
       },
       error: (error: HttpErrorResponse) => {

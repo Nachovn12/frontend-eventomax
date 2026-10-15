@@ -5,6 +5,8 @@ import { ProductionsDataService, PRODUCTION_STATUSES } from './productions-data.
 import { Production } from '../../core/models/production.model';
 import { of, throwError, Subject } from 'rxjs';
 
+import { CatalogDataService } from '../catalog/catalog-data.service';
+
 describe('Productions', () => {
   let fixture: ComponentFixture<Productions>;
   let dataServiceMock: any;
@@ -26,6 +28,10 @@ describe('Productions', () => {
       imports: [Productions],
       providers: [
         { provide: ProductionsDataService, useValue: dataServiceMock },
+        { provide: CatalogDataService, useValue: {
+          getEquipment: vi.fn(() => of([])),
+          getReservationsByProduction: vi.fn(() => of([]))
+        } },
         { provide: AuthorizationService, useValue: { hasAnyRole: () => false, hasScope: () => false } }
       ]
     }).compileComponents();

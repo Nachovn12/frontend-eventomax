@@ -18,7 +18,9 @@ describe('Catalog EP2 actions', () => {
     const api = {
       getServices: vi.fn(() => of([service])),
       createService: vi.fn(() => of(service)),
-      updateService: vi.fn(() => of(service))
+      updateService: vi.fn(() => of(service)),
+      getEquipment: vi.fn(() => of([])),
+      createEquipment: vi.fn(() => of({ id: 1, name: 'Parlante', category: 'Audio', totalQuantity: 5, availableQuantity: 5, status: 'DISPONIBLE' })),
     };
     await TestBed.configureTestingModule({
       imports: [Catalog],
@@ -71,5 +73,30 @@ describe('Catalog EP2 actions', () => {
     expect(api.updateService).toHaveBeenCalledWith(3, {
       name: 'Sonido', description: 'Equipos PA', rate: 26000.25, active: true
     });
+  });
+
+  it('prevents non-admins from opening the equipment create form', async () => {
+    const nonAdmin = await setup(false);
+    nonAdmin.component.openCreateEquipment();
+    expect(nonAdmin.component.showEquipmentEditor()).toBe(false);
+  });
+
+  it('allows admins to create equipment with exact backend fields', async () => {
+    const admin = await setup(true);
+    admin.component.openCreateEquipment();
+    expect(admin.component.showEquipmentEditor()).toBe(true);
+
+    admin.component.equipmentForm.setValue({
+      name: 'Parlante Line Array',
+      category: 'Audio',
+      totalQuantity: 10,
+    });
+    admin.component.submitEquipment();
+    expect(admin.api.createEquipment).toHaveBeenCalledWith({
+      name: 'Parlante Line Array',
+      category: 'Audio',
+      totalQuantity: 10,
+    });
+    expect(admin.component.saveEquipmentMessage()).toContain('creado correctamente');
   });
 });

@@ -24,8 +24,14 @@ export interface CreateProductionRequest {
   location: string;
 }
 
+export interface ProductionReservationItemRequest {
+  readonly equipmentId: number;
+  readonly quantity: number;
+}
+
 export interface ProductionStatusUpdateRequest {
   status: ProductionStatus;
+  items?: readonly ProductionReservationItemRequest[];
 }
 
 export type ProductionViewModel = Production;

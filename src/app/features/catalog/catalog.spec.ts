@@ -2,7 +2,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { LOCALE_ID } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeEsCL from '@angular/common/locales/es-CL';
-import { Subject } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { Catalog } from './catalog';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { CatalogDataService } from './catalog-data.service';
@@ -13,7 +13,13 @@ registerLocaleData(localeEsCL);
 describe('Catalog', () => {
   let fixture: ComponentFixture<Catalog>;
   let servicesSubject: Subject<readonly CatalogService[]>;
-  let dataServiceMock: { getServices: ReturnType<typeof vi.fn> };
+  let dataServiceMock: {
+    getServices: ReturnType<typeof vi.fn>;
+    getEquipment: ReturnType<typeof vi.fn>;
+    createEquipment: ReturnType<typeof vi.fn>;
+    createService: ReturnType<typeof vi.fn>;
+    updateService: ReturnType<typeof vi.fn>;
+  };
   let element: HTMLElement;
 
   const services: readonly CatalogService[] = [
@@ -23,7 +29,13 @@ describe('Catalog', () => {
 
   beforeEach(async () => {
     servicesSubject = new Subject<readonly CatalogService[]>();
-    dataServiceMock = { getServices: vi.fn(() => servicesSubject.asObservable()) };
+    dataServiceMock = {
+      getServices: vi.fn(() => servicesSubject.asObservable()),
+      getEquipment: vi.fn(() => of([])),
+      createEquipment: vi.fn(() => of({ id: 10, name: 'Test', category: 'Audio', totalQuantity: 5, availableQuantity: 5, status: 'DISPONIBLE' })),
+      createService: vi.fn(),
+      updateService: vi.fn(),
+    };
     await TestBed.configureTestingModule({
       imports: [Catalog],
       providers: [
@@ -203,5 +215,24 @@ describe('Catalog', () => {
     expect(element.querySelector('.catalog-description')).toBeNull();
     search('Audio');
     expect(element.querySelectorAll('tbody tr')).toHaveLength(1);
+  });
+
+  it('switches to equipment tab and renders equipment inventory', async () => {
+    const mockEquipment = [
+      { id: 1, name: 'Parlante Line Array', category: 'Audio', totalQuantity: 10, availableQuantity: 8, status: 'DISPONIBLE' },
+      { id: 2, name: 'Foco LED', category: 'Iluminación', totalQuantity: 4, availableQuantity: 0, status: 'AGOTADO' },
+    ];
+    dataServiceMock.getEquipment.mockReturnValue(of(mockEquipment));
+    fixture.componentInstance.retryEquipment();
+    fixture.componentInstance.setActiveTab('equipment');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const tabs = element.querySelectorAll('.catalog-tab-btn');
+    expect(tabs[1].getAttribute('aria-selected')).toBe('true');
+    expect(element.textContent).toContain('Inventario de Equipos');
+    expect(element.querySelectorAll('tbody tr')).toHaveLength(2);
+    expect(element.textContent).toContain('Parlante Line Array');
+    expect(element.textContent).toContain('AGOTADO');
   });
 });

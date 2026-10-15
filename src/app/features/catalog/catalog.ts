@@ -10,9 +10,12 @@ import {
   LucidePackageOpen,
   LucideSearchX,
   LucideCircleAlert,
+  LucideBoxes,
+  LucideLayers,
 } from '@lucide/angular';
 import { CatalogDataService } from './catalog-data.service';
 import { CatalogService, CatalogServiceUpsertRequest } from './models/catalog-service.model';
+import { Equipment, CreateEquipmentRequest } from './models/equipment.model';
 import { BehaviorSubject, of } from 'rxjs';
 import { switchMap, map, catchError, startWith } from 'rxjs/operators';
 import { CurrencyPipe } from '@angular/common';
@@ -34,6 +37,8 @@ import { AppRole } from '../../core/auth/models/app-role';
     LucidePackageOpen,
     LucideSearchX,
     LucideCircleAlert,
+    LucideBoxes,
+    LucideLayers,
   ],
   templateUrl: './catalog.html',
   styleUrl: './catalog.css',
@@ -41,6 +46,15 @@ import { AppRole } from '../../core/auth/models/app-role';
 })
 export class Catalog {
   private readonly dataService = inject(CatalogDataService);
+  private readonly authz = inject(AuthorizationService);
+
+  readonly activeTab = signal<'services' | 'equipment'>('services');
+
+  setActiveTab(tab: 'services' | 'equipment'): void {
+    this.activeTab.set(tab);
+  }
+
+  // --- Services state ---
   private readonly retrySubject = new BehaviorSubject<void>(undefined);
 
   private readonly catalogState = toSignal(
@@ -92,8 +106,6 @@ export class Catalog {
     });
   });
 
-
-  private readonly authz = inject(AuthorizationService);
   readonly canManage = computed(() => this.authz.hasRole(AppRole.Admin) && this.authz.hasScope('access_as_user'));
   readonly showEditor = signal(false);
   readonly editingService = signal<CatalogService | null>(null);
@@ -124,7 +136,7 @@ export class Catalog {
       name: item.name,
       description: item.description ?? '',
       rate: item.rate,
-      active: item.active
+      active: item.active,
     });
     this.saveError.set('');
     this.saveMessage.set('');
@@ -150,7 +162,7 @@ export class Catalog {
       name: input.name.trim(),
       description: input.description.trim() || null,
       rate: input.rate,
-      active: input.active
+      active: input.active,
     };
     if (!request.name) {
       this.saveError.set('El nombre del servicio es obligatorio.');
@@ -174,7 +186,7 @@ export class Catalog {
       error: (error: HttpErrorResponse) => {
         this.saving.set(false);
         this.saveError.set(this.saveErrorText(error));
-      }
+      },
     });
   }
 
@@ -194,5 +206,143 @@ export class Catalog {
 
   retry(): void {
     this.retrySubject.next();
+  }
+
+  // --- Equipment & Inventory state ---
+  private readonly equipmentRetrySubject = new BehaviorSubject<void>(undefined);
+
+  private readonly equipmentState = toSignal(
+    this.equipmentRetrySubject.pipe(
+      switchMap(() =>
+        this.dataService.getEquipment().pipe(
+          map((data) => ({ data, loading: false, error: false })),
+          catchError(() =>
+            of({ data: [] as readonly Equipment[], loading: false, error: true }),
+          ),
+          startWith({ data: [] as readonly Equipment[], loading: true, error: false }),
+        ),
+      ),
+    ),
+    { initialValue: { data: [], loading: true, error: false } },
+  );
+
+  readonly isEquipmentLoading = computed(() => this.equipmentState().loading);
+  readonly isEquipmentError = computed(() => this.equipmentState().error);
+  private readonly allEquipment = computed(() => this.equipmentState().data);
+
+  readonly totalEquipment = computed(() => this.allEquipment().length);
+  readonly totalStockAvailable = computed(() =>
+    this.allEquipment().reduce((acc, eq) => acc + (eq.availableQuantity || 0), 0),
+  );
+  readonly totalStockReserved = computed(() =>
+    this.allEquipment().reduce((acc, eq) => acc + Math.max(0, (eq.totalQuantity || 0) - (eq.availableQuantity || 0)), 0),
+  );
+
+  readonly equipmentSearch = new FormControl('', { nonNullable: true });
+  readonly equipmentCategory = new FormControl('', { nonNullable: true });
+
+  private readonly equipmentQuery = toSignal(this.equipmentSearch.valueChanges, { initialValue: '' });
+  private readonly selectedCategory = toSignal(this.equipmentCategory.valueChanges, { initialValue: '' });
+
+  readonly equipmentCategories = computed(() => {
+    const categories = new Set(this.allEquipment().map((eq) => eq.category).filter(Boolean));
+    return Array.from(categories).sort();
+  });
+
+  readonly hasActiveEquipmentFilters = computed(
+    () => this.equipmentQuery().trim() !== '' || this.selectedCategory() !== '',
+  );
+
+  readonly equipmentRows = computed(() => {
+    const query = this.equipmentQuery().trim().toLocaleLowerCase('es');
+    return this.allEquipment().filter((item) => {
+      const matchesCategory = !this.selectedCategory() || item.category === this.selectedCategory();
+      return (
+        matchesCategory &&
+        [String(item.id), item.name, item.category || ''].some((value) =>
+          value.toLocaleLowerCase('es').includes(query),
+        )
+      );
+    });
+  });
+
+  // Equipment Admin Management
+  readonly showEquipmentEditor = signal(false);
+  readonly savingEquipment = signal(false);
+  readonly saveEquipmentError = signal('');
+  readonly saveEquipmentMessage = signal('');
+
+  readonly equipmentForm = new FormGroup({
+    name: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
+    category: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),
+    totalQuantity: new FormControl(1, { nonNullable: true, validators: [Validators.required, Validators.min(1)] }),
+  });
+
+  openCreateEquipment(): void {
+    if (!this.canManage()) return;
+    this.equipmentForm.reset({ name: '', category: '', totalQuantity: 1 });
+    this.saveEquipmentError.set('');
+    this.saveEquipmentMessage.set('');
+    this.showEquipmentEditor.set(true);
+  }
+
+  closeEquipmentEditor(): void {
+    if (this.savingEquipment()) return;
+    this.showEquipmentEditor.set(false);
+  }
+
+  submitEquipment(): void {
+    if (!this.canManage() || this.savingEquipment()) return;
+    this.equipmentForm.markAllAsTouched();
+    if (this.equipmentForm.invalid) return;
+
+    const input = this.equipmentForm.getRawValue();
+    if (!Number.isSafeInteger(input.totalQuantity) || input.totalQuantity < 1) {
+      this.saveEquipmentError.set('Ingresa una cantidad entera positiva mayor o igual a 1.');
+      return;
+    }
+    const request: CreateEquipmentRequest = {
+      name: input.name.trim(),
+      category: input.category.trim(),
+      totalQuantity: input.totalQuantity,
+    };
+    if (!request.name || !request.category) {
+      this.saveEquipmentError.set('El nombre y la categoría son obligatorios.');
+      return;
+    }
+
+    this.savingEquipment.set(true);
+    this.saveEquipmentError.set('');
+    this.saveEquipmentMessage.set('');
+
+    this.dataService.createEquipment(request).subscribe({
+      next: (result) => {
+        this.savingEquipment.set(false);
+        this.showEquipmentEditor.set(false);
+        this.saveEquipmentMessage.set(`Equipo #${result.id} (${result.name}) creado correctamente con stock ${result.totalQuantity}.`);
+        this.retryEquipment();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.savingEquipment.set(false);
+        this.saveEquipmentError.set(this.saveEquipmentErrorText(error));
+      },
+    });
+  }
+
+  private saveEquipmentErrorText(error: HttpErrorResponse): string {
+    if (error.status === 0) return 'API Gateway no está disponible. Revisa la conexión y el despliegue.';
+    if (error.status === 401) return 'Inicia sesión nuevamente para gestionar equipos.';
+    if (error.status === 403) return 'Solo Admin puede registrar nuevos equipos.';
+    if (error.status === 400) return 'El backend rechazó los datos del equipo. Revisa nombre, categoría y stock.';
+    return 'No se pudo crear el equipo. Intenta nuevamente.';
+  }
+
+  clearEquipmentFilters(): void {
+    this.equipmentSearch.setValue('');
+    this.equipmentCategory.setValue('');
+  }
+
+  retryEquipment(): void {
+    this.equipmentRetrySubject.next();
   }
 }
