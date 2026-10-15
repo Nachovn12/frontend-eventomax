@@ -10,12 +10,57 @@
       <p class="page-description">
         {{
           isAuditor()
-            ? 'La información de auditoría estará disponible en el módulo Auditoría cuando el servicio esté habilitado.'
+            ? 'Revisa los eventos reales y su trazabilidad en el módulo Auditoría.'
             : 'Indicadores operacionales y próximos eventos.'
         }}
       </p>
     </div>
   </header>
+
+
+  @if (canViewReportSummary()) {
+    <section class="panel dashboard-report-panel smooth-shadow-ring-xs"
+      aria-labelledby="dashboard-report-heading">
+      <div class="panel-heading">
+        <div>
+          <h2 id="dashboard-report-heading">Análisis de transiciones (últimas 24 horas)</h2>
+          <p>Métricas reales del servicio Report; no equivalen al inventario total de producciones.</p>
+        </div>
+        <a class="text-link" routerLink="/reports">
+          Ver reportes completos <svg lucideArrowRight class="link-icon" />
+        </a>
+      </div>
+      @if (reportLoading()) {
+        <div class="dashboard-report-feedback" role="status" aria-busy="true">
+          Cargando indicadores de Report…
+        </div>
+      } @else if (reportErrorCode() !== null) {
+        <div class="dashboard-report-feedback" role="status">
+          Los KPIs de Report no están disponibles por ahora (HTTP {{ reportErrorCode() }}).
+          El resto del panel continúa operativo.
+          <button class="btn-system" type="button" (click)="retry()">Reintentar</button>
+        </div>
+      } @else if (reportKpis(); as report) {
+        <div class="dashboard-report-metrics">
+          <article>
+            <span>Cambios de estado observados</span>
+            <strong>{{ report.metrics.totalStatusChanges }}</strong>
+          </article>
+          <article>
+            <span>Transiciones a CERRADO</span>
+            <strong>{{ report.metrics.closedCount }}</strong>
+          </article>
+          <article>
+            <span>Transiciones a CANCELADO</span>
+            <strong>{{ report.metrics.cancelledCount }}</strong>
+          </article>
+        </div>
+        @if (report.partialCoverage.isPartial) {
+          <p class="dashboard-report-note" role="note">{{ report.partialCoverage.description }}</p>
+        }
+      }
+    </section>
+  }
 
   @if (isLoading()) {
     <section class="metric-grid" aria-busy="true" aria-label="Cargando métricas">
@@ -110,6 +155,14 @@
         <div class="panel-footer">
           <span>Mostrando {{ upcoming().length }} de {{ activeProductions().length }} producciones activas</span>
         </div>
+      </section>
+    }
+
+    @if (isAuditor() && !isAdmin()) {
+      <section class="panel smooth-shadow-ring-xs dashboard-audit-link">
+        <h2>Actividad y trazabilidad</h2>
+        <p>Consulta la línea de tiempo y aplica filtros de auditoría con tu rol autorizado.</p>
+        <a class="text-link" routerLink="/audit">Ir a auditoría <svg lucideArrowRight class="link-icon" /></a>
       </section>
     }
 
