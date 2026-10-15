@@ -1,5 +1,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { Productions } from './productions';
+import { AuthorizationService } from '../../core/auth/authorization.service';
 import { ProductionsDataService, PRODUCTION_STATUSES } from './productions-data.service';
 import { Production } from '../../core/models/production.model';
 import { of, throwError, Subject } from 'rxjs';
@@ -23,7 +24,10 @@ describe('Productions', () => {
 
     await TestBed.configureTestingModule({
       imports: [Productions],
-      providers: [{ provide: ProductionsDataService, useValue: dataServiceMock }]
+      providers: [
+        { provide: ProductionsDataService, useValue: dataServiceMock },
+        { provide: AuthorizationService, useValue: { hasAnyRole: () => false, hasScope: () => false } }
+      ]
     }).compileComponents();
   });
 
