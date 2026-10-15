@@ -18,9 +18,14 @@ export interface Production {
 }
 
 export interface CreateProductionRequest {
+  organizerId: string;
   name: string;
   scheduledAt: string;
   location: string;
+}
+
+export interface ProductionStatusUpdateRequest {
+  status: ProductionStatus;
 }
 
 export type ProductionViewModel = Production;
