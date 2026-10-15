@@ -5,3 +5,10 @@ export interface CatalogService {
   readonly rate: number;
   readonly active: boolean;
 }
+
+export interface CatalogServiceUpsertRequest {
+  name: string;
+  description: string | null;
+  rate: number;
+  active: boolean;
+}
