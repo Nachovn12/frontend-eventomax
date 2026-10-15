@@ -32,14 +32,15 @@ describe('AuditDataService (EMX-108)', () => {
       from: '2026-10-01T10:00:00', to: '2026-10-15T18:30:00',
       page: 2, size: 25
     }).subscribe();
-    const req = http.expectOne(r => r.url === `${environment.apiGatewayUrl}/api/audit/timeline`);
+    const req = http.expectOne(r => r.urlWithParams.startsWith(`${environment.apiGatewayUrl}/api/audit/timeline?`));
     expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('actor')).toBe('user@example.com');
-    expect(req.request.params.get('type')).toBe('ProductionStatusChanged');
-    expect(req.request.params.get('from')).toBe('2026-10-01T10:00:00');
-    expect(req.request.params.get('to')).toBe('2026-10-15T18:30:00');
-    expect(req.request.params.get('page')).toBe('2');
-    expect(req.request.params.get('size')).toBe('25');
+    const params = new URL(req.request.urlWithParams).searchParams;
+    expect(params.get('actor')).toBe('user@example.com');
+    expect(params.get('type')).toBe('ProductionStatusChanged');
+    expect(params.get('from')).toBe('2026-10-01T10:00:00');
+    expect(params.get('to')).toBe('2026-10-15T18:30:00');
+    expect(params.get('page')).toBe('2');
+    expect(params.get('size')).toBe('25');
     req.flush([]);
   });
 });
