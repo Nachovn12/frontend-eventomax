@@ -64,4 +64,32 @@ describe('ProductionsDataService', () => {
       ]);
     });
   });
+
+  it('loads production detail through API Gateway', () => {
+    service.getProduction(42).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions/42`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ id: 42 });
+  });
+
+  it('creates a production with organizerId using POST, without manually setting JWT', () => {
+    const body = { organizerId: 'org-7', name: 'Evento de prueba', scheduledAt: '2026-12-20T18:00:00', location: 'Santiago' };
+    service.createProduction(body).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(body);
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ id: 7, ...body, status: 'SOLICITADO' });
+  });
+
+  it('updates status with the backend contract via PUT', () => {
+    service.updateStatus(7, { status: 'EN_MONTAJE' }).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions/7/status`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ status: 'EN_MONTAJE' });
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ id: 7, status: 'EN_MONTAJE' });
+  });
+
 });
