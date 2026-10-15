@@ -1,17 +1,94 @@
 <div class="page-content">
   <header class="page-header">
     <div>
+      <p class="eyebrow">TRAZABILIDAD Y CONTROL</p>
       <h1 class="page-title">Auditoría y trazabilidad</h1>
-      <p class="page-description">Identidad activa: <strong>{{ displayRole() }}</strong></p>
+      <p class="page-description">Identidad activa: <strong>{{ displayRole() }}</strong>. Historial de eventos del sistema en solo lectura.</p>
     </div>
   </header>
 
-  <div class="empty-state feature-pending smooth-shadow-ring-xs">
-    <span class="icon-tile purple"><emx-icon name="shield" /></span>
-    <h2>La trazabilidad centralizada se habilitará en una siguiente etapa de la plataforma.</h2>
-    <p class="feature-pending-sub">
-      Este módulo será de solo lectura para los perfiles autorizados.
-    </p>
-    <a routerLink="/dashboard" class="btn-primary">Volver al panel</a>
-  </div>
+  @if (canView()) {
+    <section class="panel audit-panel smooth-shadow-ring-xs" aria-labelledby="audit-title">
+      <div class="panel-heading">
+        <div>
+          <h2 id="audit-title">Línea de tiempo</h2>
+          <p>Consulta eventos persistidos por Audit desde Kafka. Sin datos simulados.</p>
+        </div>
+        <button type="button" class="btn-system" (click)="retry()">Actualizar</button>
+      </div>
+
+      <form class="audit-filters" [formGroup]="filtersForm" (ngSubmit)="applyFilters()" aria-label="Filtros de auditoría">
+        <label>Usuario o actor
+          <input formControlName="actor" placeholder="Identificador exacto" />
+        </label>
+        <label>Tipo de evento
+          <select formControlName="type">
+            <option value="">Todos los tipos</option>
+            <option value="ProductionCreated">ProductionCreated</option>
+            <option value="ProductionStatusChanged">ProductionStatusChanged</option>
+          </select>
+        </label>
+        <label>Desde
+          <input type="datetime-local" formControlName="from" />
+        </label>
+        <label>Hasta
+          <input type="datetime-local" formControlName="to" />
+        </label>
+        <div class="audit-buttons">
+          <button type="submit" class="btn-system">Filtrar</button>
+          <button type="button" class="btn-clear" (click)="clearFilters()">Limpiar</button>
+        </div>
+      </form>
+      @if (filterError()) {
+        <p role="alert" class="audit-feedback audit-error">{{ filterError() }}</p>
+      }
+      @if (isLoading()) {
+        <div class="audit-feedback" role="status" aria-busy="true">Cargando eventos reales desde Audit…</div>
+      } @else if (errorCode() !== null) {
+        <div class="audit-feedback" role="alert">
+          <strong>No se pudo consultar el timeline</strong>
+          <p>{{ errorText(errorCode()) }}</p>
+          <button type="button" class="btn-system" (click)="retry()">Reintentar</button>
+        </div>
+      } @else if (items().length === 0) {
+        <div class="audit-feedback" role="status">
+          No hay eventos para los filtros seleccionados en esta página.
+        </div>
+      } @else {
+        <ol class="audit-timeline" aria-label="Eventos ordenados por fecha descendente">
+          @for (item of items(); track item.eventId) {
+            <li class="audit-event">
+              <span class="audit-timestamp">{{ timestampUtc(item.timestamp) | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+              <div class="audit-event-body">
+                <div class="audit-event-heading">
+                  <strong>{{ item.type }}</strong>
+                  <span>Actor: {{ item.actor || 'No informado' }}</span>
+                </div>
+                <p class="audit-event-id">ID: {{ item.eventId }}</p>
+                @if (item.traceId) { <p class="audit-meta">Trace ID: {{ item.traceId }}</p> }
+                @if (item.correlationId) { <p class="audit-meta">Correlation ID: {{ item.correlationId }}</p> }
+                @if (item.details) {
+                  <details>
+                    <summary>Ver detalles del evento</summary>
+                    <pre class="audit-json">{{ item.details }}</pre>
+                  </details>
+                }
+              </div>
+            </li>
+          }
+        </ol>
+      }
+      @if (errorCode() === null && !isLoading()) {
+        <nav class="audit-pagination" aria-label="Paginación de auditoría">
+          <button type="button" class="btn-system" [disabled]="page() === 0" (click)="previousPage()">Anterior</button>
+          <span>Página {{ page() + 1 }} · {{ items().length }} registros en esta página</span>
+          <button type="button" class="btn-system" [disabled]="!canAdvance()" (click)="nextPage()">Siguiente</button>
+        </nav>
+      }
+    </section>
+  } @else {
+    <section class="panel audit-feedback" role="alert">
+      Acceso restringido. El timeline requiere rol Admin/Auditor y scope access_as_user.
+    </section>
+  }
 </div>
