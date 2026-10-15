@@ -5,8 +5,8 @@ const features = {
   dashboard: true,
   productions: true,
   catalog: true,
-  reports: false,
-  audit: false
+  reports: true,
+  audit: true
 };
 
 export const featureGuard: CanActivateFn = (route) => {

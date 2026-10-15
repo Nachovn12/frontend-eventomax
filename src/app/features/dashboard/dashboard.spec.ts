@@ -5,6 +5,8 @@ import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
 import { Dashboard } from './dashboard';
 import { DashboardDataService } from './dashboard-data.service';
+import { ReportsDataService } from '../reports/reports-data.service';
+import { ReportKpisResponse } from '../reports/models/report.model';
 import { of, throwError, Subject } from 'rxjs';
 import { Production } from '../../core/models/production.model';
 import { CatalogService } from '../catalog/models/catalog-service.model';
@@ -13,6 +15,15 @@ describe('Dashboard', () => {
   let fixture: ComponentFixture<Dashboard>;
   const roles = signal<AppRole[]>([]);
   let dataServiceMock: any;
+  let reportsMock: { getKpis: ReturnType<typeof vi.fn> };
+
+  const reportResponse: ReportKpisResponse = {
+    range: 'last24h', from: '2026-10-14T00:00:00Z', to: '2026-10-15T00:00:00Z',
+    generatedAt: '2026-10-15T00:00:00Z',
+    partialCoverage: { isPartial: true, description: 'Datos parciales de transiciones' },
+    metrics: { totalStatusChanges: 3, closedCount: 1, cancelledCount: 0,
+      currentStatusDistribution: { CONFIRMADO: 3 }, transitions: [] }
+  };
 
   beforeEach(async () => {
     roles.set([]);
@@ -22,12 +33,14 @@ describe('Dashboard', () => {
       getCatalogServices: vi.fn(() => of([])),
     };
 
+    reportsMock = { getKpis: vi.fn(() => of(reportResponse)) };
     await TestBed.configureTestingModule({
       imports: [Dashboard],
       providers: [
         provideRouter([]),
-        { provide: AuthorizationService, useValue: { roles } },
-        { provide: DashboardDataService, useValue: dataServiceMock }
+        { provide: AuthorizationService, useValue: { roles, hasScope: () => true } },
+        { provide: DashboardDataService, useValue: dataServiceMock },
+        { provide: ReportsDataService, useValue: reportsMock }
       ],
     }).compileComponents();
   });
@@ -141,6 +154,54 @@ describe('Dashboard', () => {
 
     expect(dataServiceMock.getProductions).not.toHaveBeenCalled();
     expect(dataServiceMock.getCatalogServices).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.textContent).toContain('La información de auditoría estará disponible en el módulo Auditoría');
+    expect(fixture.nativeElement.textContent).toContain('Revisa los eventos reales y su trazabilidad en el módulo Auditoría');
   });
+
+  it('shows Admin Report KPIs and links to protected /reports without inventing totals', async () => {
+    roles.set([AppRole.Admin]);
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(reportsMock.getKpis).toHaveBeenCalledWith('last24h');
+    expect(fixture.nativeElement.textContent).toContain('Cambios de estado observados');
+    expect(fixture.nativeElement.textContent).toContain('Datos parciales de transiciones');
+    expect(fixture.nativeElement.querySelector('a[href="/reports"]')).not.toBeNull();
+  });
+
+  it('does not fetch Report or expose Report link for Productor', async () => {
+    roles.set([AppRole.Productor]);
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(reportsMock.getKpis).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('a[href="/reports"]')).toBeNull();
+  });
+
+  it('keeps operational dashboard visible when Report fails', async () => {
+    roles.set([AppRole.Admin]);
+    reportsMock.getKpis.mockReturnValue(throwError(() => ({ status: 502 })));
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('El resto del panel continúa operativo');
+    expect(fixture.nativeElement.querySelectorAll('.metric-value')).toHaveLength(4);
+  });
+
+  it('provides Auditor navigation without leaking operational data', async () => {
+    roles.set([AppRole.Auditor]);
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('a[href="/audit"]')).not.toBeNull();
+    expect(reportsMock.getKpis).not.toHaveBeenCalled();
+    expect(dataServiceMock.getProductions).not.toHaveBeenCalled();
+  });
+
 });

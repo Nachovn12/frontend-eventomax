@@ -115,13 +115,13 @@ export class AppShell {
   // Dynamic section titles
   readonly operationSectionTitle = computed(() => this.isOrganizador() ? 'MIS EVENTOS' : 'OPERACIÓN');
 
-  // Feature Flags (EP1)
+  // Feature Flags (EP2): rutas protegidas por MSAL y roleGuard
   readonly features = {
     dashboard: true,
     productions: true,
     catalog: true,
-    reports: false,
-    audit: false
+    reports: true,
+    audit: true
   };
 
   readonly canViewProductions = computed(

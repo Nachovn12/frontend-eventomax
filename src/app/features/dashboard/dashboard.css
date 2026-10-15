@@ -26,3 +26,17 @@
   color: var(--text-muted);
   border: 1px solid var(--border-light);
 }
+
+/* EMX-106: dashboard Admin consume transiciones reales de Report sin confundir métricas. */
+.dashboard-report-panel { margin-bottom: 24px; }
+.dashboard-report-panel .panel-heading { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.dashboard-report-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 16px 24px; }
+.dashboard-report-metrics article { display: grid; gap: 8px; border: 1px solid var(--border-base); background: var(--bg-surface); border-radius: 12px; padding: 16px; }
+.dashboard-report-metrics article span { color: var(--text-muted); font-size: 13px; }
+.dashboard-report-metrics article strong { color: var(--text-main); font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.dashboard-report-note { padding: 0 24px 18px; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+.dashboard-report-feedback { padding: 20px 24px; color: var(--text-muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.dashboard-audit-link { padding: 24px; }
+.dashboard-audit-link h2 { font-size: 16px; margin-bottom: 8px; }
+.dashboard-audit-link p { color: var(--text-muted); margin-bottom: 12px; }
+@media (max-width: 700px) { .dashboard-report-metrics { grid-template-columns: 1fr; } }
