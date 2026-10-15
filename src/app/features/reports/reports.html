@@ -67,13 +67,11 @@
             @if (statusBars().length === 0) {
               <p class="report-empty">Sin cambios de estado registrados en este período.</p>
             } @else {
-              <div class="report-bars">
+              <emx-status-distribution-chart [points]="statusBars()" />
+              <div class="report-bars" aria-label="Conteos accesibles de estados">
                 @for (bar of statusBars(); track bar.status) {
                   <div class="report-bar-row">
                     <div class="report-bar-caption"><span>{{ bar.status }}</span><strong>{{ bar.count }}</strong></div>
-                    <div class="report-bar-track" aria-hidden="true">
-                      <div class="report-bar-fill" [style.width.%]="bar.percent"></div>
-                    </div>
                   </div>
                 }
               </div>
