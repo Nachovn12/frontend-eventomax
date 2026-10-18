@@ -9,7 +9,7 @@
         <span class="brand-caption">OPERACIONES DE EVENTOS</span>
       </span>
     </a>
-    <button type="button" class="mobile-toggle-btn" aria-controls="sidebar-content" [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(true)" aria-label="Abrir menúú">
+    <button #mobileOpenBtn type="button" class="mobile-toggle-btn" aria-controls="sidebar-content" [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(true)" aria-label="Abrir menú">
       <svg lucideMenu class="nav-icon" />
     </button>
   </header>
@@ -18,7 +18,7 @@
     <div class="mobile-backdrop" aria-hidden="true" (click)="closeMenu()"></div>
   }
 
-  <aside class="shell-sidebar" [class.is-collapsed]="sidebarCompact()" [class.is-open]="menuOpen()" (keydown.escape)="closeMenu()">
+  <aside class="shell-sidebar" [class.is-collapsed]="sidebarCompact()" [class.is-open]="menuOpen()" (keydown.escape)="closeMenu(mobileOpenBtn)">
     <div class="sidebar-header">
       <div class="header-content">
         <a class="brand" routerLink="/dashboard" aria-label="EventoMax, inicio">
@@ -28,7 +28,7 @@
             <span class="brand-caption">OPERACIONES DE EVENTOS</span>
           </span>
         </a>
-        <button type="button" class="collapse-toggle desktop-toggle" aria-controls="sidebar-content" [attr.aria-expanded]="!sidebarCompact()" (click)="toggleSidebar()" [attr.aria-label]="sidebarCompact() ? 'Expandir menúú' : 'Colapsar menúú'" [attr.title]="sidebarCompact() ? 'Expandir menúú' : 'Colapsar menúþ'">
+        <button type="button" class="collapse-toggle desktop-toggle" aria-controls="sidebar-content" [attr.aria-expanded]="!sidebarCompact()" (click)="toggleSidebar()" [attr.aria-label]="sidebarCompact() ? 'Expandir menú' : 'Colapsar menú'" [attr.title]="sidebarCompact() ? 'Expandir menú' : 'Colapsar menú'">
           @if (sidebarCompact()) {
             <svg lucidePanelLeftOpen class="nav-icon" />
           } @else {
@@ -36,7 +36,7 @@
           }
         </button>
       </div>
-      <button #menuToggle type="button" class="mobile-toggle" aria-controls="sidebar-content" [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(false)" aria-label="Cerrar menúú">
+      <button #menuToggle type="button" class="mobile-toggle" aria-controls="sidebar-content" [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(false)" aria-label="Cerrar menú">
         <svg lucideX class="nav-icon" />
       </button>
     </div>

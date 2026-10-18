@@ -5,6 +5,8 @@ import { ProductionsDataService, PRODUCTION_STATUSES } from './productions-data.
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { Production } from '../../core/models/production.model';
 
+import { CatalogDataService } from '../catalog/catalog-data.service';
+
 describe('Productions EP2 actions', () => {
   const production: Production = {
     id: 4,
@@ -23,12 +25,21 @@ describe('Productions EP2 actions', () => {
       getStatuses: vi.fn(() => of(PRODUCTION_STATUSES)),
       createProduction: vi.fn(() => of(production)),
       getProduction: vi.fn(() => of(production)),
-      updateStatus: vi.fn(() => of({ ...production, status: 'EN_MONTAJE' as const }))
+      updateStatus: vi.fn((_id: number, _req: any) => of({ ...production, status: 'EN_MONTAJE' } as Production))
+    };
+    const catalogApi = {
+      getEquipment: vi.fn(() => of([
+        { id: 1, name: 'Parlante Line Array', category: 'Audio', totalQuantity: 10, availableQuantity: 8, status: 'DISPONIBLE' }
+      ])),
+      getReservationsByProduction: vi.fn(() => of([
+        { reservationId: 10, equipmentId: 1, equipmentName: 'Parlante Line Array', quantity: 2, status: 'RESERVED' }
+      ]))
     };
     await TestBed.configureTestingModule({
       imports: [Productions],
       providers: [
         { provide: ProductionsDataService, useValue: api },
+        { provide: CatalogDataService, useValue: catalogApi },
         { provide: AuthorizationService, useValue: {
           hasAnyRole: () => authorised,
           hasScope: () => authorised
@@ -37,7 +48,7 @@ describe('Productions EP2 actions', () => {
     }).compileComponents();
     const fixture = TestBed.createComponent(Productions);
     fixture.detectChanges();
-    return { api, fixture, component: fixture.componentInstance };
+    return { api, catalogApi, fixture, component: fixture.componentInstance };
   }
 
   afterEach(() => TestBed.resetTestingModule());
@@ -81,5 +92,31 @@ describe('Productions EP2 actions', () => {
     component.submitStatus();
     expect(api.updateStatus).toHaveBeenCalledWith(4, { status: 'EN_MONTAJE' });
     expect(component.operationSuccess()).toContain('EN_MONTAJE');
+  });
+
+  it('requires items when confirming a production and submits reservation items to updateStatus', async () => {
+    const { api, component } = await setup(true);
+    component.updateId.setValue('4');
+    component.nextStatus.setValue('CONFIRMADO');
+
+    // Attempt submit without items
+    component.submitStatus();
+    expect(component.operationError()).toContain('asignar al menos un ítem');
+    expect(api.updateStatus).not.toHaveBeenCalled();
+
+    // Add reservation item
+    component.selectedEquipmentId.setValue('1');
+    component.selectedQuantity.setValue(2);
+    component.addReservationItem();
+    expect(component.reservationItems()).toEqual([{ equipmentId: 1, quantity: 2 }]);
+
+    // Submit with item
+    api.updateStatus.mockReturnValue(of({ ...production, status: 'CONFIRMADO' } as Production));
+    component.submitStatus();
+    expect(api.updateStatus).toHaveBeenCalledWith(4, {
+      status: 'CONFIRMADO',
+      items: [{ equipmentId: 1, quantity: 2 }]
+    });
+    expect(component.operationSuccess()).toContain('CONFIRMADO');
   });
 });

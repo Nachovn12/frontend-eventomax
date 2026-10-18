@@ -1,25 +1,68 @@
 <div class="page-content">
-  <header class="page-header">
-    <div>
+  <header class="page-header productions-header">
+    <div class="header-copy">
       <p class="eyebrow">PLANIFICACIÓN Y COORDINACIÓN</p>
       <h1 class="page-title">Producciones</h1>
-      <p class="page-description">Consulta y seguimiento de las producciones registradas.</p>
+      <p class="page-description">
+        Planifica eventos, supervisa su estado operativo y coordina la asignación de equipamiento.
+      </p>
     </div>
+    @if (canCreate()) {
+      <div class="header-actions">
+        <button
+          #createTrigger
+          type="button"
+          class="btn-system btn-create-primary"
+          [attr.aria-expanded]="showCreate()"
+          aria-haspopup="dialog"
+          (click)="openCreateModal(createTrigger)"
+        >
+          Nueva producción
+        </button>
+      </div>
+    }
   </header>
 
+  @if (operationSuccess()) {
+    <div class="status-banner status-banner-success smooth-shadow-ring-xs" role="status" aria-live="polite">
+      <div class="status-banner-content">
+        <svg lucideCircleCheck class="banner-icon" strokeWidth="2" aria-hidden="true" />
+        <span>{{ operationSuccess() }}</span>
+      </div>
+      <button type="button" class="banner-dismiss" aria-label="Cerrar notificación" (click)="operationSuccess.set('')">
+        <svg lucideX class="dismiss-icon" strokeWidth="2" aria-hidden="true" />
+      </button>
+    </div>
+  }
+
+  @if (operationError() && !showCreate()) {
+    <div class="status-banner status-banner-error smooth-shadow-ring-xs" role="alert" aria-live="assertive">
+      <div class="status-banner-content">
+        <svg lucideCircleAlert class="banner-icon" strokeWidth="2" aria-hidden="true" />
+        <span>{{ operationError() }}</span>
+      </div>
+      <button type="button" class="banner-dismiss" aria-label="Cerrar alerta" (click)="operationError.set('')">
+        <svg lucideX class="dismiss-icon" strokeWidth="2" aria-hidden="true" />
+      </button>
+    </div>
+  }
+
   @if (isLoading()) {
-    <section class="metric-grid" aria-busy="true" aria-label="Cargando métricas">
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></article>
+    <section class="metric-grid productions-metrics" aria-busy="true" aria-label="Cargando métricas">
+      @for (card of [1, 2, 3, 4]; track card) {
+        <article class="metric-card smooth-shadow-ring-sm emx-elevate-kpi">
+          <div class="skeleton skeleton-text medium"></div>
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-text short"></div>
+        </article>
+      }
     </section>
 
-    <section class="panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel" aria-busy="true">
+    <section class="panel smooth-shadow-ring-xs emx-elevate-panel" aria-busy="true">
       <div class="panel-heading">
         <div>
           <h2>Agenda de producciones</h2>
-          <p>Fechas, estados y ubicaciones de las producciones registradas.</p>
+          <p>Fechas programadas, ubicaciones y estado operativo en orden cronológico.</p>
         </div>
       </div>
       <div class="toolbar">
@@ -33,7 +76,9 @@
     </section>
   } @else if (isError()) {
     <div class="empty-state smooth-shadow-ring-xs" role="alert">
-      <div class="empty-icon-wrapper amber" aria-hidden="true"><svg lucideCircleAlert strokeWidth="1.75" /></div>
+      <div class="empty-icon-wrapper amber" aria-hidden="true">
+        <svg lucideCircleAlert strokeWidth="1.75" />
+      </div>
       <h3>No pudimos cargar las producciones</h3>
       <p>No fue posible obtener la información en este momento.</p>
       <button type="button" class="btn-system" (click)="retry()">
@@ -41,147 +86,93 @@
       </button>
     </div>
   } @else {
-
-    @if (canCreate() || canUpdate()) {
-      <section class="panel ep2-actions smooth-shadow-ring-xs" aria-labelledby="production-actions-title">
-        <div class="panel-heading ep2-heading">
-          <div>
-            <h2 id="production-actions-title">Gestión de producciones</h2>
-            <p>Operaciones protegidas mediante Microsoft Entra ID, API Gateway y BFF.</p>
-          </div>
-          @if (canCreate()) {
-            <button type="button" class="btn-system" (click)="showCreate.set(!showCreate())">
-              {{ showCreate() ? 'Cerrar formulario' : 'Nueva producción' }}
-            </button>
-          }
-        </div>
-        @if (operationError()) { <p role="alert" class="ep2-notice ep2-error">{{ operationError() }}</p> }
-        @if (operationSuccess()) { <p role="status" class="ep2-notice">{{ operationSuccess() }}</p> }
-
-        @if (canCreate() && showCreate()) {
-          <form class="ep2-form" [formGroup]="createForm" (ngSubmit)="submitCreate()" aria-label="Crear producción">
-            <label>Organizador ID
-              <input formControlName="organizerId" maxlength="255" required autocomplete="off" />
-            </label>
-            <label>Nombre del evento
-              <input formControlName="name" maxlength="150" required />
-            </label>
-            <label>Fecha programada
-              <input formControlName="scheduledAt" type="datetime-local" required />
-            </label>
-            <label>Ubicación
-              <input formControlName="location" maxlength="255" required />
-            </label>
-            <button class="btn-system" type="submit" [disabled]="saving() || createForm.invalid">Crear evento</button>
-          </form>
-        }
-
-        <div class="ep2-form ep2-inline">
-          <label>Consultar detalle
-            <select id="production-detail-id" [formControl]="detailId">
-              <option value="">Seleccionar producción</option>
-              @for (item of rows(); track item.id) {
-                <option [value]="item.id">{{ item.id }} — {{ item.name }}</option>
-              }
-            </select>
-          </label>
-          <button type="button" class="btn-system" [disabled]="!detailId.value" (click)="consultDetail()">Ver detalle</button>
-        </div>
-        @if (detail(); as selected) {
-          <div class="ep2-detail" aria-live="polite">
-            <strong>#{{ selected.id }} — {{ selected.name }}</strong>
-            <span>{{ selected.location }} · {{ selected.scheduledAt }} · {{ getLabel(selected.status) }}</span>
-          </div>
-        }
-        @if (canUpdate()) {
-          <form class="ep2-form ep2-inline" (ngSubmit)="submitStatus()" aria-label="Cambiar estado">
-            <label>Producción
-              <select id="production-update-id" [formControl]="updateId" required>
-                <option value="">Seleccionar producción</option>
-                @for (item of rows(); track item.id) {
-                  <option [value]="item.id">#{{ item.id }} — {{ item.name }}</option>
-                }
-              </select>
-            </label>
-            <label>Nuevo estado
-              <select id="production-next-status" [formControl]="nextStatus">
-                @for (item of statuses(); track item) {
-                  @if (item !== 'SOLICITADO') {
-                    <option [value]="item">{{ getLabel(item) }}</option>
-                  }
-                }
-              </select>
-            </label>
-            <button type="submit" class="btn-system" [disabled]="saving() || !updateId.value">Actualizar estado</button>
-          </form>
-          <p class="ep2-footnote">Las transiciones válidas y las reservas de inventario son verificadas por el backend.</p>
-        }
-      </section>
-    }
-
-    <section class="metric-grid" aria-label="Resumen operativo">
+    <section class="metric-grid productions-metrics" aria-label="Resumen operativo">
       <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
         <div class="metric-top">
           <span>Producciones</span>
-          <svg lucideCalendarDays class="metric-icon" strokeWidth="2" />
+          <span class="icon-tile" aria-hidden="true">
+            <svg lucideCalendarDays class="metric-icon" strokeWidth="1.75" />
+          </span>
         </div>
         <strong class="metric-value">{{ total() }}</strong>
-        <p class="metric-foot">Producciones registradas</p>
+        <p class="metric-foot">Eventos registrados en agenda</p>
       </article>
+
       <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
         <div class="metric-top">
           <span>Por confirmar</span>
-          <svg lucideClock3 class="metric-icon amber" strokeWidth="2" />
+          <span class="icon-tile amber" aria-hidden="true">
+            <svg lucideClock3 class="metric-icon amber" strokeWidth="1.75" />
+          </span>
         </div>
         <strong class="metric-value">{{ pending() }}</strong>
-        <p class="metric-foot">Solicitudes recibidas</p>
+        <p class="metric-foot">Solicitudes pendientes de revisión</p>
       </article>
+
       <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
         <div class="metric-top">
           <span>En operación</span>
-          <svg lucideActivity class="metric-icon green" strokeWidth="2" />
+          <span class="icon-tile green" aria-hidden="true">
+            <svg lucideActivity class="metric-icon green" strokeWidth="1.75" />
+          </span>
         </div>
         <strong class="metric-value">{{ active() }}</strong>
-        <p class="metric-foot">Montaje y ejecución</p>
+        <p class="metric-foot">Montaje y ejecución en curso</p>
       </article>
+
       <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
         <div class="metric-top">
           <span>Finalizadas</span>
-          <svg lucideCircleCheck class="metric-icon purple" strokeWidth="2" />
+          <span class="icon-tile purple" aria-hidden="true">
+            <svg lucideCircleCheck class="metric-icon purple" strokeWidth="1.75" />
+          </span>
         </div>
         <strong class="metric-value">{{ closed() }}</strong>
         <p class="metric-foot">Producciones cerradas</p>
       </article>
     </section>
 
-    <section class="panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel">
-      <div class="panel-heading">
+    <section
+      class="panel agenda-panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel"
+      aria-labelledby="agenda-heading"
+    >
+      <div class="panel-heading agenda-heading">
         <div>
-          <h2>Agenda de producciones</h2>
-          <p>Fechas, estados y ubicaciones de las producciones registradas.</p>
+          <div class="heading-title-row">
+            <h2 id="agenda-heading">Agenda de producciones</h2>
+            @if (total() > 0) {
+              <span class="count-pill">{{ rows().length }}</span>
+            }
+          </div>
+          <p>Fechas programadas, ubicaciones y estado operativo en orden cronológico.</p>
         </div>
+        @if (total() > 0) {
+          <span class="selection-hint">Haz clic en «Gestionar» para consultar el detalle o actualizar el estado</span>
+        }
       </div>
 
-      <div class="toolbar">
+      <div class="toolbar" role="search" aria-label="Filtrar producciones">
         <label class="field search-field grow" for="production-search">
           <span class="sr-only">Buscar producción</span>
-          <svg lucideSearch class="field-icon" strokeWidth="2.5" />
+          <svg lucideSearch class="field-icon" strokeWidth="2" aria-hidden="true" />
           <input
             id="production-search"
             #searchInput
             type="search"
             [formControl]="search"
-            placeholder="Buscar por nombre, organizador o ubicación" />
+            placeholder="Buscar por nombre, organizador o ubicación"
+          />
         </label>
-        <label class="field select-field" for="production-status">
-          <span class="sr-only">Estado</span>
+        <div class="field select-field">
+          <label class="sr-only" for="production-status">Estado</label>
           <select id="production-status" [formControl]="status">
             <option value="">Todos los estados</option>
             @for (item of statuses(); track item) {
               <option [value]="item">{{ getLabel(item) }}</option>
             }
           </select>
-        </label>
+          <svg lucideChevronDown class="select-chevron" strokeWidth="1.75" aria-hidden="true" />
+        </div>
         @if (hasActiveFilters()) {
           <button class="btn-clear" type="button" (click)="clearFilters(); searchInput.focus()">
             Limpiar filtros
@@ -190,14 +181,34 @@
       </div>
 
       @if (total() === 0) {
-        <div class="empty-state smooth-shadow-ring-xs">
-          <div class="empty-icon-wrapper" aria-hidden="true"><svg lucideCalendarX2 strokeWidth="1.75" /></div>
+        <div class="empty-state empty-state-panel">
+          <div class="empty-icon-wrapper" aria-hidden="true">
+            <svg lucideCalendarX2 strokeWidth="1.75" />
+          </div>
           <h3>No hay producciones registradas</h3>
-          <p>Cuando existan producciones disponibles, aparecerán en esta agenda.</p>
+          <p>
+            {{
+              canCreate()
+                ? 'Aún no existen eventos programados en la plataforma. Crea la primera producción para iniciar su planificación.'
+                : 'Cuando existan producciones disponibles, aparecerán organizadas cronológicamente en esta agenda.'
+            }}
+          </p>
+          @if (canCreate()) {
+            <button
+              #emptyCreateTrigger
+              type="button"
+              class="btn-system"
+              (click)="openCreateModal(emptyCreateTrigger)"
+            >
+              Nueva producción
+            </button>
+          }
         </div>
       } @else if (rows().length === 0) {
-        <div class="empty-state smooth-shadow-ring-xs" role="status">
-          <div class="empty-icon-wrapper" aria-hidden="true"><svg lucideSearch strokeWidth="1.75" /></div>
+        <div class="empty-state empty-state-panel" role="status">
+          <div class="empty-icon-wrapper" aria-hidden="true">
+            <svg lucideSearchX strokeWidth="1.75" />
+          </div>
           <h3>No encontramos producciones</h3>
           <p>Prueba con otro nombre, ubicación o estado.</p>
           <button type="button" class="btn-system" (click)="clearFilters(); searchInput.focus()">
@@ -205,15 +216,400 @@
           </button>
         </div>
       } @else {
-        <emx-production-table [rows]="rows()" caption="Agenda de producciones" />
+        <emx-production-table
+          [rows]="rows()"
+          [selectable]="true"
+          [selectedId]="selectedProductionId()"
+          (selectProduction)="selectProduction($event)"
+          caption="Agenda de producciones"
+        />
       }
 
       @if (total() > 0) {
-        <div class="panel-footer">
+        <div class="panel-footer agenda-footer">
           <span role="status">{{ rows().length }} de {{ total() }} producciones visibles</span>
+          @if (detail(); as current) {
+            <span class="active-selection-indicator">
+              En gestión: <strong>#{{ current.id }} {{ current.name }}</strong>
+            </span>
+          }
         </div>
       }
     </section>
+
+    @if (detail(); as selected) {
+      <div class="modal-backdrop detail-backdrop" aria-hidden="true" (click)="closeDetail()"></div>
+      <aside
+        class="modal-drawer detail-drawer detail-panel smooth-shadow-ring-md"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="detail-panel-title"
+        aria-live="polite"
+        (keydown)="onDetailKeydown($event)"
+      >
+        <div class="modal-header detail-heading">
+          <div class="detail-heading-main">
+            <div class="detail-badges">
+              <span class="detail-id-badge">Producción #{{ selected.id }}</span>
+              <emx-status [status]="selected.status" />
+            </div>
+            <h2 id="detail-panel-title" class="modal-title detail-title">{{ selected.name }}</h2>
+          </div>
+          <button
+            id="detail-close-btn"
+            type="button"
+            class="btn-icon-close"
+            aria-label="Cerrar detalle de producción"
+            [disabled]="saving()"
+            (click)="closeDetail()"
+          >
+            <svg lucideX class="close-svg" strokeWidth="2" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div class="modal-body detail-body">
+          @if (operationError()) {
+            <div class="field-error-banner" role="alert">{{ operationError() }}</div>
+          }
+
+          <section aria-label="Resumen de producción">
+            <dl class="detail-meta-grid">
+              <div class="meta-item">
+                <dt>Fecha programada</dt>
+                <dd>{{ selected.scheduledAt | date:'dd MMM yyyy, HH:mm' }} h</dd>
+              </div>
+              <div class="meta-item">
+                <dt>Ubicación</dt>
+                <dd>{{ selected.location }}</dd>
+              </div>
+              <div class="meta-item">
+                <dt>Organizador</dt>
+                <dd>{{ selected.organizerId }}</dd>
+              </div>
+              <div class="meta-item">
+                <dt>Estado operativo</dt>
+                <dd>{{ getReadableStatus(selected.status) }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="detail-section" aria-labelledby="reservations-heading">
+            <div class="detail-section-header">
+              <h3 id="reservations-heading">Equipos reservados</h3>
+              <span class="count-pill subtle">{{ productionReservations().length }}</span>
+            </div>
+
+            @if (reservationsLoading()) {
+              <div class="reservations-loading" aria-live="polite" aria-busy="true">
+                <div class="skeleton skeleton-text medium"></div>
+                <div class="skeleton skeleton-text short"></div>
+              </div>
+            } @else if (reservationsError()) {
+              <div class="reservations-error-state" role="alert" aria-live="assertive">
+                <div class="field-error-banner">
+                  <span>{{ reservationsError() }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="btn-retry-reservations"
+                  (click)="retryReservations()"
+                >
+                  Reintentar consulta de reservas
+                </button>
+              </div>
+            } @else if (productionReservations().length > 0) {
+              <ul class="reservations-card-list">
+                @for (r of productionReservations(); track r.reservationId) {
+                  <li class="reservation-card-item">
+                    <div class="reservation-item-info">
+                      <strong>{{ r.equipmentName }}</strong>
+                      <span class="reservation-item-meta">Reserva #{{ r.reservationId }}</span>
+                    </div>
+                    <div class="reservation-item-badges">
+                      <span class="qty-badge">{{ r.quantity }} u.</span>
+                      <span class="badge available">{{ r.status }}</span>
+                    </div>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="detail-empty-note">
+                Sin reservas de equipamiento registradas para esta producción.
+              </p>
+            }
+          </section>
+
+          @if (canUpdate()) {
+            <section class="detail-section status-workflow-section" aria-labelledby="workflow-heading">
+              <div class="detail-section-header">
+                <div>
+                  <h3 id="workflow-heading">Transición de estado</h3>
+                  <p class="workflow-subtitle">
+                    Selecciona el nuevo estado operativo para esta producción.
+                  </p>
+                </div>
+              </div>
+
+              <form class="workflow-form" [formGroup]="workflowForm" (ngSubmit)="submitStatus()" aria-label="Cambiar estado" novalidate>
+                <div class="transition-preview">
+                  <div class="transition-step">
+                    <span class="step-label">Estado actual</span>
+                    <emx-status [status]="selected.status" />
+                  </div>
+                  <svg lucideArrowRight class="transition-arrow" strokeWidth="1.75" aria-hidden="true" />
+                  <div class="transition-step grow">
+                    <label class="step-label" for="production-next-status">Estado solicitado</label>
+                    <div class="select-wrapper">
+                      <select id="production-next-status" [formControl]="nextStatus">
+                        @for (item of statuses(); track item) {
+                          @if (item !== 'SOLICITADO') {
+                            <option [value]="item">{{ getLabel(item) }}</option>
+                          }
+                        }
+                      </select>
+                      <svg lucideChevronDown class="select-chevron" strokeWidth="1.75" aria-hidden="true" />
+                    </div>
+                  </div>
+                </div>
+
+                @if (nextStatus.value === 'CONFIRMADO') {
+                  <div class="reservation-builder">
+                    <div class="reservation-builder-head">
+                      <h4>Asignación obligatoria de equipos</h4>
+                      <p>
+                        Para confirmar la producción, asigna al menos un equipo con stock disponible en inventario.
+                      </p>
+                    </div>
+
+                    @if (reservationInputError()) {
+                      <p class="field-error-banner" role="alert">{{ reservationInputError() }}</p>
+                    }
+
+                    <div class="picker-stack">
+                      <div class="picker-field picker-equipment">
+                        <label for="equipment-select">Equipo disponible</label>
+                        <div class="select-wrapper">
+                          <select id="equipment-select" [formControl]="selectedEquipmentId">
+                            <option value="">Seleccionar equipo</option>
+                            @for (eq of availableEquipment(); track eq.id) {
+                              <option [value]="eq.id" [disabled]="(eq.availableQty ?? eq.availableQuantity) <= 0">
+                                {{ eq.name }}{{ (eq.description || eq.category) ? ' (' + (eq.description || eq.category) + ')' : '' }} — Stock: {{ eq.availableQty ?? eq.availableQuantity }}
+                              </option>
+                            }
+                          </select>
+                          <svg lucideChevronDown class="select-chevron" strokeWidth="1.75" aria-hidden="true" />
+                        </div>
+                      </div>
+
+                      <div class="picker-qty-row">
+                        <div class="picker-field picker-qty">
+                          <label for="equipment-qty">Cantidad</label>
+                          <input id="equipment-qty" type="number" min="1" [formControl]="selectedQuantity" />
+                        </div>
+                        <button type="button" class="btn-secondary btn-add-item" (click)="addReservationItem()">
+                          Agregar ítem
+                        </button>
+                      </div>
+                    </div>
+
+                    @if (reservationItems().length > 0) {
+                      <ul class="added-items-list" aria-label="Equipos asignados para confirmar la producción">
+                        @for (item of reservationItems(); track item.equipmentId; let idx = $index) {
+                          <li class="added-item-card">
+                            <div class="added-item-info">
+                              <strong>{{ getEquipmentName(item.equipmentId) }}</strong>
+                              <span class="qty-badge">{{ item.quantity }} unid.</span>
+                            </div>
+                            <button
+                              type="button"
+                              class="btn-remove-item"
+                              [attr.aria-label]="'Quitar ' + getEquipmentName(item.equipmentId)"
+                              (click)="removeReservationItem(idx)"
+                            >
+                              Quitar
+                            </button>
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <p class="reservation-empty-hint" role="note">
+                        Agrega al menos un equipo a la lista antes de confirmar el estado.
+                      </p>
+                    }
+                  </div>
+                }
+
+                <div class="workflow-actions">
+                  <button
+                    type="submit"
+                    class="btn-system btn-submit-status"
+                    [disabled]="saving()"
+                  >
+                    {{
+                      saving()
+                        ? 'Guardando…'
+                        : nextStatus.value === 'CONFIRMADO'
+                          ? 'Confirmar y reservar equipos'
+                          : 'Actualizar estado'
+                    }}
+                  </button>
+                </div>
+              </form>
+            </section>
+          }
+        </div>
+      </aside>
+    }
   }
-  <span class="sr-only" role="status">{{ announcement() }}</span>
+
+  @if (canCreate() && showCreate()) {
+    <div class="modal-backdrop" aria-hidden="true" (click)="closeCreateModal()"></div>
+    <div
+      class="modal-drawer smooth-shadow-ring-md"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-production-title"
+      aria-describedby="create-production-desc"
+      (keydown)="onDialogKeydown($event)"
+    >
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">NUEVO EVENTO</p>
+          <h2 id="create-production-title" class="modal-title">Nueva producción</h2>
+          <p id="create-production-desc" class="modal-subtitle">
+            Completa los datos requeridos para registrar la producción en la agenda.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn-icon-close"
+          aria-label="Cerrar formulario de nueva producción"
+          [disabled]="saving()"
+          (click)="closeCreateModal()"
+        >
+          <svg lucideX class="close-svg" strokeWidth="2" aria-hidden="true" />
+        </button>
+      </div>
+
+      <form
+        class="modal-form"
+        [formGroup]="createForm"
+        (ngSubmit)="submitCreate()"
+        aria-label="Crear producción"
+        novalidate
+      >
+        <div class="modal-body">
+          @if (operationError()) {
+            <div class="field-error-banner" role="alert" aria-live="assertive">
+              {{ operationError() }}
+            </div>
+          }
+
+          <div class="form-field">
+            <label for="create-name-input">
+              Nombre del evento <span class="required-mark" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="create-name-input"
+              formControlName="name"
+              maxlength="150"
+              required
+              placeholder="Ej: Cumbre de Innovación Corporativa"
+              [attr.aria-invalid]="hasFieldError('name')"
+              [attr.aria-describedby]="hasFieldError('name') ? 'err-name' : 'hint-name'"
+            />
+            @if (hasFieldError('name')) {
+              <span id="err-name" class="field-error-text" role="alert">{{ getFieldError('name') }}</span>
+            } @else {
+              <span id="hint-name" class="field-hint">Nombre comercial o identificador público (máx. 150 caracteres).</span>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="create-organizer-input">
+              Organizador ID <span class="required-mark" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="create-organizer-input"
+              formControlName="organizerId"
+              maxlength="255"
+              required
+              autocomplete="off"
+              placeholder="Ej: org-productora-central"
+              [readonly]="isOrganizerOnly()"
+              [attr.aria-readonly]="isOrganizerOnly() ? 'true' : null"
+              [attr.aria-invalid]="hasFieldError('organizerId')"
+              [attr.aria-describedby]="hasFieldError('organizerId') ? 'err-organizer' : 'hint-organizer'"
+            />
+            @if (hasFieldError('organizerId')) {
+              <span id="err-organizer" class="field-error-text" role="alert">{{ getFieldError('organizerId') }}</span>
+            } @else if (isOrganizerOnly()) {
+              <span id="hint-organizer" class="field-hint">Asignado automáticamente a tu identidad de Organizador.</span>
+            } @else {
+              <span id="hint-organizer" class="field-hint">Código o cuenta del cliente responsable del evento.</span>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="create-scheduled-input">
+              Fecha programada <span class="required-mark" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="create-scheduled-input"
+              formControlName="scheduledAt"
+              type="datetime-local"
+              required
+              [attr.aria-invalid]="hasFieldError('scheduledAt')"
+              [attr.aria-describedby]="hasFieldError('scheduledAt') ? 'err-scheduled' : 'hint-scheduled'"
+            />
+            @if (hasFieldError('scheduledAt')) {
+              <span id="err-scheduled" class="field-error-text" role="alert">{{ getFieldError('scheduledAt') }}</span>
+            } @else {
+              <span id="hint-scheduled" class="field-hint">Debe corresponder a una fecha y hora actual o futura.</span>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="create-location-input">
+              Ubicación <span class="required-mark" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="create-location-input"
+              formControlName="location"
+              maxlength="255"
+              required
+              placeholder="Ej: Centro Parque, Salón Principal"
+              [attr.aria-invalid]="hasFieldError('location')"
+              [attr.aria-describedby]="hasFieldError('location') ? 'err-location' : 'hint-location'"
+            />
+            @if (hasFieldError('location')) {
+              <span id="err-location" class="field-error-text" role="alert">{{ getFieldError('location') }}</span>
+            } @else {
+              <span id="hint-location" class="field-hint">Recinto, dirección o sala asignada para el montaje.</span>
+            }
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn-secondary"
+            [disabled]="saving()"
+            (click)="closeCreateModal()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn-system"
+            [disabled]="saving()"
+          >
+            {{ saving() ? 'Guardando…' : 'Guardar producción' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <span class="sr-only" role="status" aria-live="polite">{{ announcement() }}</span>
 </div>

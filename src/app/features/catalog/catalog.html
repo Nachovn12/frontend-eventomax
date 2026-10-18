@@ -4,240 +4,525 @@
       <p class="eyebrow">RECURSOS PARA CADA PRODUCCIÓN</p>
       <h1 class="page-title">Catálogo de servicios</h1>
       <p class="page-description">
-        Consulta los servicios disponibles en el catálogo y sus tarifas.
+        Consulta servicios contratables, tarifas y el inventario real de equipos.
       </p>
     </div>
   </header>
 
-  @if (isLoading()) {
-    <div class="catalog-loading" aria-busy="true" aria-label="Cargando catálogo">
-      <div class="metric-grid catalog-metrics" aria-hidden="true">
-        @for (card of [1, 2, 3]; track card) {
-          <div class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-            <div class="skeleton skeleton-text medium"></div>
-            <div class="skeleton skeleton-title"></div>
-            <div class="skeleton skeleton-text"></div>
-          </div>
-        }
-      </div>
-      <div class="panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel" aria-hidden="true">
-        <div class="panel-heading">
-          <div class="catalog-loading-heading">
-            <div class="skeleton skeleton-title"></div>
-            <div class="skeleton skeleton-text"></div>
-          </div>
-        </div>
-        <div class="catalog-toolbar">
-          <div class="skeleton skeleton-toolbar"></div>
-        </div>
-        @for (row of [1, 2, 3]; track row) {
-          <div class="catalog-loading-row">
-            <div class="skeleton skeleton-text medium"></div>
-            <div class="skeleton skeleton-text"></div>
-            <div class="skeleton skeleton-text short"></div>
-          </div>
-        }
-      </div>
+  <nav class="catalog-tabs" aria-label="Secciones del catálogo" role="tablist">
+    <div
+      role="tab"
+      tabindex="0"
+      [attr.aria-selected]="activeTab() === 'services'"
+      class="catalog-tab-btn"
+      [class.active]="activeTab() === 'services'"
+      (click)="setActiveTab('services')"
+      (keydown.enter)="setActiveTab('services')"
+      (keydown.space)="setActiveTab('services')"
+    >
+      Servicios
     </div>
-  } @else if (isError()) {
-    <div class="empty-state smooth-shadow-ring-xs" role="alert">
-      <div class="empty-icon-wrapper amber" aria-hidden="true">
-        <svg lucideCircleAlert strokeWidth="1.75" />
-      </div>
-      <h2>No pudimos cargar el catálogo</h2>
-      <p>No fue posible obtener la información en este momento.</p>
-      <button type="button" class="btn-system" (click)="retry()">Reintentar</button>
+    <div
+      role="tab"
+      tabindex="0"
+      [attr.aria-selected]="activeTab() === 'equipment'"
+      class="catalog-tab-btn"
+      [class.active]="activeTab() === 'equipment'"
+      (click)="setActiveTab('equipment')"
+      (keydown.enter)="setActiveTab('equipment')"
+      (keydown.space)="setActiveTab('equipment')"
+    >
+      Equipos e Inventario
     </div>
-  } @else {
-    <section class="metric-grid catalog-metrics" aria-label="Métricas de catálogo">
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-        <div class="metric-top">
-          <span>Total de servicios</span>
-          <svg lucidePackage class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
-        </div>
-        <strong class="metric-value">{{ total() }}</strong>
-        <p class="metric-foot">Servicios registrados</p>
-      </article>
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-        <div class="metric-top">
-          <span>Activos</span>
-          <svg lucideCircleCheck class="metric-icon green" strokeWidth="1.75" aria-hidden="true" />
-        </div>
-        <strong class="metric-value">{{ activeCount() }}</strong>
-        <p class="metric-foot">Servicios activos en catálogo</p>
-      </article>
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-        <div class="metric-top">
-          <span>Inactivos</span>
-          <svg lucideCirclePause class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
-        </div>
-        <strong class="metric-value">{{ inactiveCount() }}</strong>
-        <p class="metric-foot">Servicios inactivos en catálogo</p>
-      </article>
-    </section>
+  </nav>
 
-
-    @if (canManage()) {
-      <section class="panel ep2-catalog-editor smooth-shadow-ring-xs" aria-labelledby="catalog-editor-heading">
-        <div class="panel-heading ep2-catalog-heading">
-          <div>
-            <h2 id="catalog-editor-heading">Administrar servicios</h2>
-            <p>Crear y actualizar mediante API Gateway y BFF. Disponible solo para Admin.</p>
-          </div>
-          <button type="button" class="btn-system" (click)="openCreate()">Nuevo servicio</button>
-        </div>
-        @if (saveError()) { <p class="ep2-catalog-message ep2-catalog-error" role="alert">{{ saveError() }}</p> }
-        @if (saveMessage()) { <p class="ep2-catalog-message" role="status">{{ saveMessage() }}</p> }
-        @if (showEditor()) {
-          <form class="ep2-catalog-form" [formGroup]="serviceForm" (ngSubmit)="submitService()" aria-label="Formulario de servicio">
-            <label>Nombre
-              <input formControlName="name" maxlength="150" required />
-            </label>
-            <label>Descripción
-              <input formControlName="description" maxlength="500" />
-            </label>
-            <label>Tarifa (CLP)
-              <input type="number" min="0.01" step="0.01" formControlName="rate" required />
-            </label>
-            <label>Estado
-              <select formControlName="active">
-                <option [ngValue]="true">Activo</option>
-                <option [ngValue]="false">Inactivo</option>
-              </select>
-            </label>
-            <div class="ep2-catalog-buttons">
-              <button type="submit" class="btn-system" [disabled]="saving() || serviceForm.invalid">
-                {{ saving() ? 'Guardando…' : editingService() ? 'Guardar cambios' : 'Crear servicio' }}
-              </button>
-              <button type="button" class="btn-clear" [disabled]="saving()" (click)="closeEditor()">Cancelar</button>
+  @if (activeTab() === 'services') {
+    @if (isLoading()) {
+      <div class="catalog-loading" aria-busy="true" aria-label="Cargando catálogo">
+        <div class="metric-grid catalog-metrics" aria-hidden="true">
+          @for (card of [1, 2, 3]; track card) {
+            <div class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+              <div class="skeleton skeleton-text medium"></div>
+              <div class="skeleton skeleton-title"></div>
+              <div class="skeleton skeleton-text"></div>
             </div>
-          </form>
-        }
-      </section>
-    }
-
-    <section class="panel catalog-panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel" aria-labelledby="catalog-services-heading">
-      <div class="panel-heading">
-        <div>
-          <h2 id="catalog-services-heading">Servicios</h2>
-          <p>Consulta las características y tarifas del catálogo.</p>
-        </div>
-      </div>
-
-      @if (total() > 0) {
-        <div class="catalog-toolbar" role="search" aria-label="Filtrar servicios">
-          <div class="catalog-search">
-            <label class="sr-only" for="catalog-search">Buscar servicio</label>
-            <svg lucideSearch class="catalog-field-icon" strokeWidth="1.75" aria-hidden="true" />
-            <input
-              #searchInput
-              id="catalog-search"
-              type="search"
-              [formControl]="search"
-              placeholder="Buscar por nombre o descripción"
-            />
-          </div>
-          <div class="catalog-select">
-            <label class="sr-only" for="catalog-status">Estado</label>
-            <select id="catalog-status" [formControl]="status">
-              <option value="">Todos los estados</option>
-              <option value="active">Activos</option>
-              <option value="inactive">Inactivos</option>
-            </select>
-            <svg
-              lucideChevronDown
-              class="catalog-field-icon"
-              strokeWidth="1.75"
-              aria-hidden="true"
-            />
-          </div>
-          @if (hasActiveFilters()) {
-            <button
-              type="button"
-              class="catalog-clear"
-              (click)="clearFilters(); searchInput.focus()"
-            >
-              Limpiar filtros
-            </button>
           }
         </div>
-
-        @if (rows().length === 0) {
-          <div class="empty-state empty-state-panel">
-            <div class="empty-icon-wrapper" aria-hidden="true">
-              <svg lucideSearchX strokeWidth="1.75" />
+        <div class="panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel" aria-hidden="true">
+          <div class="panel-heading">
+            <div class="catalog-loading-heading">
+              <div class="skeleton skeleton-title"></div>
+              <div class="skeleton skeleton-text"></div>
             </div>
-            <h3>No encontramos servicios</h3>
-            <p>Prueba con otro nombre, descripción o estado.</p>
-            <button type="button" class="btn-system" (click)="clearFilters(); searchInput.focus()">
-              Limpiar filtros
-            </button>
           </div>
-        } @else {
-          <table class="data-table catalog-table" role="table">
-            <caption class="sr-only">
-              Servicios del catálogo, tarifas y estados.
-            </caption>
-            <colgroup>
-              <col class="catalog-service-column" />
-              <col class="catalog-rate-column" />
-              <col class="catalog-status-column" />
-            </colgroup>
-            <thead role="rowgroup">
-              <tr role="row">
-                <th scope="col" role="columnheader">Servicio</th>
-                <th scope="col" role="columnheader">Tarifa</th>
-                <th scope="col" role="columnheader">Estado</th>
-              </tr>
-            </thead>
-            <tbody role="rowgroup">
-              @for (item of rows(); track item.id) {
-                <tr role="row">
-                  <td class="catalog-service-cell" role="cell">
-                    <strong class="catalog-service-name">{{ item.name }}</strong>
-                    @if (item.description) {
-                      <p class="catalog-description" [title]="item.description">
-                        {{ item.description }}
-                      </p>
-                    }
-                  </td>
-                  <td class="catalog-rate-cell" role="cell">
-                    <span class="catalog-mobile-label" aria-hidden="true">Tarifa</span>
-                    <!-- CLP is the frontend presentation convention, not a field from the API. -->
-                    <strong
-                      >{{ item.rate | currency: 'CLP' : 'symbol-narrow' : '1.0-2' }}
-                      <span class="catalog-currency">CLP</span></strong
-                    >
-                  </td>
-                  <td class="catalog-status-cell" role="cell">
-                    <span class="catalog-status" [class.catalog-status-active]="item.active">
-                      {{ item.active ? 'Activo' : 'Inactivo' }}
-                    </span>
-                    @if (canManage()) {
-                      <button class="btn-clear ep2-catalog-table-action" type="button" (click)="openEdit(item)">Editar servicio</button>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      } @else {
-        <div class="empty-state empty-state-panel">
-          <div class="empty-icon-wrapper" aria-hidden="true">
-            <svg lucidePackageOpen strokeWidth="1.75" />
+          <div class="catalog-toolbar">
+            <div class="skeleton skeleton-toolbar"></div>
           </div>
-          <h3>No hay servicios registrados</h3>
-          <p>Los servicios disponibles aparecerán aquí cuando sean registrados.</p>
+          @for (row of [1, 2, 3]; track row) {
+            <div class="catalog-loading-row">
+              <div class="skeleton skeleton-text medium"></div>
+              <div class="skeleton skeleton-text"></div>
+              <div class="skeleton skeleton-text short"></div>
+            </div>
+          }
         </div>
+      </div>
+    } @else if (isError()) {
+      <div class="empty-state smooth-shadow-ring-xs" role="alert">
+        <div class="empty-icon-wrapper amber" aria-hidden="true">
+          <svg lucideCircleAlert strokeWidth="1.75" />
+        </div>
+        <h2>No pudimos cargar el catálogo</h2>
+        <p>No fue posible obtener la información en este momento.</p>
+        <button type="button" class="btn-system" (click)="retry()">Reintentar</button>
+      </div>
+    } @else {
+      <section class="metric-grid catalog-metrics" aria-label="Métricas de servicios">
+        <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+          <div class="metric-top">
+            <span>Total de servicios</span>
+            <svg lucidePackage class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
+          </div>
+          <strong class="metric-value">{{ total() }}</strong>
+          <p class="metric-foot">Servicios registrados</p>
+        </article>
+        <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+          <div class="metric-top">
+            <span>Activos</span>
+            <svg lucideCircleCheck class="metric-icon green" strokeWidth="1.75" aria-hidden="true" />
+          </div>
+          <strong class="metric-value">{{ activeCount() }}</strong>
+          <p class="metric-foot">Servicios activos en catálogo</p>
+        </article>
+        <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+          <div class="metric-top">
+            <span>Inactivos</span>
+            <svg lucideCirclePause class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
+          </div>
+          <strong class="metric-value">{{ inactiveCount() }}</strong>
+          <p class="metric-foot">Servicios inactivos en catálogo</p>
+        </article>
+      </section>
+
+      @if (canManage()) {
+        <section class="panel ep2-catalog-editor smooth-shadow-ring-xs" aria-labelledby="catalog-editor-heading">
+          <div class="panel-heading ep2-catalog-heading">
+            <div>
+              <h2 id="catalog-editor-heading">Administrar servicios</h2>
+              <p>Crear y actualizar mediante API Gateway y BFF. Disponible solo para Admin.</p>
+            </div>
+            <button type="button" class="btn-system" (click)="openCreate()">Nuevo servicio</button>
+          </div>
+          @if (saveError()) { <p class="ep2-catalog-message ep2-catalog-error" role="alert">{{ saveError() }}</p> }
+          @if (saveMessage()) { <p class="ep2-catalog-message" role="status">{{ saveMessage() }}</p> }
+          @if (showEditor()) {
+            <form class="ep2-catalog-form" [formGroup]="serviceForm" (ngSubmit)="submitService()" aria-label="Formulario de servicio">
+              <label>Nombre
+                <input formControlName="name" maxlength="150" required />
+              </label>
+              <label>Descripción
+                <input formControlName="description" maxlength="500" />
+              </label>
+              <label>Tarifa (CLP)
+                <input type="number" min="0.01" step="0.01" formControlName="rate" required />
+              </label>
+              <label>Estado
+                <select formControlName="active">
+                  <option [ngValue]="true">Activo</option>
+                  <option [ngValue]="false">Inactivo</option>
+                </select>
+              </label>
+              <div class="ep2-catalog-buttons">
+                <button type="submit" class="btn-system" [disabled]="saving() || serviceForm.invalid">
+                  {{ saving() ? 'Guardando…' : editingService() ? 'Guardar cambios' : 'Crear servicio' }}
+                </button>
+                <button type="button" class="btn-clear" [disabled]="saving()" (click)="closeEditor()">Cancelar</button>
+              </div>
+            </form>
+          }
+        </section>
       }
 
-      <div class="panel-footer">
-        <span role="status" aria-atomic="true"
-          >{{ rows().length }} de {{ total() }} servicios visibles</span
-        >
-      </div>
-    </section>
+      <section class="panel catalog-panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel" aria-labelledby="catalog-services-heading">
+        <div class="panel-heading">
+          <div>
+            <h2 id="catalog-services-heading">Servicios</h2>
+            <p>Consulta las características y tarifas del catálogo.</p>
+          </div>
+        </div>
+
+        @if (total() > 0) {
+          <div class="catalog-toolbar" role="search" aria-label="Filtrar servicios">
+            <div class="catalog-search">
+              <label class="sr-only" for="catalog-search">Buscar servicio</label>
+              <svg lucideSearch class="catalog-field-icon" strokeWidth="1.75" aria-hidden="true" />
+              <input
+                #searchInput
+                id="catalog-search"
+                type="search"
+                [formControl]="search"
+                placeholder="Buscar por nombre o descripción"
+              />
+            </div>
+            <div class="catalog-select">
+              <label class="sr-only" for="catalog-status">Estado</label>
+              <select id="catalog-status" [formControl]="status">
+                <option value="">Todos los estados</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
+              </select>
+              <svg
+                lucideChevronDown
+                class="catalog-field-icon"
+                strokeWidth="1.75"
+                aria-hidden="true"
+              />
+            </div>
+            @if (hasActiveFilters()) {
+              <button
+                type="button"
+                class="catalog-clear"
+                (click)="clearFilters(); searchInput.focus()"
+              >
+                Limpiar filtros
+              </button>
+            }
+          </div>
+
+          @if (rows().length === 0) {
+            <div class="empty-state empty-state-panel">
+              <div class="empty-icon-wrapper" aria-hidden="true">
+                <svg lucideSearchX strokeWidth="1.75" />
+              </div>
+              <h3>No encontramos servicios</h3>
+              <p>Prueba con otro nombre, descripción o estado.</p>
+              <button type="button" class="btn-system" (click)="clearFilters(); searchInput.focus()">
+                Limpiar filtros
+              </button>
+            </div>
+          } @else {
+            <table class="data-table catalog-table" role="table">
+              <caption class="sr-only">
+                Servicios del catálogo, tarifas y estados.
+              </caption>
+              <colgroup>
+                <col class="catalog-service-column" />
+                <col class="catalog-rate-column" />
+                <col class="catalog-status-column" />
+              </colgroup>
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th scope="col" role="columnheader">Servicio</th>
+                  <th scope="col" role="columnheader">Tarifa</th>
+                  <th scope="col" role="columnheader">Estado</th>
+                </tr>
+              </thead>
+              <tbody role="rowgroup">
+                @for (item of rows(); track item.id) {
+                  <tr role="row">
+                    <td class="catalog-service-cell" role="cell">
+                      <strong class="catalog-service-name">{{ item.name }}</strong>
+                      @if (item.description) {
+                        <p class="catalog-description" [title]="item.description">
+                          {{ item.description }}
+                        </p>
+                      }
+                    </td>
+                    <td class="catalog-rate-cell" role="cell">
+                      <span class="catalog-mobile-label" aria-hidden="true">Tarifa</span>
+                      <strong>{{ item.rate | currency: 'CLP' : 'symbol-narrow' : '1.0-2' }}
+                        <span class="catalog-currency">CLP</span></strong>
+                    </td>
+                    <td class="catalog-status-cell" role="cell">
+                      <span class="catalog-status" [class.catalog-status-active]="item.active">
+                        {{ item.active ? 'Activo' : 'Inactivo' }}
+                      </span>
+                      @if (canManage()) {
+                        <button class="btn-clear ep2-catalog-table-action" type="button" (click)="openEdit(item)">Editar servicio</button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        } @else {
+          <div class="empty-state empty-state-panel">
+            <div class="empty-icon-wrapper" aria-hidden="true">
+              <svg lucidePackageOpen strokeWidth="1.75" />
+            </div>
+            <h3>No hay servicios registrados</h3>
+            <p>Los servicios disponibles aparecerán aquí cuando sean registrados.</p>
+          </div>
+        }
+
+        <div class="panel-footer">
+          <span role="status" aria-atomic="true"
+            >{{ rows().length }} de {{ total() }} servicios visibles</span
+          >
+        </div>
+      </section>
+    }
   }
+
+  @if (activeTab() === 'equipment') {
+    @if (isEquipmentLoading()) {
+      <div class="catalog-loading" aria-busy="true" aria-label="Cargando inventario de equipos">
+        <div class="metric-grid catalog-metrics" aria-hidden="true">
+          @for (card of [1, 2, 3]; track card) {
+            <div class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+              <div class="skeleton skeleton-text medium"></div>
+              <div class="skeleton skeleton-title"></div>
+              <div class="skeleton skeleton-text"></div>
+            </div>
+          }
+        </div>
+        <div class="panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel" aria-hidden="true">
+          <div class="panel-heading">
+            <div class="catalog-loading-heading">
+              <div class="skeleton skeleton-title"></div>
+              <div class="skeleton skeleton-text"></div>
+            </div>
+          </div>
+          @for (row of [1, 2, 3]; track row) {
+            <div class="catalog-loading-row">
+              <div class="skeleton skeleton-text medium"></div>
+              <div class="skeleton skeleton-text"></div>
+              <div class="skeleton skeleton-text short"></div>
+            </div>
+          }
+        </div>
+      </div>
+    } @else if (isEquipmentError()) {
+      <div class="empty-state smooth-shadow-ring-xs" role="alert">
+        <div class="empty-icon-wrapper amber" aria-hidden="true">
+          <svg lucideCircleAlert strokeWidth="1.75" />
+        </div>
+        <h2>No pudimos cargar el inventario de equipos</h2>
+        <p>No fue posible obtener la información en este momento.</p>
+        <button type="button" class="btn-system" (click)="retryEquipment()">Reintentar</button>
+      </div>
+    } @else {
+      <section class="metric-grid catalog-metrics" aria-label="Métricas de inventario">
+        <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+          <div class="metric-top">
+            <span>Tipos de equipos</span>
+            <svg lucideBoxes class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
+          </div>
+          <strong class="metric-value">{{ totalEquipment() }}</strong>
+          <p class="metric-foot">Modelos registrados en inventario</p>
+        </article>
+        <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+          <div class="metric-top">
+            <span>Stock disponible</span>
+            <svg lucideCircleCheck class="metric-icon green" strokeWidth="1.75" aria-hidden="true" />
+          </div>
+          <strong class="metric-value">{{ totalStockAvailable() }}</strong>
+          <p class="metric-foot">Unidades listas para producción</p>
+        </article>
+        <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+          <div class="metric-top">
+            <span>Stock reservado</span>
+            <svg lucideLayers class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
+          </div>
+          <strong class="metric-value">{{ totalStockReserved() }}</strong>
+          <p class="metric-foot">Unidades asignadas a eventos</p>
+        </article>
+      </section>
+
+      @if (canManage()) {
+        <section class="panel ep2-catalog-editor smooth-shadow-ring-xs" aria-labelledby="equipment-editor-heading">
+          <div class="panel-heading ep2-catalog-heading">
+            <div>
+              <h2 id="equipment-editor-heading">{{ editingEquipment() ? 'Editar equipo' : 'Administrar equipos e inventario' }}</h2>
+              <p>{{ editingEquipment() ? 'Modificar datos del equipo o ajustar stock disponible.' : 'Crear equipos y dotar stock para producciones. Disponible solo para Admin.' }}</p>
+            </div>
+            @if (!editingEquipment()) {
+              <button type="button" class="btn-system" (click)="openCreateEquipment()">Nuevo equipo</button>
+            }
+          </div>
+          @if (saveEquipmentError()) { <p class="ep2-catalog-message ep2-catalog-error" role="alert">{{ saveEquipmentError() }}</p> }
+          @if (saveEquipmentMessage()) { <p class="ep2-catalog-message" role="status">{{ saveEquipmentMessage() }}</p> }
+          @if (showEquipmentEditor()) {
+            <form class="ep2-catalog-form" [formGroup]="equipmentForm" (ngSubmit)="submitEquipment()" aria-label="Formulario de equipo">
+              <label>Nombre del equipo
+                <input formControlName="name" placeholder="Ej: Foco LED Prueba EP2" maxlength="150" required />
+              </label>
+              <label>Descripción
+                <input formControlName="description" placeholder="Ej: Equipo de iluminación" maxlength="500" />
+              </label>
+
+              @if (editingEquipment(); as current) {
+                <label>Stock reservado (solo lectura)
+                  <input type="text" [value]="current.reservedQty + ' unidades asignadas a eventos'" readonly disabled />
+                </label>
+                <fieldset class="ep2-catalog-stock-choice">
+                  <legend>Disponibilidad de stock</legend>
+                  <label class="ep2-catalog-radio-label">
+                    <input type="radio" value="keep" formControlName="stockMode" />
+                    Conservar disponible ({{ current.availableQty }} unidades)
+                  </label>
+                  <label class="ep2-catalog-radio-label">
+                    <input type="radio" value="adjust" formControlName="stockMode" />
+                    Ajustar disponible
+                  </label>
+                </fieldset>
+                @if (equipmentForm.controls.stockMode.value === 'adjust') {
+                  <label>Nueva cantidad disponible
+                    <input type="number" min="0" step="1" formControlName="adjustedAvailableQty" placeholder="0 o mayor" required />
+                  </label>
+                }
+              } @else {
+                <label>Cantidad inicial disponible
+                  <input type="number" min="0" step="1" formControlName="initialAvailableQty" required />
+                </label>
+              }
+
+              <label>Estado
+                <select formControlName="active">
+                  <option [ngValue]="true">Activo</option>
+                  <option [ngValue]="false">Inactivo</option>
+                </select>
+              </label>
+              <div class="ep2-catalog-buttons">
+                <button type="submit" class="btn-system" [disabled]="savingEquipment() || equipmentForm.invalid">
+                  {{ savingEquipment() ? 'Guardando…' : (editingEquipment() ? 'Guardar cambios' : 'Registrar equipo') }}
+                </button>
+                <button type="button" class="btn-clear" [disabled]="savingEquipment()" (click)="closeEquipmentEditor()">Cancelar</button>
+              </div>
+            </form>
+          }
+        </section>
+      }
+
+      <section class="panel catalog-panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel" aria-labelledby="catalog-equipment-heading">
+        <div class="panel-heading">
+          <div>
+            <h2 id="catalog-equipment-heading">Inventario de Equipos</h2>
+            <p>Control de disponibilidad y asignación para producciones.</p>
+          </div>
+        </div>
+
+        @if (totalEquipment() > 0) {
+          <div class="catalog-toolbar" role="search" aria-label="Filtrar equipos">
+            <div class="catalog-search">
+              <label class="sr-only" for="equipment-search">Buscar equipo</label>
+              <svg lucideSearch class="catalog-field-icon" strokeWidth="1.75" aria-hidden="true" />
+              <input
+                #equipmentSearchInput
+                id="equipment-search"
+                type="search"
+                [formControl]="equipmentSearch"
+                placeholder="Buscar por nombre o descripción"
+              />
+            </div>
+            <div class="catalog-select">
+              <label class="sr-only" for="equipment-status">Estado</label>
+              <select id="equipment-status" [formControl]="equipmentStatus">
+                <option value="">Todos los estados</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
+              </select>
+              <svg
+                lucideChevronDown
+                class="catalog-field-icon"
+                strokeWidth="1.75"
+                aria-hidden="true"
+              />
+            </div>
+            @if (hasActiveEquipmentFilters()) {
+              <button
+                type="button"
+                class="catalog-clear"
+                (click)="clearEquipmentFilters(); equipmentSearchInput.focus()"
+              >
+                Limpiar filtros
+              </button>
+            }
+          </div>
+
+          @if (equipmentRows().length === 0) {
+            <div class="empty-state empty-state-panel">
+              <div class="empty-icon-wrapper" aria-hidden="true">
+                <svg lucideSearchX strokeWidth="1.75" />
+              </div>
+              <h3>No encontramos equipos</h3>
+              <p>Prueba con otro nombre o descripción.</p>
+              <button type="button" class="btn-system" (click)="clearEquipmentFilters(); equipmentSearchInput.focus()">
+                Limpiar filtros
+              </button>
+            </div>
+          } @else {
+            <table class="data-table catalog-table" role="table">
+              <caption class="sr-only">
+                Equipos de producción, disponibilidad y stock.
+              </caption>
+              <colgroup>
+                <col style="width: 10%;" />
+                <col style="width: 35%;" />
+                <col style="width: 25%;" />
+                <col style="width: 15%;" />
+                <col style="width: 15%;" />
+              </colgroup>
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th scope="col" role="columnheader">ID</th>
+                  <th scope="col" role="columnheader">Equipo</th>
+                  <th scope="col" role="columnheader">Descripción</th>
+                  <th scope="col" role="columnheader">Disponibilidad</th>
+                  <th scope="col" role="columnheader">Estado</th>
+                </tr>
+              </thead>
+              <tbody role="rowgroup">
+                @for (item of equipmentRows(); track item.id) {
+                  <tr role="row">
+                    <td role="cell">#{{ item.id }}</td>
+                    <td class="catalog-service-cell" role="cell">
+                      <strong class="catalog-service-name">{{ item.name }}</strong>
+                    </td>
+                    <td role="cell">
+                      <span class="catalog-description" [title]="item.description || ''">
+                        {{ item.description || '—' }}
+                      </span>
+                    </td>
+                    <td class="catalog-rate-cell" role="cell">
+                      <strong>{{ item.availableQty }} disp. / {{ item.reservedQty }} res.</strong>
+                    </td>
+                    <td class="catalog-status-cell" role="cell">
+                      <span
+                        class="catalog-status"
+                        [class.catalog-status-active]="item.active && item.availableQty > 0"
+                        [class.badge-depleted]="item.active && item.availableQty === 0"
+                      >
+                        {{ !item.active ? 'INACTIVO' : (item.availableQty > 0 ? 'DISPONIBLE' : 'AGOTADO') }}
+                      </span>
+                      @if (canManage()) {
+                        <button class="btn-clear ep2-catalog-table-action" type="button" (click)="openEditEquipment(item)">Editar equipo</button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        } @else {
+          <div class="empty-state empty-state-panel">
+            <div class="empty-icon-wrapper" aria-hidden="true">
+              <svg lucideBoxes strokeWidth="1.75" />
+            </div>
+            <h3>No hay equipos registrados</h3>
+            <p>Los equipos para eventos aparecerán aquí cuando sean agregados al inventario.</p>
+          </div>
+        }
+
+        <div class="panel-footer">
+          <span role="status" aria-atomic="true"
+            >{{ equipmentRows().length }} de {{ totalEquipment() }} equipos visibles</span
+          >
+        </div>
+      </section>
+    }
+  }
+
   <span class="sr-only" role="status">{{ isLoading() ? 'Cargando catálogo.' : '' }}</span>
 </div>

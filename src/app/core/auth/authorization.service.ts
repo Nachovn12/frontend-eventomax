@@ -4,6 +4,12 @@ import { AppRole } from './models/app-role';
 import { AuthClaims } from './models/auth-claims';
 import { environment } from '../../../environments/environment';
 
+const EVENTOMAX_API_CLIENT_ID = 'a1a87bcd-fed7-4d65-83c3-338389b80093';
+const ALLOWED_AUDIENCES: ReadonlySet<string> = new Set([
+  EVENTOMAX_API_CLIENT_ID,
+  `api://${EVENTOMAX_API_CLIENT_ID}`,
+]);
+
 /**
  * Authorization service.
  * Inspects MSAL access token claims for eventomax-api
@@ -15,6 +21,7 @@ export class AuthorizationService {
 
   private readonly _roles = signal<readonly AppRole[]>([]);
   private readonly _scopes = signal<readonly string[]>([]);
+  private readonly _ownerId = signal<string>('');
 
   /** Returns normalized roles from the current access token. */
   roles(): readonly AppRole[] {
@@ -24,6 +31,11 @@ export class AuthorizationService {
   /** Returns normalized scopes from the current access token. */
   scopes(): readonly string[] {
     return this._scopes();
+  }
+
+  /** Returns canonical owner identifier resolved from current access token (tid:oid, oid, or sub). */
+  ownerId(): string {
+    return this._ownerId();
   }
 
   /** Check if the user has a specific role. */
@@ -46,6 +58,7 @@ export class AuthorizationService {
   clear(): void {
     this._roles.set([]);
     this._scopes.set([]);
+    this._ownerId.set('');
   }
 
   /**
@@ -97,8 +110,8 @@ export class AuthorizationService {
   private isValidPayload(payload: AuthClaims | null): payload is AuthClaims {
     if (!payload) return false;
 
-    // Validate audience (eventomax-api App ID)
-    if (payload['aud'] !== 'a1a87bcd-fed7-4d65-83c3-338389b80093') {
+    // Validate audience (eventomax-api App ID GUID or Application ID URI)
+    if (!this.hasValidAudience(payload['aud'])) {
       return false;
     }
 
@@ -120,6 +133,20 @@ export class AuthorizationService {
     return true;
   }
 
+  private hasValidAudience(aud: unknown): boolean {
+    if (typeof aud === 'string') {
+      return ALLOWED_AUDIENCES.has(aud);
+    }
+    if (Array.isArray(aud)) {
+      return (
+        aud.length > 0 &&
+        aud.every((entry): entry is string => typeof entry === 'string') &&
+        aud.some((entry) => ALLOWED_AUDIENCES.has(entry))
+      );
+    }
+    return false;
+  }
+
   private populateFromPayload(payload: AuthClaims): void {
     // Process Roles
     let resolvedRoles: AppRole[] = [];
@@ -136,5 +163,20 @@ export class AuthorizationService {
       resolvedScopes = payload.scp.split(' ').filter(s => s.length > 0);
     }
     this._scopes.set(resolvedScopes);
+
+    // Process Owner ID (canonical tid:oid, fallback oid, fallback sub)
+    const tid = typeof payload['tid'] === 'string' && payload['tid'].trim().length > 0 ? payload['tid'].trim() : null;
+    const oid = typeof payload['oid'] === 'string' && payload['oid'].trim().length > 0 ? payload['oid'].trim() : null;
+    const sub = typeof payload['sub'] === 'string' && payload['sub'].trim().length > 0 ? payload['sub'].trim() : null;
+
+    let resolvedOwnerId = '';
+    if (tid && oid) {
+      resolvedOwnerId = `${tid}:${oid}`;
+    } else if (oid) {
+      resolvedOwnerId = oid;
+    } else if (sub) {
+      resolvedOwnerId = sub;
+    }
+    this._ownerId.set(resolvedOwnerId);
   }
 }

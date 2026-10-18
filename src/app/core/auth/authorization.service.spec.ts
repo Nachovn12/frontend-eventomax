@@ -96,6 +96,30 @@ describe('AuthorizationService', () => {
     expect(service.hasScope('custom_scope')).toBe(true);
   });
 
+  it('should accept authorized Application ID URI audience (api://GUID)', async () => {
+    const payload = getValidPayload();
+    payload.aud = `api://${validAud}`;
+    authMock.acquireAccessToken.mockResolvedValue({
+      accessToken: createDummyJwt(payload)
+    });
+    await service.refreshAuthorization();
+
+    expect(service.roles()).toEqual([AppRole.Admin]);
+    expect(service.scopes()).toEqual(['access_as_user']);
+  });
+
+  it('should accept aud claim as a valid string array containing an authorized audience', async () => {
+    const payload: any = getValidPayload();
+    payload.aud = ['other-resource', `api://${validAud}`];
+    authMock.acquireAccessToken.mockResolvedValue({
+      accessToken: createDummyJwt(payload)
+    });
+    await service.refreshAuthorization();
+
+    expect(service.roles()).toEqual([AppRole.Admin]);
+    expect(service.scopes()).toEqual(['access_as_user']);
+  });
+
   it('should fail closed if audience is incorrect', async () => {
     const payload = getValidPayload();
     payload.aud = 'wrong-audience';
@@ -106,6 +130,20 @@ describe('AuthorizationService', () => {
 
     expect(service.roles()).toEqual([]);
     expect(service.scopes()).toEqual([]);
+  });
+
+  it('should fail closed if audience is empty string, empty array, or contains non-string elements', async () => {
+    for (const invalidAud of ['', '   ', [], undefined, null, [validAud, 123]]) {
+      const payload: any = getValidPayload();
+      payload.aud = invalidAud;
+      authMock.acquireAccessToken.mockResolvedValue({
+        accessToken: createDummyJwt(payload)
+      });
+      await service.refreshAuthorization();
+
+      expect(service.roles()).toEqual([]);
+      expect(service.scopes()).toEqual([]);
+    }
   });
 
   it('should fail closed if issuer is incorrect', async () => {
@@ -163,5 +201,69 @@ describe('AuthorizationService', () => {
     await service.refreshAuthorization();
 
     expect(service.scopes()).toEqual([]);
+  });
+
+  it('should resolve empty roles and scopes when roles and scp claims are absent', async () => {
+    const payload: any = getValidPayload();
+    delete payload.roles;
+    delete payload.scp;
+    authMock.acquireAccessToken.mockResolvedValue({
+      accessToken: createDummyJwt(payload)
+    });
+    await service.refreshAuthorization();
+
+    expect(service.roles()).toEqual([]);
+    expect(service.scopes()).toEqual([]);
+    expect(service.hasRole(AppRole.Admin)).toBe(false);
+    expect(service.hasScope('access_as_user')).toBe(false);
+  });
+
+  it('should resolve canonical tid:oid ownerId when both are present', async () => {
+    const payload: any = getValidPayload();
+    payload.tid = 'tenant-duoc-ep2';
+    payload.oid = 'user-oid-123';
+    payload.sub = 'user-sub-456';
+    authMock.acquireAccessToken.mockResolvedValue({
+      accessToken: createDummyJwt(payload)
+    });
+    await service.refreshAuthorization();
+
+    expect(service.ownerId()).toBe('tenant-duoc-ep2:user-oid-123');
+  });
+
+  it('should fallback to oid when tid is absent', async () => {
+    const payload: any = getValidPayload();
+    payload.oid = 'user-oid-123';
+    payload.sub = 'user-sub-456';
+    authMock.acquireAccessToken.mockResolvedValue({
+      accessToken: createDummyJwt(payload)
+    });
+    await service.refreshAuthorization();
+
+    expect(service.ownerId()).toBe('user-oid-123');
+  });
+
+  it('should fallback to sub when oid and tid are absent', async () => {
+    const payload: any = getValidPayload();
+    payload.sub = 'user-sub-456';
+    authMock.acquireAccessToken.mockResolvedValue({
+      accessToken: createDummyJwt(payload)
+    });
+    await service.refreshAuthorization();
+
+    expect(service.ownerId()).toBe('user-sub-456');
+  });
+
+  it('should clear ownerId on clear()', async () => {
+    const payload: any = getValidPayload();
+    payload.oid = 'user-oid-123';
+    authMock.acquireAccessToken.mockResolvedValue({
+      accessToken: createDummyJwt(payload)
+    });
+    await service.refreshAuthorization();
+    expect(service.ownerId()).toBe('user-oid-123');
+
+    service.clear();
+    expect(service.ownerId()).toBe('');
   });
 });
