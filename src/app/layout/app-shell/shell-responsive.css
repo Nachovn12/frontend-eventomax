@@ -33,7 +33,7 @@
   .mobile-header, .mobile-backdrop, .mobile-toggle-btn { display: none; }
 
   @media (max-width: 767px) {
-    &.shell-layout { display: flex; flex-direction: column; }
+    .shell-layout { display: flex; flex-direction: column; }
 
     .mobile-header {
       display: flex; align-items: center; justify-content: space-between;

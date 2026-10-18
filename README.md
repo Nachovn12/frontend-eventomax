@@ -333,6 +333,45 @@ también aplica autorización por rol.
 
 ---
 
+## Pruebas E2E con Playwright (PowerShell)
+
+La suite de pruebas End-to-End vive en `e2e/` y está completamente separada de las pruebas unitarias con Vitest (`ng test`).
+
+### Comandos principales en PowerShell
+
+```powershell
+# Listar todas las pruebas E2E registradas sin ejecutarlas
+npx playwright test --list
+
+# Ejecutar la suite E2E completa en Chromium (reutiliza o levanta http://localhost:4200)
+npm run test:e2e
+
+# Abrir el último reporte HTML generado
+npm run test:e2e:report
+```
+
+### Variables de entorno opcionales (PowerShell)
+
+Por defecto, `playwright.config.ts` apunta a `http://localhost:4200` y levanta o reutiliza el servidor local (`npm run start:local`). Si deseas apuntar a otro entorno sin iniciar el servidor local:
+
+```powershell
+$env:PLAYWRIGHT_BASE_URL = "http://localhost:4200"
+npm run test:e2e
+```
+
+### Alcance actual y escenarios autenticados futuros
+
+- **Alcance actual implementado (`e2e/`)**:
+  - `e2e/smoke-public.spec.ts`: carga inicial, redirección `/` → `/login`, carrusel interactivo, vista `/forbidden` (`403`) y vista `404` en contexto de navegador limpio (sin cookies, cuentas personales ni tokens de Entra ID).
+  - `e2e/auth-guards.spec.ts`: validación del guard de rutas en el cliente Angular (`MsalGuard`) ante accesos anónimos a `/dashboard`, `/productions`, `/catalog`, `/reports` y `/audit`, comprobando que nunca se monte el `AppShell` privado. *(Nota: esta prueba verifica la protección de rutas en el cliente Angular; la validación criptográfica de JWT en API Gateway/BFF se verifica en las pruebas de backend/API).*
+  - `e2e/responsive-public.spec.ts`: ausencia de overflow horizontal (`scrollWidth <= clientWidth`) y visibilidad de controles primarios a `390`, `768`, `1024` y `1440 px`.
+- **Escenarios autenticados planificados para etapas posteriores (no simulados en esta fase)**:
+  - Inicio de sesión con cuentas de prueba dedicadas en Microsoft Entra ID (`storageState` aislado y excluido de Git en `e2e/.auth/`).
+  - Control de acceso basado en roles (RBAC) E2E para `Admin`, `Productor`, `Organizador` y `Auditor` contra el BFF activo.
+  - Creación de producciones, transición a `CONFIRMADO` con reserva atómica de inventario y verificación de eventos en RabbitMQ/Auditoría.
+
+---
+
 ## Proyecto académico
 
 **Asignatura:** DSY1107 — Desarrollo Cloud Native I
