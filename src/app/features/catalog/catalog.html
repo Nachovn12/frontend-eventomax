@@ -334,10 +334,12 @@
         <section class="panel ep2-catalog-editor smooth-shadow-ring-xs" aria-labelledby="equipment-editor-heading">
           <div class="panel-heading ep2-catalog-heading">
             <div>
-              <h2 id="equipment-editor-heading">Administrar equipos e inventario</h2>
-              <p>Crear equipos y dotar stock para producciones. Disponible solo para Admin.</p>
+              <h2 id="equipment-editor-heading">{{ editingEquipment() ? 'Editar equipo' : 'Administrar equipos e inventario' }}</h2>
+              <p>{{ editingEquipment() ? 'Modificar datos del equipo o ajustar stock disponible.' : 'Crear equipos y dotar stock para producciones. Disponible solo para Admin.' }}</p>
             </div>
-            <button type="button" class="btn-system" (click)="openCreateEquipment()">Nuevo equipo</button>
+            @if (!editingEquipment()) {
+              <button type="button" class="btn-system" (click)="openCreateEquipment()">Nuevo equipo</button>
+            }
           </div>
           @if (saveEquipmentError()) { <p class="ep2-catalog-message ep2-catalog-error" role="alert">{{ saveEquipmentError() }}</p> }
           @if (saveEquipmentMessage()) { <p class="ep2-catalog-message" role="status">{{ saveEquipmentMessage() }}</p> }
@@ -349,9 +351,33 @@
               <label>Descripción
                 <input formControlName="description" placeholder="Ej: Equipo de iluminación" maxlength="500" />
               </label>
-              <label>Cantidad inicial disponible
-                <input type="number" min="0" step="1" formControlName="initialAvailableQty" required />
-              </label>
+
+              @if (editingEquipment(); as current) {
+                <label>Stock reservado (solo lectura)
+                  <input type="text" [value]="current.reservedQty + ' unidades asignadas a eventos'" readonly disabled />
+                </label>
+                <fieldset class="ep2-catalog-stock-choice">
+                  <legend>Disponibilidad de stock</legend>
+                  <label class="ep2-catalog-radio-label">
+                    <input type="radio" value="keep" formControlName="stockMode" />
+                    Conservar disponible ({{ current.availableQty }} unidades)
+                  </label>
+                  <label class="ep2-catalog-radio-label">
+                    <input type="radio" value="adjust" formControlName="stockMode" />
+                    Ajustar disponible
+                  </label>
+                </fieldset>
+                @if (equipmentForm.controls.stockMode.value === 'adjust') {
+                  <label>Nueva cantidad disponible
+                    <input type="number" min="0" step="1" formControlName="adjustedAvailableQty" placeholder="0 o mayor" required />
+                  </label>
+                }
+              } @else {
+                <label>Cantidad inicial disponible
+                  <input type="number" min="0" step="1" formControlName="initialAvailableQty" required />
+                </label>
+              }
+
               <label>Estado
                 <select formControlName="active">
                   <option [ngValue]="true">Activo</option>
@@ -360,7 +386,7 @@
               </label>
               <div class="ep2-catalog-buttons">
                 <button type="submit" class="btn-system" [disabled]="savingEquipment() || equipmentForm.invalid">
-                  {{ savingEquipment() ? 'Guardando…' : 'Registrar equipo' }}
+                  {{ savingEquipment() ? 'Guardando…' : (editingEquipment() ? 'Guardar cambios' : 'Registrar equipo') }}
                 </button>
                 <button type="button" class="btn-clear" [disabled]="savingEquipment()" (click)="closeEquipmentEditor()">Cancelar</button>
               </div>
@@ -470,6 +496,9 @@
                       >
                         {{ !item.active ? 'INACTIVO' : (item.availableQty > 0 ? 'DISPONIBLE' : 'AGOTADO') }}
                       </span>
+                      @if (canManage()) {
+                        <button class="btn-clear ep2-catalog-table-action" type="button" (click)="openEditEquipment(item)">Editar equipo</button>
+                      }
                     </td>
                   </tr>
                 }

@@ -1,6 +1,25 @@
 import { Component, ChangeDetectionStrategy, computed, inject, signal, Signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
+
+export function integerValidator(control: AbstractControl): ValidationErrors | null {
+  const value = control.value;
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  const num = Number(value);
+  if (!Number.isFinite(num) || !Number.isInteger(num)) {
+    return { integer: true };
+  }
+  return null;
+}
 import {
   LucidePackage,
   LucideCircleCheck,
@@ -15,7 +34,7 @@ import {
 } from '@lucide/angular';
 import { CatalogDataService } from './catalog-data.service';
 import { CatalogService, CatalogServiceUpsertRequest } from './models/catalog-service.model';
-import { Equipment, CreateEquipmentRequest } from './models/equipment.model';
+import { Equipment, CreateEquipmentRequest, EquipmentUpdateRequest } from './models/equipment.model';
 import { BehaviorSubject, of, Observable } from 'rxjs';
 import { switchMap, map, catchError, startWith } from 'rxjs/operators';
 import { CurrencyPipe } from '@angular/common';
@@ -277,6 +296,7 @@ export class Catalog {
 
   // Equipment Admin Management
   readonly showEquipmentEditor = signal(false);
+  readonly editingEquipment = signal<Equipment | null>(null);
   readonly savingEquipment = signal(false);
   readonly saveEquipmentError = signal('');
   readonly saveEquipmentMessage = signal('');
@@ -284,13 +304,90 @@ export class Catalog {
   readonly equipmentForm = new FormGroup({
     name: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
     description: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
-    initialAvailableQty: new FormControl(1, { nonNullable: true, validators: [Validators.required, Validators.min(0)] }),
+    initialAvailableQty: new FormControl<number | null>(1, { validators: [Validators.required, Validators.min(0), integerValidator] }),
     active: new FormControl(true, { nonNullable: true }),
+    stockMode: new FormControl<'keep' | 'adjust'>('keep', { nonNullable: true }),
+    adjustedAvailableQty: new FormControl<number | null>(0),
   });
+
+  constructor() {
+    this.setupStockModeListener();
+    this.configureEquipmentFormMode(false);
+  }
+
+  private setupStockModeListener(): void {
+    this.equipmentForm.controls.stockMode.valueChanges.subscribe((mode) => {
+      this.syncStockModeValidation(mode);
+    });
+  }
+
+  private syncStockModeValidation(mode: 'keep' | 'adjust' | null | undefined): void {
+    const adjustedControl = this.equipmentForm.controls.adjustedAvailableQty;
+    if (mode === 'adjust') {
+      adjustedControl.enable();
+      adjustedControl.setValidators([Validators.required, Validators.min(0), integerValidator]);
+    } else {
+      adjustedControl.disable();
+      adjustedControl.clearValidators();
+    }
+    adjustedControl.updateValueAndValidity();
+  }
+
+  private configureEquipmentFormMode(isEdit: boolean): void {
+    const initialQtyControl = this.equipmentForm.controls.initialAvailableQty;
+    const stockModeControl = this.equipmentForm.controls.stockMode;
+
+    if (isEdit) {
+      initialQtyControl.disable();
+      initialQtyControl.clearValidators();
+      initialQtyControl.updateValueAndValidity();
+
+      stockModeControl.enable();
+      stockModeControl.updateValueAndValidity();
+      this.syncStockModeValidation(stockModeControl.value);
+    } else {
+      stockModeControl.disable();
+      stockModeControl.clearValidators();
+      stockModeControl.updateValueAndValidity();
+
+      this.syncStockModeValidation('keep');
+
+      initialQtyControl.enable();
+      initialQtyControl.setValidators([Validators.required, Validators.min(0), integerValidator]);
+      initialQtyControl.updateValueAndValidity();
+    }
+    this.equipmentForm.updateValueAndValidity();
+  }
 
   openCreateEquipment(): void {
     if (!this.canManage()) return;
-    this.equipmentForm.reset({ name: '', description: '', initialAvailableQty: 1, active: true });
+    this.editingEquipment.set(null);
+    this.equipmentForm.reset({
+      name: '',
+      description: '',
+      initialAvailableQty: 1,
+      active: true,
+      stockMode: 'keep',
+      adjustedAvailableQty: 0,
+    });
+    this.configureEquipmentFormMode(false);
+    this.saveEquipmentError.set('');
+    this.saveEquipmentMessage.set('');
+    this.showEquipmentEditor.set(true);
+  }
+
+  openEditEquipment(item: Equipment): void {
+    if (!this.canManage()) return;
+    this.editingEquipment.set(item);
+    this.equipmentForm.reset({
+      name: item.name,
+      description: item.description ?? '',
+      initialAvailableQty: item.availableQty,
+      active: item.active,
+      stockMode: 'keep',
+      adjustedAvailableQty: item.availableQty,
+    });
+    this.configureEquipmentFormMode(true);
     this.saveEquipmentError.set('');
     this.saveEquipmentMessage.set('');
     this.showEquipmentEditor.set(true);
@@ -299,53 +396,123 @@ export class Catalog {
   closeEquipmentEditor(): void {
     if (this.savingEquipment()) return;
     this.showEquipmentEditor.set(false);
+    this.editingEquipment.set(null);
+    this.configureEquipmentFormMode(false);
   }
 
   submitEquipment(): void {
     if (!this.canManage() || this.savingEquipment()) return;
+    const isEdit = this.editingEquipment() !== null;
+    this.configureEquipmentFormMode(isEdit);
     this.equipmentForm.markAllAsTouched();
-    if (this.equipmentForm.invalid) return;
 
-    const input = this.equipmentForm.getRawValue();
-    if (!Number.isSafeInteger(input.initialAvailableQty) || input.initialAvailableQty < 0) {
-      this.saveEquipmentError.set('Ingresa una cantidad inicial entera mayor o igual a 0.');
+    if (this.equipmentForm.invalid) {
+      if (this.equipmentForm.controls.name.invalid) {
+        this.saveEquipmentError.set('El nombre del equipo es obligatorio.');
+      } else if (isEdit && this.equipmentForm.controls.stockMode.value === 'adjust' && this.equipmentForm.controls.adjustedAvailableQty.invalid) {
+        this.saveEquipmentError.set('Ingresa una cantidad disponible entera mayor o igual a 0.');
+      } else if (!isEdit && this.equipmentForm.controls.initialAvailableQty.invalid) {
+        this.saveEquipmentError.set('Ingresa una cantidad inicial entera mayor o igual a 0.');
+      } else {
+        this.saveEquipmentError.set('Revisa los datos del formulario.');
+      }
       return;
     }
-    const request: CreateEquipmentRequest = {
-      name: input.name.trim(),
-      description: input.description.trim() || null,
-      active: input.active,
-      initialAvailableQty: input.initialAvailableQty,
-    };
-    if (!request.name) {
+
+    const input = this.equipmentForm.getRawValue();
+    const nameTrimmed = input.name.trim();
+    if (!nameTrimmed) {
       this.saveEquipmentError.set('El nombre del equipo es obligatorio.');
       return;
     }
+    if (nameTrimmed.length > 150) {
+      this.saveEquipmentError.set('El nombre del equipo no puede superar 150 caracteres.');
+      return;
+    }
+    const descriptionTrimmed = input.description ? input.description.trim() || null : null;
+    if (descriptionTrimmed && descriptionTrimmed.length > 500) {
+      this.saveEquipmentError.set('La descripción no puede superar 500 caracteres.');
+      return;
+    }
 
-    this.savingEquipment.set(true);
-    this.saveEquipmentError.set('');
-    this.saveEquipmentMessage.set('');
+    const current = this.editingEquipment();
+    if (current) {
+      let adjustedQty: number | undefined = undefined;
+      if (input.stockMode === 'adjust') {
+        const rawVal = input.adjustedAvailableQty;
+        if (rawVal === null || rawVal === undefined || !Number.isSafeInteger(Number(rawVal)) || Number(rawVal) < 0) {
+          this.saveEquipmentError.set('Ingresa una cantidad disponible entera mayor o igual a 0.');
+          return;
+        }
+        adjustedQty = Number(rawVal);
+      }
 
-    this.dataService.createEquipment(request).subscribe({
-      next: (result) => {
-        this.savingEquipment.set(false);
-        this.showEquipmentEditor.set(false);
-        this.saveEquipmentMessage.set(`Equipo #${result.id} (${result.name}) creado correctamente con stock inicial ${result.availableQty}.`);
-        this.retryEquipment();
-      },
-      error: (error: HttpErrorResponse) => {
-        this.savingEquipment.set(false);
-        this.saveEquipmentError.set(this.saveEquipmentErrorText(error));
-      },
-    });
+      const request: EquipmentUpdateRequest = {
+        name: nameTrimmed,
+        description: descriptionTrimmed,
+        active: input.active,
+        ...(adjustedQty !== undefined ? { availableQty: adjustedQty } : {}),
+      };
+
+      this.savingEquipment.set(true);
+      this.saveEquipmentError.set('');
+      this.saveEquipmentMessage.set('');
+
+      this.dataService.updateEquipment(current.id, request).subscribe({
+        next: (result) => {
+          this.savingEquipment.set(false);
+          this.showEquipmentEditor.set(false);
+          this.editingEquipment.set(null);
+          this.configureEquipmentFormMode(false);
+          this.saveEquipmentMessage.set(`Equipo #${result.id} (${result.name}) actualizado correctamente.`);
+          this.retryEquipment();
+        },
+        error: (error: HttpErrorResponse) => {
+          this.savingEquipment.set(false);
+          this.saveEquipmentError.set(this.saveEquipmentErrorText(error));
+        },
+      });
+    } else {
+      const rawInit = input.initialAvailableQty;
+      if (rawInit === null || rawInit === undefined || !Number.isSafeInteger(Number(rawInit)) || Number(rawInit) < 0) {
+        this.saveEquipmentError.set('Ingresa una cantidad inicial entera mayor o igual a 0.');
+        return;
+      }
+      const request: CreateEquipmentRequest = {
+        name: nameTrimmed,
+        description: descriptionTrimmed,
+        active: input.active,
+        initialAvailableQty: Number(rawInit),
+      };
+
+      this.savingEquipment.set(true);
+      this.saveEquipmentError.set('');
+      this.saveEquipmentMessage.set('');
+
+      this.dataService.createEquipment(request).subscribe({
+        next: (result) => {
+          this.savingEquipment.set(false);
+          this.showEquipmentEditor.set(false);
+          this.configureEquipmentFormMode(false);
+          this.saveEquipmentMessage.set(`Equipo #${result.id} (${result.name}) creado correctamente con stock inicial ${result.availableQty}.`);
+          this.retryEquipment();
+        },
+        error: (error: HttpErrorResponse) => {
+          this.savingEquipment.set(false);
+          this.saveEquipmentError.set(this.saveEquipmentErrorText(error));
+        },
+      });
+    }
   }
 
   private saveEquipmentErrorText(error: HttpErrorResponse): string {
     if (error.status === 0) return 'API Gateway no está disponible. Revisa la conexión y el despliegue.';
     if (error.status === 401) return 'Inicia sesión nuevamente para gestionar equipos.';
-    if (error.status === 403) return 'Solo Admin puede registrar nuevos equipos.';
-    if (error.status === 400) return 'El backend rechazó los datos del equipo. Revisa nombre y stock inicial.';
-    return 'No se pudo crear el equipo. Intenta nuevamente.';
+    if (error.status === 403) return 'Solo Admin puede registrar o actualizar equipos.';
+    if (error.status === 400) return 'El backend rechazó los datos del equipo. Revisa nombre y cantidades.';
+    if (error.status === 404) return 'El equipo ya no existe. Actualiza el listado.';
+    if (error.status === 409) return 'Conflicto de concurrencia al actualizar el inventario. Reintenta la operación.';
+    return 'No se pudo guardar el equipo. Intenta nuevamente.';
   }
 
   clearEquipmentFilters(): void {

@@ -21,6 +21,7 @@ describe('Catalog EP2 actions', () => {
       updateService: vi.fn(() => of(service)),
       getEquipment: vi.fn(() => of([])),
       createEquipment: vi.fn(() => of({ id: 1, name: 'Parlante', description: 'Audio', active: true, availableQty: 5, reservedQty: 0, totalQuantity: 5, availableQuantity: 5, status: 'DISPONIBLE' })),
+      updateEquipment: vi.fn(() => of({ id: 1, name: 'Parlante', description: 'Audio', active: true, availableQty: 5, reservedQty: 0, totalQuantity: 5, availableQuantity: 5, status: 'DISPONIBLE' })),
     };
     await TestBed.configureTestingModule({
       imports: [Catalog],
@@ -86,7 +87,7 @@ describe('Catalog EP2 actions', () => {
     admin.component.openCreateEquipment();
     expect(admin.component.showEquipmentEditor()).toBe(true);
 
-    admin.component.equipmentForm.setValue({
+    admin.component.equipmentForm.patchValue({
       name: 'Parlante Line Array',
       description: 'Sistema PA',
       initialAvailableQty: 10,
@@ -100,5 +101,27 @@ describe('Catalog EP2 actions', () => {
       initialAvailableQty: 10,
     });
     expect(admin.component.saveEquipmentMessage()).toContain('creado correctamente');
+  });
+
+  it('allows admins to update equipment with exact backend fields and PUT', async () => {
+    const admin = await setup(true);
+    const equip = { id: 7, name: 'Parlante', description: 'Audio', active: true, availableQty: 5, reservedQty: 0, totalQuantity: 5, availableQuantity: 5, status: 'DISPONIBLE' };
+    admin.component.openEditEquipment(equip);
+    expect(admin.component.showEquipmentEditor()).toBe(true);
+
+    admin.component.equipmentForm.patchValue({
+      name: 'Parlante Pro',
+      description: 'Audio Pro',
+      stockMode: 'adjust',
+      adjustedAvailableQty: 0,
+    });
+    admin.component.submitEquipment();
+    expect(admin.api.updateEquipment).toHaveBeenCalledWith(7, {
+      name: 'Parlante Pro',
+      description: 'Audio Pro',
+      active: true,
+      availableQty: 0,
+    });
+    expect(admin.component.saveEquipmentMessage()).toContain('actualizado correctamente');
   });
 });

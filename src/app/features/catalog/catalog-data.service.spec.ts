@@ -105,6 +105,43 @@ describe('CatalogDataService', () => {
     req.flush({ id: 2, name: 'Foco LED RGB', description: 'Equipo de iluminación', active: true, availableQty: 20, reservedQty: 0 });
   });
 
+  it('updates equipment through the protected Gateway route omitting availableQty when retaining stock', () => {
+    const request = { name: 'Foco LED RGB Actualizado', description: 'Nueva versión', active: true };
+    service.updateEquipment(2, request).subscribe((data) => {
+      expect(data.id).toBe(2);
+      expect(data.name).toBe('Foco LED RGB Actualizado');
+      expect(data.availableQty).toBe(20);
+    });
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/catalog/equipment/2`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({
+      name: 'Foco LED RGB Actualizado',
+      description: 'Nueva versión',
+      active: true,
+    });
+    expect(req.request.body).not.toHaveProperty('availableQty');
+    req.flush({ id: 2, name: 'Foco LED RGB Actualizado', description: 'Nueva versión', active: true, availableQty: 20, reservedQty: 0 });
+  });
+
+  it('updates equipment through the protected Gateway route preserving availableQty=0 when adjusted to zero', () => {
+    const request = { name: 'Foco LED RGB Agotado', description: null, active: true, availableQty: 0 };
+    service.updateEquipment(2, request).subscribe((data) => {
+      expect(data.id).toBe(2);
+      expect(data.availableQty).toBe(0);
+      expect(data.status).toBe('AGOTADO');
+    });
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/catalog/equipment/2`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({
+      name: 'Foco LED RGB Agotado',
+      description: null,
+      active: true,
+      availableQty: 0,
+    });
+    expect(req.request.body.availableQty).toBe(0);
+    req.flush({ id: 2, name: 'Foco LED RGB Agotado', description: null, active: true, availableQty: 0, reservedQty: 0 });
+  });
+
   it('queries reservations for a production from the Gateway route', () => {
     const mockReservations = [
       { reservationId: 101, equipmentId: 1, equipmentName: 'Parlante Line Array', quantity: 2, status: 'RESERVED' },

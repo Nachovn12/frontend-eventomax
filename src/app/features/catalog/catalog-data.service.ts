@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { CatalogService, CatalogServiceUpsertRequest } from './models/catalog-service.model';
-import { Equipment, CreateEquipmentRequest, EquipmentReservationItem, BackendEquipmentResponse } from './models/equipment.model';
+import { Equipment, CreateEquipmentRequest, EquipmentUpdateRequest, EquipmentReservationItem, BackendEquipmentResponse } from './models/equipment.model';
 import { ApiClientService } from '../../core/http/api-client.service';
 import { environment } from '../../../environments/environment';
 
@@ -56,6 +56,25 @@ export class CatalogDataService {
     return this.apiClient.post<BackendEquipmentResponse>(`${environment.apiGatewayUrl}/api/catalog/equipment`, payload).pipe(
       map(mapEquipmentResponse)
     );
+  }
+
+  updateEquipment(id: number, request: EquipmentUpdateRequest): Observable<Equipment> {
+    const payload: {
+      name: string;
+      description: string | null;
+      active: boolean;
+      availableQty?: number;
+    } = {
+      name: request.name.trim(),
+      description: request.description ? request.description.trim() : null,
+      active: request.active,
+    };
+    if (request.availableQty !== undefined && request.availableQty !== null) {
+      payload.availableQty = request.availableQty;
+    }
+    return this.apiClient
+      .put<BackendEquipmentResponse>(`${environment.apiGatewayUrl}/api/catalog/equipment/${id}`, payload)
+      .pipe(map(mapEquipmentResponse));
   }
 
   getReservationsByProduction(productionId: number): Observable<readonly EquipmentReservationItem[]> {

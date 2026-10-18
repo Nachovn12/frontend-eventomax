@@ -18,6 +18,13 @@ export interface CreateEquipmentRequest {
   readonly initialAvailableQty: number;
 }
 
+export interface EquipmentUpdateRequest {
+  readonly name: string;
+  readonly description?: string | null;
+  readonly active: boolean;
+  readonly availableQty?: number;
+}
+
 export interface EquipmentReservationItem {
   readonly reservationId: number;
   readonly equipmentId: number;

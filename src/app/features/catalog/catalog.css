@@ -317,8 +317,33 @@
 .ep2-catalog-buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ep2-catalog-buttons button { min-height: 42px; }
 .ep2-catalog-message { padding: 10px 24px; font-size: 13px; }
-.ep2-catalog-error { color: #991b1b; }
 .ep2-catalog-table-action { margin-top: 8px; }
+.ep2-catalog-stock-choice {
+  border: 1px solid var(--border-base);
+  border-radius: 9px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ep2-catalog-stock-choice legend {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 4px;
+  color: var(--text-main);
+}
+.ep2-catalog-radio-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  font-weight: normal !important;
+  cursor: pointer;
+}
+.ep2-catalog-radio-label input[type="radio"] {
+  width: auto !important;
+  min-height: auto !important;
+  margin: 0;
+}
 
 /* Tabs for Catalog (Servicios / Equipos e Inventario) */
 .catalog-tabs {
