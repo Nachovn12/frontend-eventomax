@@ -31,3 +31,21 @@ export interface ReportKpisResponse {
   };
   readonly metrics: ReportMetrics;
 }
+
+export interface TopServiceItem {
+  readonly serviceId: number;
+  readonly serviceName: string;
+  readonly hireCount: number;
+}
+
+export interface ReportTopServicesResponse {
+  readonly range: ReportRange;
+  readonly from: string;
+  readonly to: string;
+  readonly generatedAt: string;
+  readonly partialCoverage: {
+    readonly isPartial: boolean;
+    readonly description: string;
+  };
+  readonly items: readonly TopServiceItem[];
+}

@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, OnDestroy, computed, signal, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, of } from 'rxjs';
@@ -26,6 +26,7 @@ import { StatusChip } from '../../shared/ui/status-chip';
 import { ProductionsDataService } from './productions-data.service';
 import { CatalogDataService } from '../catalog/catalog-data.service';
 import { Equipment, EquipmentReservationItem } from '../catalog/models/equipment.model';
+import { CatalogService } from '../catalog/models/catalog-service.model';
 
 @Component({
   selector: 'app-productions',
@@ -33,6 +34,7 @@ import { Equipment, EquipmentReservationItem } from '../catalog/models/equipment
   imports: [
     ReactiveFormsModule,
     DatePipe,
+    DecimalPipe,
     ProductionTable,
     StatusChip,
     LucideCalendarDays,
@@ -135,6 +137,21 @@ export class Productions implements OnDestroy {
     ),
     { initialValue: [] as readonly Equipment[] }
   );
+  readonly availableServices = toSignal(
+    toObservable(this.canUpdate).pipe(
+      distinctUntilChanged(),
+      switchMap((canQueryServices) =>
+        canQueryServices
+          ? this.catalogDataService.getServices().pipe(
+              map((services) => services.filter((s) => s.active)),
+              catchError(() => of([] as readonly CatalogService[]))
+            )
+          : of([] as readonly CatalogService[])
+      )
+    ),
+    { initialValue: [] as readonly CatalogService[] }
+  );
+  readonly selectedServiceIds = signal<readonly number[]>([]);
   readonly reservationItems = signal<ProductionReservationItemRequest[]>([]);
   readonly productionReservations = signal<readonly EquipmentReservationItem[]>([]);
   readonly reservationsLoading = signal(false);
@@ -340,6 +357,7 @@ export class Productions implements OnDestroy {
     this.operationError.set('');
     this.reservationInputError.set('');
     this.reservationItems.set([]);
+    this.selectedServiceIds.set([]);
     this.suggestNextStatus(item.status);
     this.announcement.set(`Producción seleccionada: ${item.name}`);
     this.syncBodyScrollLock();
@@ -361,6 +379,7 @@ export class Productions implements OnDestroy {
     this.reservationsLoading.set(false);
     this.reservationsError.set(null);
     this.reservationItems.set([]);
+    this.selectedServiceIds.set([]);
     this.reservationInputError.set('');
     this.syncBodyScrollLock();
     const trigger = this.detailTriggerElement;
@@ -507,6 +526,19 @@ export class Productions implements OnDestroy {
     return detail ? `${eq.name} (${detail})` : eq.name;
   }
 
+  toggleService(serviceId: number): void {
+    const current = this.selectedServiceIds();
+    if (current.includes(serviceId)) {
+      this.selectedServiceIds.set(current.filter((id) => id !== serviceId));
+    } else {
+      this.selectedServiceIds.set([...current, serviceId]);
+    }
+  }
+
+  isServiceSelected(serviceId: number): boolean {
+    return this.selectedServiceIds().includes(serviceId);
+  }
+
   submitStatus(): void {
     if (!this.canUpdate() || this.saving()) return;
     const id = Number(this.updateId.value || this.detail()?.id || '');
@@ -517,6 +549,7 @@ export class Productions implements OnDestroy {
 
     const next = this.nextStatus.value;
     let items: ProductionReservationItemRequest[] | undefined;
+    let serviceIds: readonly number[] | undefined;
 
     if (next === 'CONFIRMADO') {
       if (this.reservationItems().length === 0) {
@@ -524,13 +557,16 @@ export class Productions implements OnDestroy {
         return;
       }
       items = this.reservationItems();
+      if (this.selectedServiceIds().length > 0) {
+        serviceIds = this.selectedServiceIds();
+      }
     }
 
     this.saving.set(true);
     this.operationError.set('');
     this.operationSuccess.set('');
 
-    this.dataService.updateStatus(id, { status: next, items }).subscribe({
+    this.dataService.updateStatus(id, { status: next, items, serviceIds }).subscribe({
       next: (production) => {
         this.saving.set(false);
         this.operationSuccess.set(`Producción #${production.id} actualizada a ${production.status}.`);
@@ -538,6 +574,7 @@ export class Productions implements OnDestroy {
         this.detailId.setValue(String(production.id));
         this.updateId.setValue(String(production.id));
         this.reservationItems.set([]);
+        this.selectedServiceIds.set([]);
         this.suggestNextStatus(production.status);
         this.fetchReservations(id);
         this.retry();

@@ -103,12 +103,55 @@
         </div>
       }
     </section>
-    <section class="panel report-pending smooth-shadow-ring-xs" aria-label="Reporte de servicios contratados">
-      <h2>Servicios más contratados</h2>
-      <p>Este indicador está pendiente: el endpoint <code>GET /api/report/top-services</code>
-        responde <strong>501 Not Implemented</strong> en el backend actual.
-        El evento Kafka v1 no incluye información suficiente sobre los servicios contratados.
-        No se muestran estadísticas ficticias.</p>
+    <section class="panel report-panel smooth-shadow-ring-xs" aria-labelledby="top-services-heading">
+      <div class="panel-heading report-heading">
+        <div>
+          <h2 id="top-services-heading">Servicios más contratados</h2>
+          <p>Ranking de servicios en producciones confirmadas en el período seleccionado.</p>
+        </div>
+      </div>
+
+      @if (isLoadingTopServices()) {
+        <div class="report-feedback" aria-busy="true" role="status">Cargando ranking de servicios…</div>
+      } @else if (topServicesError() !== null) {
+        <div class="report-feedback" role="alert">
+          <strong>No pudimos obtener el ranking de servicios</strong>
+          <p>{{ errorText(topServicesError()) }}</p>
+          <button type="button" class="btn-system" (click)="retry()">Reintentar</button>
+        </div>
+      } @else if (topServicesResponse(); as topServices) {
+        @if (topServices.partialCoverage.isPartial) {
+          <p class="report-coverage" role="note">
+            <strong>Alcance parcial:</strong> {{ topServices.partialCoverage.description }}
+          </p>
+        }
+
+        @if (topServices.items.length === 0) {
+          <p class="report-empty">Sin contrataciones de servicios registradas en este período.</p>
+        } @else {
+          <div class="report-table-scroll" role="region" aria-label="Tabla de servicios más contratados" tabindex="0">
+            <table class="data-table">
+              <caption class="sr-only">Ranking de servicios más contratados del período</caption>
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Servicio</th>
+                  <th scope="col">Contrataciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of topServices.items; track item.serviceId) {
+                  <tr>
+                    <td>{{ item.serviceId }}</td>
+                    <td><strong>{{ item.serviceName }}</strong></td>
+                    <td>{{ item.hireCount }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
     </section>
   } @else {
     <section class="panel report-feedback" role="alert">

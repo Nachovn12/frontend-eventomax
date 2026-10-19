@@ -32,6 +32,7 @@ export interface ProductionReservationItemRequest {
 export interface ProductionStatusUpdateRequest {
   status: ProductionStatus;
   items?: readonly ProductionReservationItemRequest[];
+  serviceIds?: readonly number[];
 }
 
 export type ProductionViewModel = Production;

@@ -96,6 +96,11 @@ describe('Productions', () => {
 
     catalogServiceMock = {
       getEquipment: vi.fn(() => of(mockEquipment)),
+      getServices: vi.fn(() => of([
+        { id: 101, name: 'Sonido En Vivo', description: 'Audio', rate: 150000, active: true },
+        { id: 102, name: 'Streaming HD', description: 'Video', rate: 200000, active: true },
+        { id: 103, name: 'Servicio Inactivo', description: 'Desc', rate: 50000, active: false }
+      ])),
       getReservationsByProduction: vi.fn(() => of(mockReservations))
     };
 
@@ -608,5 +613,43 @@ describe('Productions', () => {
       items: [{ equipmentId: 10, quantity: 2 }],
     });
     expect(fixture.componentInstance.operationSuccess()).toContain('CONFIRMADO');
+  });
+
+  it('allows selecting active services and sends serviceIds on confirmation', async () => {
+    enableRoles([AppRole.Admin]);
+    fixture = TestBed.createComponent(Productions);
+    fixture.detectChanges();
+    productionsSubject.next(mockProductions);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    fixture.componentInstance.selectProduction(mockProductions[0]);
+    fixture.detectChanges();
+
+    // Active services are loaded (101 and 102 active, 103 inactive filtered out)
+    expect(fixture.componentInstance.availableServices().length).toBe(2);
+    expect(fixture.nativeElement.querySelector('.services-contract-builder')).not.toBeNull();
+
+    // Toggle service 101
+    fixture.componentInstance.toggleService(101);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.isServiceSelected(101)).toBe(true);
+    expect(fixture.componentInstance.selectedServiceIds()).toEqual([101]);
+
+    // Add required equipment
+    fixture.componentInstance.selectedEquipmentId.setValue('10');
+    fixture.componentInstance.selectedQuantity.setValue(1);
+    fixture.componentInstance.addReservationItem();
+
+    // Submit
+    fixture.componentInstance.submitStatus();
+    fixture.detectChanges();
+
+    expect(dataServiceMock.updateStatus).toHaveBeenCalledWith(1, {
+      status: 'CONFIRMADO',
+      items: [{ equipmentId: 10, quantity: 1 }],
+      serviceIds: [101]
+    });
+    expect(fixture.componentInstance.selectedServiceIds()).toEqual([]);
   });
 });
