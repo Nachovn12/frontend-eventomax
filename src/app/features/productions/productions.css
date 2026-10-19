@@ -389,6 +389,19 @@
   padding: 10px 12px;
   border-radius: 8px;
 }
+.services-contract-builder { padding: 14px; border-radius: 12px; background: #f8fafc; border: 1px solid var(--border-base); display: grid; gap: 10px; }
+.services-builder-head h4 { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+.services-builder-head p { margin: 0; font-size: 12px; color: var(--text-light); }
+.services-checkbox-grid { display: grid; gap: 8px; }
+.service-checkbox-card { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-base); background: #fff; cursor: pointer; transition: border-color .15s, background-color .15s; }
+.service-checkbox-card:hover { border-color: #cbd5e1; background: #f1f5f9; }
+.service-checkbox-card.selected { border-color: #0284c7; background: #f0f9ff; }
+.service-checkbox-card input[type="checkbox"] { margin-top: 3px; accent-color: #0284c7; }
+.service-card-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.service-card-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.service-card-desc { font-size: 12px; color: var(--text-light); }
+.service-card-rate { font-size: 12px; font-weight: 600; color: #0369a1; margin-top: 2px; }
+.services-empty-hint { font-size: 12px; color: var(--text-light); margin: 0; }
 .btn-submit-status,
 .form-field input {
   width: 100%;

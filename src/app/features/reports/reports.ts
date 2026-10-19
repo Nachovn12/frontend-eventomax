@@ -7,12 +7,18 @@ import { BehaviorSubject, combineLatest, of } from 'rxjs';
 import { catchError, map, startWith, switchMap } from 'rxjs/operators';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
-import { ReportKpisResponse, ReportRange } from './models/report.model';
+import { ReportKpisResponse, ReportRange, ReportTopServicesResponse } from './models/report.model';
 import { ReportsDataService } from './reports-data.service';
 import { StatusDistributionChart } from './status-distribution-chart';
 
 interface ReportViewState {
   readonly data: ReportKpisResponse | null;
+  readonly loading: boolean;
+  readonly error: number | null;
+}
+
+interface TopServicesViewState {
+  readonly data: ReportTopServicesResponse | null;
   readonly loading: boolean;
   readonly error: number | null;
 }
@@ -53,9 +59,36 @@ export class Reports {
     { initialValue: { data: null, loading: true, error: null } as ReportViewState }
   );
 
+  private readonly topServicesState = toSignal(
+    combineLatest([
+      this.rangeControl.valueChanges.pipe(startWith(this.rangeControl.value)),
+      this.refreshSubject,
+    ]).pipe(
+      switchMap(([range]) => {
+        if (!this.canView()) {
+          return of<TopServicesViewState>({ data: null, loading: false, error: 403 });
+        }
+        return this.reports.getTopServices(range).pipe(
+          map((data): TopServicesViewState => ({ data, loading: false, error: null })),
+          catchError((error: HttpErrorResponse) =>
+            of<TopServicesViewState>({ data: null, loading: false, error: error.status })
+          ),
+          startWith<TopServicesViewState>({ data: null, loading: true, error: null }),
+        );
+      })
+    ),
+    { initialValue: { data: null, loading: true, error: null } as TopServicesViewState }
+  );
+
   readonly isLoading = computed(() => this.reportState().loading);
   readonly response = computed(() => this.reportState().data);
   readonly errorCode = computed(() => this.reportState().error);
+
+  readonly isLoadingTopServices = computed(() => this.topServicesState().loading);
+  readonly topServicesResponse = computed(() => this.topServicesState().data);
+  readonly topServicesError = computed(() => this.topServicesState().error);
+  readonly topServicesItems = computed(() => this.topServicesResponse()?.items ?? []);
+
   readonly statusBars = computed(() => {
     const distribution = this.response()?.metrics.currentStatusDistribution ?? {};
     const rows = Object.entries(distribution).map(([status, count]) => ({
@@ -76,7 +109,7 @@ export class Reports {
     if (code === 403) return 'Se requiere el rol Admin y el permiso access_as_user para ver este reporte.';
     if (code === 404) return 'La ruta de Report todavía no está configurada en API Gateway o BFF.';
     if (code === 0 || code === 502 || code === 503) return 'Report no está disponible. Revisa la conectividad cloud.';
-    return 'No fue posible cargar los KPIs. Intenta nuevamente.';
+    return 'No fue posible cargar la información. Intenta nuevamente.';
   }
 
   retry(): void {

@@ -437,6 +437,41 @@
                       </p>
                     }
                   </div>
+
+                  <div class="services-contract-builder">
+                    <div class="services-builder-head">
+                      <h4>Servicios a contratar (opcional)</h4>
+                      <p>
+                        Selecciona los servicios de catálogo que formarán parte de la contratación para esta confirmación.
+                      </p>
+                    </div>
+
+                    @if (availableServices().length > 0) {
+                      <div class="services-checkbox-grid" role="group" aria-label="Servicios de catálogo disponibles para contratación">
+                        @for (srv of availableServices(); track srv.id) {
+                          <label class="service-checkbox-card" [class.selected]="isServiceSelected(srv.id)">
+                            <input
+                              type="checkbox"
+                              [checked]="isServiceSelected(srv.id)"
+                              (change)="toggleService(srv.id)"
+                              [disabled]="saving()"
+                            />
+                            <div class="service-card-info">
+                              <span class="service-card-name">{{ srv.name }}</span>
+                              @if (srv.description) {
+                                <span class="service-card-desc">{{ srv.description }}</span>
+                              }
+                              <span class="service-card-rate">${{ srv.rate | number:'1.0-2' }}</span>
+                            </div>
+                          </label>
+                        }
+                      </div>
+                    } @else {
+                      <p class="services-empty-hint" role="note">
+                        No hay servicios activos disponibles en catálogo para asociar.
+                      </p>
+                    }
+                  </div>
                 }
 
                 <div class="workflow-actions">

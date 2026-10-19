@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClientService } from '../../core/http/api-client.service';
 import { environment } from '../../../environments/environment';
-import { ReportKpisResponse, ReportRange } from './models/report.model';
+import { ReportKpisResponse, ReportRange, ReportTopServicesResponse } from './models/report.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReportsDataService {
@@ -13,6 +13,13 @@ export class ReportsDataService {
     const params = new URLSearchParams({ range });
     return this.api.get<ReportKpisResponse>(
       `${environment.apiGatewayUrl}/api/report/kpis?${params.toString()}`
+    );
+  }
+
+  getTopServices(range: ReportRange = 'last7d'): Observable<ReportTopServicesResponse> {
+    const params = new URLSearchParams({ range });
+    return this.api.get<ReportTopServicesResponse>(
+      `${environment.apiGatewayUrl}/api/report/top-services?${params.toString()}`
     );
   }
 }
