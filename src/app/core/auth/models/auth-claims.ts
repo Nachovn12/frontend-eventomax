@@ -4,7 +4,13 @@
  * to prevent assuming they are always present or correctly typed arrays/strings.
  */
 export interface AuthClaims {
+  aud?: unknown;
+  iss?: unknown;
+  exp?: unknown;
   roles?: unknown;
   scp?: unknown;
+  tid?: unknown;
+  oid?: unknown;
+  sub?: unknown;
   [key: string]: unknown;
 }

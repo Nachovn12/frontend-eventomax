@@ -64,4 +64,74 @@ describe('ProductionsDataService', () => {
       ]);
     });
   });
+
+  it('loads production detail through API Gateway', () => {
+    service.getProduction(42).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions/42`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ id: 42 });
+  });
+
+  it('creates a production with organizerId using POST, without manually setting JWT', () => {
+    const body = { organizerId: 'org-7', name: 'Evento de prueba', scheduledAt: '2026-12-20T18:00:00', location: 'Santiago' };
+    service.createProduction(body).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(body);
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ id: 7, ...body, status: 'SOLICITADO' });
+  });
+
+  it('updates status with the backend contract via PUT', () => {
+    service.updateStatus(7, { status: 'EN_MONTAJE' }).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions/7/status`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ status: 'EN_MONTAJE' });
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ id: 7, status: 'EN_MONTAJE' });
+  });
+
+  it('updates status with reservation items when confirming', () => {
+    const updateRequest = {
+      status: 'CONFIRMADO' as const,
+      items: [{ equipmentId: 1, quantity: 2 }]
+    };
+    service.updateStatus(7, updateRequest).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions/7/status`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(updateRequest);
+    req.flush({ id: 7, status: 'CONFIRMADO' });
+  });
+
+  it('requests crew ticket via GET /api/productions/{id}/crew-ticket', () => {
+    const mockTicket = {
+      id: 1,
+      productionId: 42,
+      eventId: 'evt-1',
+      productionName: 'Prod 42',
+      scheduledAt: '2026-11-20T18:00:00',
+      location: 'Loc',
+      status: 'EN_MONTAJE',
+      instructions: 'Instrucciones',
+      createdAt: '2026-10-19T10:00:00',
+      updatedAt: '2026-10-19T10:00:00'
+    };
+    service.getCrewTicket(42).subscribe((ticket) => {
+      expect(ticket).toEqual(mockTicket);
+    });
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions/42/crew-ticket`);
+    expect(req.request.method).toBe('GET');
+    req.flush(mockTicket);
+  });
+
+  it('downloads quote PDF via GET /api/productions/{id}/quote-pdf as blob', () => {
+    const mockBlob = new Blob(['%PDF-1.4 test'], { type: 'application/pdf' });
+    service.downloadQuotePdf(42).subscribe((blob) => {
+      expect(blob).toEqual(mockBlob);
+    });
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions/42/quote-pdf`);
+    expect(req.request.method).toBe('GET');
+    req.flush(mockBlob);
+  });
 });

@@ -1,3 +1,29 @@
-:host {
-  display: block;
-}
+:host { display: block; }
+.report-heading { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; }
+.report-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.report-controls label { font-size: 13px; color: var(--text-muted); }
+.report-controls select { min-height: 42px; border: 1px solid var(--border-base); border-radius: 9px; padding: 8px 10px; background: var(--bg-surface); color: var(--text-main); font: inherit; }
+.report-controls select:focus-visible, .report-controls button:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
+.report-feedback { padding: 32px 24px; color: var(--text-main); }
+.report-feedback p { margin-block: 10px; color: var(--text-muted); }
+.report-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 20px 24px; }
+.report-metrics .metric-card { display: grid; gap: 10px; padding: 20px; }
+.report-metrics .metric-card > span { color: var(--text-muted); font-size: 13px; }
+.report-metrics .metric-card > small { color: var(--text-muted); }
+.report-coverage { margin: 0 24px; padding: 14px 16px; border-left: 3px solid #b45309; background: var(--bg-surface-hover); color: var(--text-main); line-height: 1.6; }
+.report-period { padding: 14px 24px; color: var(--text-muted); font-size: 12px; }
+.report-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding: 4px 24px 24px; }
+.report-sections h3 { margin-bottom: 16px; font-size: 15px; }
+.report-bars { display: grid; gap: 16px; }
+.report-bar-caption { display: flex; gap: 12px; justify-content: space-between; font-size: 12px; }
+.report-bar-track { height: 12px; background: var(--bg-surface-hover); border-radius: 99px; overflow: hidden; }
+.report-bar-fill { height: 100%; background: #2563eb; border-radius: inherit; }
+.report-table-scroll { min-width: 0; overflow: auto; }
+.report-table-scroll .data-table { width: 100%; min-width: 390px; }
+.report-empty { color: var(--text-muted); font-size: 13px; }
+.report-pending { padding: 24px; margin-top: 24px; }
+.report-pending h2 { font-size: 15px; margin-bottom: 8px; }
+.report-pending p { font-size: 13px; line-height: 1.7; color: var(--text-muted); }
+@media (max-width: 900px) { .report-sections { grid-template-columns: 1fr; } }
+@media (max-width: 680px) { .report-metrics { grid-template-columns: 1fr; } .report-controls { width: 100%; } }
+@media (forced-colors: active) { .report-bar-fill { background: Highlight; } }

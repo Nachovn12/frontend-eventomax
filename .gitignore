@@ -66,3 +66,13 @@ Thumbs.db
 .agents/
 AGENTS.md
 skills-lock.json
+# Playwright CLI & E2E artifacts (may contain traces, reports or auth state)
+.playwright-cli/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth/
+e2e/.auth/
+*storageState*.json
+*.har

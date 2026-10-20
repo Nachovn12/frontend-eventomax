@@ -109,11 +109,11 @@ describe('AppShell', () => {
     expect(element.querySelector('.user-name-role')?.textContent?.trim()).toBe('Persona De Prueba');
   });
   it.each([
-    [AppRole.Admin, ['/dashboard', '/productions', '/catalog']],
+    [AppRole.Admin, ['/dashboard', '/productions', '/catalog', '/reports', '/audit']],
     [AppRole.Productor, ['/dashboard', '/productions', '/catalog']],
     [AppRole.Organizador, ['/dashboard', '/productions']],
-    [AppRole.Auditor, ['/dashboard']],
-  ])('keeps the existing navigation permissions for %s (EP1 features)', (role, expected) => {
+    [AppRole.Auditor, ['/dashboard', '/audit']],
+  ])('shows the role-based navigation for %s (EP2 modules)', (role, expected) => {
     roles.set([role]);
     fixture.detectChanges();
     const links = Array.from(
@@ -125,7 +125,7 @@ describe('AppShell', () => {
     roles.set([AppRole.Admin, AppRole.Auditor]);
     fixture.detectChanges();
     expect(fixture.componentInstance.displayRole()).toBe('Administrador, Auditor');
-    expect(fixture.nativeElement.querySelector('a[href="/audit"]')).toBeNull(); // Hidden by feature flag
+    expect(fixture.nativeElement.querySelector('a[href="/audit"]')).not.toBeNull();
   });
   it('closes mobile navigation on Escape and returns focus to its toggle', () => {
     const button: HTMLButtonElement = fixture.nativeElement.querySelector('.mobile-toggle-btn');
@@ -136,7 +136,24 @@ describe('AppShell', () => {
     sidebar.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     fixture.detectChanges();
     expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(button);
+  });
 
+  it('exposes properly encoded accessible labels and titles for mobile and desktop menu toggles', () => {
+    const openBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.mobile-toggle-btn');
+    const closeBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.mobile-toggle');
+    const desktopToggle: HTMLButtonElement = fixture.nativeElement.querySelector('.desktop-toggle');
+
+    expect(openBtn.getAttribute('aria-label')).toBe('Abrir menú');
+    expect(closeBtn.getAttribute('aria-label')).toBe('Cerrar menú');
+    expect(desktopToggle.getAttribute('aria-label')).toBe('Colapsar menú');
+    expect(desktopToggle.getAttribute('title')).toBe('Colapsar menú');
+
+    fixture.componentInstance.toggleSidebar();
+    fixture.detectChanges();
+
+    expect(desktopToggle.getAttribute('aria-label')).toBe('Expandir menú');
+    expect(desktopToggle.getAttribute('title')).toBe('Expandir menú');
   });
   it('has a keyboard skip link and focusable main landmark', () => {
     expect(fixture.nativeElement.querySelector('.skip-link').getAttribute('href')).toBe(

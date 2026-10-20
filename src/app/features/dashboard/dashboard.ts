@@ -4,6 +4,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
 import { DashboardDataService } from './dashboard-data.service';
+import { ReportsDataService } from '../reports/reports-data.service';
+import { ReportKpisResponse } from '../reports/models/report.model';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   LucideCalendarDays,
   LucideClock3,
@@ -37,6 +40,7 @@ import { CatalogService } from '../catalog/models/catalog-service.model';
 export class Dashboard {
   private readonly authz = inject(AuthorizationService);
   private readonly dataService = inject(DashboardDataService);
+  private readonly reportsData = inject(ReportsDataService);
 
   readonly canViewProductions = computed(() =>
     this.authz.roles().some((role) => [AppRole.Admin, AppRole.Productor].includes(role))
@@ -51,6 +55,38 @@ export class Dashboard {
   );
 
   private readonly retrySubject = new BehaviorSubject<void>(undefined);
+
+
+  // EMX-106: la reportería es independiente del panel operativo. Un fallo de Report
+  // NO debe ocultar los datos válidos de Productions y Catalog.
+  private readonly reportState = toSignal(
+    this.retrySubject.pipe(
+      switchMap(() => {
+        if (!this.isAdmin() || !this.authz.hasScope('access_as_user')) {
+          return of<{ data: ReportKpisResponse | null; loading: boolean; error: number | null }>({
+            data: null, loading: false, error: null
+          });
+        }
+        return this.reportsData.getKpis('last24h').pipe(
+          map(data => ({ data, loading: false, error: null as number | null })),
+          catchError((error: HttpErrorResponse) =>
+            of({ data: null as ReportKpisResponse | null, loading: false, error: error.status })
+          ),
+          startWith({ data: null as ReportKpisResponse | null, loading: true, error: null as number | null })
+        );
+      })
+    ),
+    { initialValue: { data: null, loading: true, error: null } as {
+      data: ReportKpisResponse | null; loading: boolean; error: number | null
+    } }
+  );
+
+  readonly reportLoading = computed(() => this.reportState().loading);
+  readonly reportKpis = computed(() => this.reportState().data);
+  readonly reportErrorCode = computed(() => this.reportState().error);
+  readonly canViewReportSummary = computed(() =>
+    this.isAdmin() && this.authz.hasScope('access_as_user')
+  );
 
   private readonly dashboardState = toSignal(
     this.retrySubject.pipe(
