@@ -36,3 +36,16 @@ export interface ProductionStatusUpdateRequest {
 }
 
 export type ProductionViewModel = Production;
+
+export interface CrewTicket {
+  readonly id: number;
+  readonly productionId: number;
+  readonly eventId: string;
+  readonly productionName: string;
+  readonly scheduledAt: string;
+  readonly location: string;
+  readonly status: ProductionStatus;
+  readonly instructions?: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}

@@ -20,7 +20,7 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
-import { Production, ProductionStatus, ProductionReservationItemRequest } from '../../core/models/production.model';
+import { Production, ProductionStatus, ProductionReservationItemRequest, CrewTicket } from '../../core/models/production.model';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { StatusChip } from '../../shared/ui/status-chip';
 import { ProductionsDataService } from './productions-data.service';
@@ -108,6 +108,8 @@ export class Productions implements OnDestroy {
   private readonly authz = inject(AuthorizationService);
   readonly canCreate = computed(() => this.authz.hasAnyRole([AppRole.Productor, AppRole.Organizador]) && this.authz.hasScope('access_as_user'));
   readonly canUpdate = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]) && this.authz.hasScope('access_as_user'));
+  readonly canViewCrewTicket = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]) && this.authz.hasScope('access_as_user'));
+  readonly canDownloadQuote = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor, AppRole.Organizador]) && this.authz.hasScope('access_as_user'));
   readonly isOrganizerOnly = computed(() => this.authz.hasAnyRole([AppRole.Organizador]) && !this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]));
   readonly currentOwnerId = computed(() => this.authz.ownerId());
   readonly showCreate = signal(false);
@@ -120,10 +122,20 @@ export class Productions implements OnDestroy {
   readonly selectedProductionId = computed(() => this.detail()?.id ?? null);
   readonly detailId = new FormControl('', { nonNullable: true });
   readonly updateId = new FormControl('', { nonNullable: true });
-  readonly nextStatus = new FormControl<ProductionStatus>('CONFIRMADO', { nonNullable: true });
+  readonly nextStatus = new FormControl<ProductionStatus | ''>('', { nonNullable: true });
+
+  isTerminalStatus(status?: ProductionStatus | '' | null): boolean {
+    return status === 'CERRADO' || status === 'CANCELADO';
+  }
+
+  readonly isSelectedTerminal = computed(() => {
+    const current = this.detail();
+    return current ? this.isTerminalStatus(current.status) : false;
+  });
 
   private lastTriggerElement: HTMLElement | null = null;
   private detailTriggerElement: HTMLElement | null = null;
+  private ticketTriggerElement: HTMLElement | null = null;
 
   // Reservation items for CONFIRMADO transition & Detail inquiry
   readonly availableEquipment = toSignal(
@@ -160,6 +172,16 @@ export class Productions implements OnDestroy {
   readonly selectedQuantity = new FormControl<number>(1, { nonNullable: true });
   readonly reservationInputError = signal('');
 
+  // Ticket de cuadrilla
+  readonly ticketLoading = signal<boolean>(false);
+  readonly ticketError = signal<string | null>(null);
+  readonly currentTicket = signal<CrewTicket | null>(null);
+  readonly showTicketModal = signal<boolean>(false);
+
+  // Descarga de PDF
+  readonly quoteDownloading = signal<boolean>(false);
+  readonly quoteError = signal<string | null>(null);
+
   readonly workflowForm = new FormGroup({
     nextStatus: this.nextStatus,
     selectedEquipmentId: this.selectedEquipmentId,
@@ -178,7 +200,7 @@ export class Productions implements OnDestroy {
   }
 
   private syncBodyScrollLock(): void {
-    this.setBodyScrollLocked(this.showCreate() || this.detail() !== null);
+    this.setBodyScrollLocked(this.showCreate() || this.detail() !== null || this.showTicketModal());
   }
 
   private setBodyScrollLocked(locked: boolean): void {
@@ -358,6 +380,7 @@ export class Productions implements OnDestroy {
     this.reservationInputError.set('');
     this.reservationItems.set([]);
     this.selectedServiceIds.set([]);
+    this.nextStatus.setValue('');
     this.suggestNextStatus(item.status);
     this.announcement.set(`Producción seleccionada: ${item.name}`);
     this.syncBodyScrollLock();
@@ -375,6 +398,7 @@ export class Productions implements OnDestroy {
     this.detail.set(null);
     this.detailId.setValue('');
     this.updateId.setValue('');
+    this.nextStatus.setValue('');
     this.productionReservations.set([]);
     this.reservationsLoading.set(false);
     this.reservationsError.set(null);
@@ -387,7 +411,7 @@ export class Productions implements OnDestroy {
     setTimeout(() => trigger?.focus(), 0);
   }
 
-  private suggestNextStatus(current: ProductionStatus): void {
+  suggestNextStatus(current: ProductionStatus): void {
     switch (current) {
       case 'SOLICITADO':
         this.nextStatus.setValue('CONFIRMADO');
@@ -401,8 +425,12 @@ export class Productions implements OnDestroy {
       case 'EN_EJECUCION':
         this.nextStatus.setValue('CERRADO');
         break;
+      case 'CERRADO':
+      case 'CANCELADO':
+        this.nextStatus.setValue('');
+        break;
       default:
-        this.nextStatus.setValue('CONFIRMADO');
+        this.nextStatus.setValue('');
         break;
     }
   }
@@ -414,6 +442,7 @@ export class Productions implements OnDestroy {
     this.dataService.getProduction(id).subscribe({
       next: (result) => {
         this.detail.set(result);
+        this.suggestNextStatus(result.status);
         this.detailLoading.set(false);
         this.syncBodyScrollLock();
         this.fetchReservations(id);
@@ -473,6 +502,7 @@ export class Productions implements OnDestroy {
   }
 
   addReservationItem(): void {
+    if (this.isSelectedTerminal()) return;
     const rawId = this.selectedEquipmentId.value;
     const eqId = Number(rawId);
     const qty = Number(this.selectedQuantity.value);
@@ -515,6 +545,7 @@ export class Productions implements OnDestroy {
   }
 
   removeReservationItem(index: number): void {
+    if (this.isSelectedTerminal()) return;
     const current = this.reservationItems();
     this.reservationItems.set(current.filter((_, i) => i !== index));
   }
@@ -527,6 +558,7 @@ export class Productions implements OnDestroy {
   }
 
   toggleService(serviceId: number): void {
+    if (this.isSelectedTerminal()) return;
     const current = this.selectedServiceIds();
     if (current.includes(serviceId)) {
       this.selectedServiceIds.set(current.filter((id) => id !== serviceId));
@@ -541,6 +573,15 @@ export class Productions implements OnDestroy {
 
   submitStatus(): void {
     if (!this.canUpdate() || this.saving()) return;
+    const current = this.detail();
+    if (current && this.isTerminalStatus(current.status)) {
+      this.operationError.set(
+        current.status === 'CERRADO'
+          ? 'Producción cerrada. No se permiten nuevas transiciones de estado.'
+          : 'Producción cancelada. No se permiten nuevas transiciones de estado.'
+      );
+      return;
+    }
     const id = Number(this.updateId.value || this.detail()?.id || '');
     if (!Number.isSafeInteger(id) || id < 1) {
       this.operationError.set('Selecciona una producción.');
@@ -548,6 +589,10 @@ export class Productions implements OnDestroy {
     }
 
     const next = this.nextStatus.value;
+    if (!next) {
+      this.operationError.set('Selecciona un estado operativo válido.');
+      return;
+    }
     let items: ProductionReservationItemRequest[] | undefined;
     let serviceIds: readonly number[] | undefined;
 
@@ -609,5 +654,91 @@ export class Productions implements OnDestroy {
 
   retry(): void {
     this.retrySubject.next();
+  }
+
+  viewCrewTicket(productionId: number, trigger?: HTMLElement): void {
+    if (!this.canViewCrewTicket()) return;
+    this.ticketTriggerElement = trigger ?? (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    this.ticketLoading.set(true);
+    this.ticketError.set(null);
+    this.currentTicket.set(null);
+    this.showTicketModal.set(true);
+    this.syncBodyScrollLock();
+
+    setTimeout(() => {
+      if (typeof document !== 'undefined') {
+        const modal = document.querySelector<HTMLElement>('.ticket-modal-card');
+        const firstFocusable = modal?.querySelector<HTMLElement>('button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+        (firstFocusable ?? modal)?.focus();
+      }
+    }, 0);
+
+    this.dataService.getCrewTicket(productionId).subscribe({
+      next: (ticket) => {
+        this.currentTicket.set(ticket);
+        this.ticketLoading.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.ticketLoading.set(false);
+        if (err.status === 404) {
+          this.ticketError.set('No se ha emitido un ticket de cuadrilla para esta producción.');
+        } else if (err.status === 403) {
+          this.ticketError.set('No tienes permisos para consultar el ticket de cuadrilla.');
+        } else {
+          this.ticketError.set('Error al recuperar el ticket de cuadrilla.');
+        }
+      }
+    });
+  }
+
+  closeTicketModal(): void {
+    this.showTicketModal.set(false);
+    this.currentTicket.set(null);
+    this.ticketError.set(null);
+    this.syncBodyScrollLock();
+    const trigger = this.ticketTriggerElement;
+    this.ticketTriggerElement = null;
+    setTimeout(() => trigger?.focus(), 0);
+  }
+
+  onTicketKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeTicketModal();
+      return;
+    }
+    this.trapFocus(event);
+  }
+
+  downloadQuotePdf(productionId: number): void {
+    if (!this.canDownloadQuote() || this.quoteDownloading()) return;
+    this.quoteDownloading.set(true);
+    this.quoteError.set(null);
+
+    this.dataService.downloadQuotePdf(productionId).subscribe({
+      next: (blob) => {
+        this.quoteDownloading.set(false);
+        if (typeof window !== 'undefined') {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `acta-cierre-produccion-${productionId}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.quoteDownloading.set(false);
+        if (err.status === 404) {
+          this.quoteError.set('El acta de cierre PDF no está disponible para esta producción.');
+        } else if (err.status === 403) {
+          this.quoteError.set('No tienes permisos para descargar el acta de cierre.');
+        } else {
+          this.quoteError.set('Error al descargar el acta de cierre PDF.');
+        }
+      }
+    });
   }
 }

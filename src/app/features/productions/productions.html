@@ -293,6 +293,44 @@
             </dl>
           </section>
 
+          <section class="detail-section" aria-labelledby="operations-docs-heading">
+            <div class="detail-section-header">
+              <h3 id="operations-docs-heading">Documentos y Hoja de Ruta</h3>
+            </div>
+
+            @if (quoteError()) {
+              <div class="field-error-banner" role="alert">{{ quoteError() }}</div>
+            }
+
+            <div class="docs-action-buttons">
+              @if (['EN_MONTAJE', 'EN_EJECUCION', 'CERRADO'].includes(selected.status) && canViewCrewTicket()) {
+                <button
+                  #ticketBtn
+                  type="button"
+                  class="btn-secondary btn-ticket-view"
+                  [attr.aria-label]="'Ver ticket de cuadrilla para producción #' + selected.id"
+                  (click)="viewCrewTicket(selected.id, ticketBtn)"
+                >
+                  <svg lucideActivity class="icon-inline" strokeWidth="1.75" aria-hidden="true" />
+                  Ver Ticket de Cuadrilla
+                </button>
+              }
+
+              @if (selected.status === 'CERRADO' && canDownloadQuote()) {
+                <button
+                  type="button"
+                  class="btn-secondary btn-quote-download"
+                  [disabled]="quoteDownloading()"
+                  [attr.aria-label]="'Descargar acta de cierre en PDF para producción #' + selected.id"
+                  (click)="downloadQuotePdf(selected.id)"
+                >
+                  <svg lucideCircleCheck class="icon-inline" strokeWidth="1.75" aria-hidden="true" />
+                  {{ quoteDownloading() ? 'Descargando Acta…' : 'Descargar Acta de Cierre (PDF)' }}
+                </button>
+              }
+            </div>
+          </section>
+
           <section class="detail-section" aria-labelledby="reservations-heading">
             <div class="detail-section-header">
               <h3 id="reservations-heading">Equipos reservados</h3>
@@ -339,7 +377,29 @@
             }
           </section>
 
-          @if (canUpdate()) {
+          @if (isTerminalStatus(selected.status)) {
+            <section class="detail-section terminal-notice-section" aria-label="Información de estado terminal">
+              <div class="terminal-notice-card" [class.cancelled]="selected.status === 'CANCELADO'">
+                <div class="terminal-notice-header">
+                  @if (selected.status === 'CERRADO') {
+                    <svg lucideCircleCheck class="terminal-notice-icon closed" strokeWidth="1.75" aria-hidden="true" />
+                  } @else {
+                    <svg lucideCircleAlert class="terminal-notice-icon cancelled" strokeWidth="1.75" aria-hidden="true" />
+                  }
+                  <h3 class="terminal-notice-title">
+                    {{ selected.status === 'CERRADO' ? 'Producción cerrada' : 'Producción cancelada' }}
+                  </h3>
+                </div>
+                <p class="terminal-notice-desc">
+                  {{
+                    selected.status === 'CERRADO'
+                      ? 'Producción cerrada. No se permiten nuevas transiciones de estado.'
+                      : 'Producción cancelada. No se permiten nuevas transiciones de estado.'
+                  }}
+                </p>
+              </div>
+            </section>
+          } @else if (canUpdate()) {
             <section class="detail-section status-workflow-section" aria-labelledby="workflow-heading">
               <div class="detail-section-header">
                 <div>
@@ -643,6 +703,74 @@
           </button>
         </div>
       </form>
+    </div>
+  }
+
+  @if (showTicketModal()) {
+    <div class="modal-backdrop ticket-backdrop" aria-hidden="true" (click)="closeTicketModal()"></div>
+    <div
+      class="ticket-modal-card smooth-shadow-ring-md"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ticket-modal-title"
+      tabindex="-1"
+      (keydown)="onTicketKeydown($event)"
+    >
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">HOJA DE RUTA OPERATIVA</p>
+          <h2 id="ticket-modal-title" class="modal-title">Ticket de Cuadrilla Técnica</h2>
+        </div>
+        <button
+          type="button"
+          class="btn-icon-close"
+          aria-label="Cerrar ticket de cuadrilla"
+          (click)="closeTicketModal()"
+        >
+          <svg lucideX class="close-svg" strokeWidth="2" aria-hidden="true" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (ticketLoading()) {
+          <div class="reservations-loading" aria-live="polite" aria-busy="true">
+            <div class="skeleton skeleton-text medium"></div>
+            <div class="skeleton skeleton-text short"></div>
+          </div>
+        } @else if (ticketError()) {
+          <div class="field-error-banner" role="alert">{{ ticketError() }}</div>
+        } @else if (currentTicket(); as ticket) {
+          <dl class="detail-meta-grid">
+            <div class="meta-item">
+              <dt>RabbitMQ Event ID</dt>
+              <dd><code>{{ ticket.eventId }}</code></dd>
+            </div>
+            <div class="meta-item">
+              <dt>Producción</dt>
+              <dd>#{{ ticket.productionId }} — {{ ticket.productionName }}</dd>
+            </div>
+            <div class="meta-item">
+              <dt>Recinto / Ubicación</dt>
+              <dd>{{ ticket.location }}</dd>
+            </div>
+            <div class="meta-item">
+              <dt>Estado de Cuadrilla</dt>
+              <dd><emx-status [status]="ticket.status" /></dd>
+            </div>
+            <div class="meta-item full-width">
+              <dt>Instrucciones de Montaje</dt>
+              <dd class="ticket-instructions">{{ ticket.instructions }}</dd>
+            </div>
+            <div class="meta-item">
+              <dt>Fecha de Registro</dt>
+              <dd>{{ ticket.createdAt | date:'dd MMM yyyy, HH:mm' }}</dd>
+            </div>
+          </dl>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeTicketModal()">Cerrar</button>
+      </div>
     </div>
   }
 

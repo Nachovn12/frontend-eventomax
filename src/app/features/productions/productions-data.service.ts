@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { Production, ProductionStatus, CreateProductionRequest, ProductionStatusUpdateRequest } from '../../core/models/production.model';
+import { Production, ProductionStatus, CreateProductionRequest, ProductionStatusUpdateRequest, CrewTicket } from '../../core/models/production.model';
 import { ApiClientService } from '../../core/http/api-client.service';
 import { environment } from '../../../environments/environment';
 
@@ -31,6 +31,14 @@ export class ProductionsDataService {
 
   updateStatus(id: number, request: ProductionStatusUpdateRequest): Observable<Production> {
     return this.apiClient.put<Production>(`${environment.apiGatewayUrl}/api/productions/${id}/status`, request);
+  }
+
+  getCrewTicket(productionId: number): Observable<CrewTicket> {
+    return this.apiClient.get<CrewTicket>(`${environment.apiGatewayUrl}/api/productions/${productionId}/crew-ticket`);
+  }
+
+  downloadQuotePdf(productionId: number): Observable<Blob> {
+    return this.apiClient.getBlob(`${environment.apiGatewayUrl}/api/productions/${productionId}/quote-pdf`);
   }
 
   getStatuses(): Observable<readonly ProductionStatus[]> {

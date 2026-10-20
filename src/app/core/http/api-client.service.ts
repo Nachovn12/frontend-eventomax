@@ -15,6 +15,12 @@ export class ApiClientService {
     );
   }
 
+  getBlob(url: string): Observable<Blob> {
+    return this.http.get(url, { responseType: 'blob' }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   post<T>(url: string, body: unknown): Observable<T> {
     return this.http.post<T>(url, body).pipe(
       catchError(this.handleError)

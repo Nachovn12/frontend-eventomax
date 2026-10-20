@@ -1,384 +1,124 @@
-# EventoMax Frontend
+# frontend-eventomax — Portal Web Empresarial Angular 22 + MSAL Microsoft Entra ID (EP2)
 
-Frontend web de **EventoMax**, plataforma cloud para la gestión y producción de eventos.
+**Asignatura:** Desarrollo Cloud Native I (`DSY1107`)
+**Caso de Estudio:** Caso 8 — Plataforma de Producción y Montaje de Eventos (**EventoMax**)
+**Equipo:** Ignacio Valeria, Benjamín Flores, Benjamín Espinoza
 
-## Tecnologías implementadas
+---
 
-- Angular 22
-- TypeScript
-- MSAL Angular / MSAL Browser
-- Microsoft Entra ID
-- OAuth 2.0 / OpenID Connect
-- Authorization Code Flow con PKCE
-- JWT
-- AWS API Gateway HTTP API con JWT Authorizer
-- `ms-eventomax-bff`
-- microservicios de dominio
-- PostgreSQL como base de datos vigente del proyecto
+## 1. Propósito del Repositorio y Rol en EventoMax
 
-## Arquitectura y Flujo de Autenticación
+`frontend-eventomax` es la aplicación de página única (**SPA en Angular 22**) que proporciona la experiencia operativa de **EventoMax EP2** para los cuatro roles del sistema (`Admin`, `Productor`, `Organizador`, `Auditor`):
 
-El proyecto implementa el siguiente flujo seguro:
+1. **Autenticación Federada OAuth2 / OIDC con PKCE (`@azure/msal-angular`):** Inicia sesión contra **Microsoft Entra ID**, adquiere tokens de acceso para el scope `api://a1a87bcd-fed7-4d65-83c3-338389b80093/access_as_user` y los adjunta automáticamente hacia **AWS API Gateway** → **`ms-eventomax-bff`**.
+2. **Gestión Integral de Producciones y Artefactos Asíncronos RabbitMQ:**
+   - Creación de producciones, registro de contacto del organizador y contratación de servicios del catálogo.
+   - Confirmación con reserva transaccional de equipamiento técnico.
+   - Visualización de **Tickets de Cuadrilla Técnica** (`GET /api/productions/{id}/crew-ticket`) generados vía RabbitMQ al pasar a `EN_EJECUCION`.
+   - Descarga directa del **Acta de Cierre y Cotización Formal en PDF** (`GET /api/productions/{id}/quote-pdf`) generada asíncronamente por `ms-eventomax-notify` (OpenPDF) al cerrar la producción (`CERRADO`).
+3. **Catálogo e Inventario, Reportes Analíticos (ECharts) y Línea de Tiempo de Auditoría:** Vistas dedicadas con estados reactivos de carga, vacío, error y control de permisos por rol.
 
-```text
-Angular
-→ Microsoft Entra ID
-→ Access Token JWT
-→ AWS API Gateway
-→ ms-eventomax-bff
-→ microservicio de dominio
+---
+
+## 2. Arquitectura del Módulo y Diagrama
+
+```mermaid
+flowchart LR
+    USER["Usuario (Navegador)\nAdmin / Productor / Organizador / Auditor"] --> SPA["Angular 22 SPA\n(S3 + CloudFront HTTPS)"]
+    SPA <-->|OAuth2 Authorization Code + PKCE| ENTRA["Microsoft Entra ID\nTenant: f191bdc8-..."]
+    SPA -->|HTTPS + Bearer Access Token| APIGW["AWS API Gateway\n(https://ntnnrohhj8.execute-api.us-east-1.amazonaws.com)"]
+    APIGW --> BFF["ms-eventomax-bff"]
 ```
 
-## Validación previa al despliegue
+---
 
-```powershell
+## 3. Stack Tecnológico y Versiones Reales (`package.json`)
+
+| Componente | Tecnología / Paquete | Versión |
+|---|---|---|
+| Framework Frontend | `@angular/core`, `@angular/router`, `@angular/forms` | `^22.2.3` |
+| Lenguaje | TypeScript | `~6.0.2` |
+| Autenticación Entra ID | `@azure/msal-angular` / `@azure/msal-browser` | `^6.2.0` / `^5.21.0` |
+| Visualización Analítica | `echarts` | `6.1.0` |
+| Estilos e Iconografía | `tailwindcss` / `@lucide/angular` | `^4.3.3` / `^1.47.0` |
+| Testing Unitario | `vitest` + `@angular/build:unit-test` | `^4.0.8` |
+| Testing E2E | `@playwright/test` | `^1.64.1` |
+
+---
+
+## 4. Cumplimiento de Rúbrica EP2 (Matriz Caso 8)
+
+| Criterio de Evaluación EP2 | Implementación en `frontend-eventomax` | Estado |
+|---|---|---|
+| **Integración con Flujos Asíncronos RabbitMQ** | Consulta de tickets de cuadrilla (`/crew-ticket`), gestión de contacto de organizador (`/api/organizers/{id}/contact`) y descarga binaria de Acta PDF (`/quote-pdf` con `responseType: 'blob'`). | **CUMPLIDO** |
+| **Autenticación Microsoft Entra ID (SPA Pública)** | Configuración PKCE sin secretos en cliente, validación de `iss` y `aud` en `AuthorizationService`, guards (`MsalGuard`, `roleGuard`, `featureGuard`) e interceptor HTTP. | **CUMPLIDO** |
+| **Build Productivo Listo para AWS S3 + CloudFront** | `environment.prod.ts` con `redirectUri` dinámico basado en `window.location.origin + '/index.html'` y `apiGatewayUrl` apuntando al API Gateway de AWS. | **CUMPLIDO** |
+
+---
+
+## 5. Rutas de la Aplicación y Control de Acceso
+
+| Ruta SPA | Componente | Roles Autorizados | Endpoints BFF Consumidos |
+|---|---|---|---|
+| `/login` | `LoginComponent` | Público | Redirección MSAL a Microsoft Entra ID |
+| `/dashboard` | `DashboardComponent` | `Admin`, `Productor`, `Organizador`, `Auditor` | `/api/productions`, `/api/catalog/services`, `/api/report/kpis` |
+| `/productions` | `ProductionsComponent` | `Admin`, `Productor`, `Organizador` | `/api/productions/**`, `/api/organizers/{id}/contact`, `/api/catalog/reservations/**`, `/crew-ticket`, `/quote-pdf` |
+| `/catalog` | `CatalogComponent` | `Admin`, `Productor`, `Organizador` | `/api/catalog/services/**`, `/api/catalog/equipment/**` |
+| `/reports` | `ReportsComponent` | `Admin`, `Auditor` | `/api/report/kpis`, `/api/report/top-services` |
+| `/audit` | `AuditComponent` | `Admin`, `Auditor` | `/api/audit/timeline` |
+| `/forbidden` | `ForbiddenComponent` | Autenticado sin rol requerido | Diagnóstico de sesión y cierre seguro |
+
+---
+
+## 6. Configuración de Entornos (`src/environments/`)
+
+- `environment.local.ts`: Usa proxy local (`/api` → `http://localhost:8081` vía `proxy.conf.json`) y `redirectUri: 'http://localhost:4200/'`.
+- `environment.prod.ts`:
+  - `apiGatewayUrl`: `https://ntnnrohhj8.execute-api.us-east-1.amazonaws.com`
+  - `redirectUri` / `postLogoutRedirectUri`: `window.location.origin + '/index.html'`
+  - **Cero secretos:** Contiene únicamente identificadores públicos OIDC (`tenantId`, `frontendClientId`, `apiScope`).
+
+---
+
+## 7. Ejecución Local y Pruebas Automatizadas
+
+```bash
+# 1. Instalar dependencias reproducibles
 npm ci
-npm test -- --watch=false
+
+# 2. Levantar servidor de desarrollo local con proxy hacia BFF (:8081)
+npm run start:local
+
+# 3. Ejecutar suite completa de pruebas unitarias Vitest (24 archivos, 199 tests)
+npx ng test --watch=false
+
+# 4. Generar build productivo optimizado para S3 / CloudFront
 npm run build
 ```
 
-Resultado esperado:
-
-```text
-18 test files passed
-110 tests passed
-build PASS
-```
-
-## Demo EP1 paso a paso
-
-Esta demostración se realiza contra la infraestructura cloud desplegada de EventoMax.
-No depende de localhost.
-
-### 1. Abrir EventoMax en cloud y preparar Network
-
-```text
-https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com/login
-```
-
-Antes de iniciar sesión:
-
-1. Abrir la URL cloud.
-2. Presionar `F12`.
-3. Ir a `Network`.
-4. Activar `Preserve log`.
-5. Opcionalmente seleccionar `Fetch/XHR`.
-6. Recién ahora seleccionar **Iniciar sesión con Microsoft**.
-7. Completar la autenticación con Microsoft Entra ID.
-8. Al volver a EventoMax, abrir Dashboard, Catálogo o Producciones.
-9. Seleccionar una request `services` o `productions` hacia API Gateway.
-10. Ir a `Headers → Request Headers`.
-11. Verificar:
-
-   `Authorization: Bearer <access_token>`
-
-> Si DevTools se abre después del login, la solicitud utilizada para obtener el token puede no aparecer porque ocurrió antes. MSAL además puede reutilizar un Access Token vigente sin solicitar uno nuevo.
-
-> Para la rúbrica, la evidencia principal es que una request protegida hacia API Gateway contiene `Authorization: Bearer <access_token>`.
-
-> Durante la presentación no mostrar ni dejar visible el JWT completo.
+**Resultado certificado en EP2:** `Test Files: 24 passed (24), Tests: 199 passed (199)` — Bundle productivo generado en `dist/frontend-eventomax/browser`.
 
 ---
 
-### 2. Prueba 401 — endpoint protegido sin JWT
+## 8. Guía de Despliegue en AWS S3 + CloudFront HTTPS y Microsoft Entra ID
 
-```powershell
-curl.exe -i "https://ntnnrohhj8.execute-api.us-east-1.amazonaws.com/api/catalog/services"
-```
+> **Nota crítica OAuth2 / MSAL:** Microsoft Entra ID exige **HTTPS** para cualquier `Redirect URI` de tipo `Single-page application (SPA)` que no sea `http://localhost`. El endpoint HTTP de S3 Static Website Hosting (`http://<bucket>.s3-website-us-east-1.amazonaws.com`) no es aceptado por Entra ID ni por WebCrypto PKCE en navegadores modernos. Por ello, el bucket S3 debe servirse detrás de una distribución **Amazon CloudFront con HTTPS** (`https://<dist-id>.cloudfront.net`).
 
-Resultado esperado:
-
-```text
-HTTP/1.1 401
-```
-
----
-
-### 3. Prueba 401 — JWT inválido
-
-```powershell
-curl.exe -i `
-  -H "Authorization: Bearer token-invalido" `
-  "https://ntnnrohhj8.execute-api.us-east-1.amazonaws.com/api/catalog/services"
-```
-
-Resultado esperado:
-
-```text
-HTTP/1.1 401
-```
+### Pasos para Despliegue Futuro (cuando se autorice):
+1. Sincronizar el directorio `dist/frontend-eventomax/browser` al bucket S3:
+   ```bash
+   aws s3 sync dist/frontend-eventomax/browser/ s3://<NOMBRE_BUCKET_FRONTEND>/ --delete
+   ```
+2. Configurar en CloudFront las páginas de error personalizadas (`403` y `404` → `/index.html` con código `200`) para soportar el enrutamiento SPA de Angular.
+3. Registrar en **Microsoft Entra ID → App Registrations → `frontend-eventomax` → Authentication (Single-page application)**:
+   - `https://<DOMINIO_CLOUDFRONT>/`
+   - `https://<DOMINIO_CLOUDFRONT>/index.html`
+4. Verificar que en **AWS API Gateway → CORS** esté permitido el origen `https://<DOMINIO_CLOUDFRONT>`.
 
 ---
 
-### 4. Preparar el Access Token para las pruebas con curl
-
-Desde una request protegida `services` o `productions`:
-
-1. Ir a `Headers → Request Headers`.
-2. Copiar únicamente el valor posterior a `Bearer`.
-3. No copiar la palabra `Bearer`.
-
-> Si se inspecciona la respuesta de autenticación de Microsoft, el token correcto para consumir API Gateway es `access_token`, no `id_token` ni `refresh_token`.
-
-En PowerShell:
-
-```powershell
-$token = Get-Clipboard
-```
-
----
-
-### 5. JWT válido — GET Catálogo
-
-```powershell
-curl.exe -i `
-  -H "Authorization: Bearer $token" `
-  "https://ntnnrohhj8.execute-api.us-east-1.amazonaws.com/api/catalog/services"
-```
-
-Destino interno esperado:
-```text
-API Gateway → ms-eventomax-bff → ms-eventomax-catalog
-```
-
-Resultado esperado:
-
-```text
-HTTP/1.1 200
-```
-(Más el JSON).
-
----
-
-### 6. JWT válido — GET Producciones
-
-```powershell
-curl.exe -i `
-  -H "Authorization: Bearer $token" `
-  "https://ntnnrohhj8.execute-api.us-east-1.amazonaws.com/api/productions"
-```
-
-Destino interno esperado:
-```text
-API Gateway → ms-eventomax-bff → ms-eventomax-productions
-```
-
-Resultado esperado según rol:
-
-```text
-HTTP/1.1 200
-```
-(Más el JSON).
-
----
-
-### 7. Prueba de autorización por rol — 403
-
-> **Prueba opcional:** ejecutar si el docente solicita demostrar
-> autorización por roles.
-
-Para esta prueba se necesita un JWT **válido**, pero perteneciente a un
-usuario que no tenga el rol requerido por el endpoint.
-
-Caso recomendado para EventoMax:
-
-```text
-Admin       → GET /api/catalog/services → permitido
-Productor   → GET /api/catalog/services → permitido
-Organizador → GET /api/catalog/services → no permitido
-```
-
-#### 1. Iniciar sesión con un usuario Organizador
-
-Cerrar la sesión del usuario Admin.
-
-Para evitar que Microsoft/MSAL reutilice la sesión anterior, utilizar
-preferentemente una ventana privada/incógnito o un perfil de navegador
-diferente.
-
-Iniciar sesión en EventoMax cloud con el usuario que tenga rol
-`Organizador`.
-
-Abrir DevTools antes del login:
-
-```text
-F12
-→ Network
-→ Preserve log
-→ Iniciar sesión con Microsoft
-```
-
-Una vez autenticado, abrir una request protegida y copiar únicamente su
-`access_token`, sin la palabra `Bearer`.
-
-#### 2. Cargar el token del usuario Organizador
-
-En PowerShell:
-
-```powershell
-$tokenSinRol = Get-Clipboard
-```
-
-#### 3. Ejecutar GET sobre Catálogo
-
-```powershell
-curl.exe -i `
-  -H "Authorization: Bearer $tokenSinRol" `
-  "https://ntnnrohhj8.execute-api.us-east-1.amazonaws.com/api/catalog/services"
-```
-
-Resultado esperado:
-
-```text
-HTTP/1.1 403 Forbidden
-```
-
-Interpretación:
-
-```text
-401 Unauthorized
-→ no existe un JWT válido o el token fue rechazado.
-
-403 Forbidden
-→ el JWT es válido y el usuario está autenticado,
-  pero su rol no autoriza el acceso al recurso.
-```
-
-La comparación que se demuestra es:
-
-```text
-Admin + JWT válido
-GET /api/catalog/services
-→ 200 + JSON
-
-Organizador + JWT válido
-GET /api/catalog/services
-→ 403 Forbidden
-```
-
-Esto evidencia que EventoMax no solo valida autenticación JWT, sino que
-también aplica autorización por rol.
-
-> Si la llamada con el usuario Organizador responde `200`, revisar la
-> autorización del BFF/backend porque el endpoint estaría permitiendo un rol
-> no esperado.
->
-> Si responde `401`, revisar que se haya copiado correctamente el
-> `access_token` válido del usuario Organizador.
-
----
-
-### 8. Evidencias visuales en cloud (Presentación)
-
-**Microsoft Entra ID:**
-- Tenant operativo.
-- App Registration EventoMax.
-- Redirect URI cloud.
-- API scope configurado.
-- App Roles y usuarios asignados.
-
-**Frontend Angular + MSAL:**
-- Login con Microsoft desde el frontend cloud.
-- Logout funcional.
-- Intentar acceder a una ruta protegida sin sesión y comprobar que el Guard bloquea/redirige.
-- Abrir `F12 → Network` antes del login y activar `Preserve log`.
-- Autenticarse con Microsoft Entra ID.
-- Seleccionar una request `services` o `productions` hacia API Gateway.
-- Verificar en `Headers → Request Headers` que existe `Authorization: Bearer <access_token>`.
-- No es necesario que la solicitud de adquisición del token vuelva a aparecer después de autenticarse.
-- No exponer el JWT completo durante la presentación.
-- Mostrar comportamiento de la interfaz según el rol del usuario.
-- Flujo OAuth 2.0 / OpenID Connect con Authorization Code + PKCE.
-
-**AWS API Gateway:**
-- Rutas `/api/catalog/*` y `/api/productions/*` configuradas.
-- Integración hacia `ms-eventomax-bff`.
-- JWT Authorizer asociado a las rutas protegidas.
-- Issuer configurado.
-- Audience configurado.
-- CORS configurado para el frontend cloud.
-
-**BFF / Spring Security:**
-- Configuración de Resource Server JWT.
-- Validación de issuer y audience.
-- Validación de firma y vigencia mediante el proveedor de identidad.
-- Autorización por rol.
-- Flujo: API Gateway → `ms-eventomax-bff` → microservicio de dominio.
-
-**Pruebas funcionales:**
-- Request sin JWT → `401`.
-- JWT inválido → `401`.
-- JWT válido + rol autorizado → `200 + JSON`.
-- JWT válido sin rol requerido → `403`, si existe usuario de prueba.
-- Catálogo responde desde `ms-eventomax-catalog`.
-- Producciones responde desde `ms-eventomax-productions`.
-
----
-
-## Checklist final de demostración
-
-| Prueba | Resultado esperado |
-|---|---|
-| Frontend cloud | Abre correctamente |
-| Login Microsoft | Sesión autenticada |
-| Guard sin sesión | Ruta protegida bloqueada/redirigida |
-| Logout | Sesión finalizada |
-| MsalInterceptor | `Authorization: Bearer ...` |
-| GET sin JWT | 401 |
-| JWT inválido | 401 |
-| JWT válido + rol autorizado | 200 + JSON |
-| JWT válido + rol insuficiente | 403, si existe usuario de prueba |
-| Catálogo | JSON real |
-| Producciones | JSON real |
-
----
-
-## Pruebas E2E con Playwright (PowerShell)
-
-La suite de pruebas End-to-End vive en `e2e/` y está completamente separada de las pruebas unitarias con Vitest (`ng test`).
-
-### Comandos principales en PowerShell
-
-```powershell
-# Listar todas las pruebas E2E registradas sin ejecutarlas
-npx playwright test --list
-
-# Ejecutar la suite E2E completa en Chromium (reutiliza o levanta http://localhost:4200)
-npm run test:e2e
-
-# Abrir el último reporte HTML generado
-npm run test:e2e:report
-```
-
-### Variables de entorno opcionales (PowerShell)
-
-Por defecto, `playwright.config.ts` apunta a `http://localhost:4200` y levanta o reutiliza el servidor local (`npm run start:local`). Si deseas apuntar a otro entorno sin iniciar el servidor local:
-
-```powershell
-$env:PLAYWRIGHT_BASE_URL = "http://localhost:4200"
-npm run test:e2e
-```
-
-### Alcance actual y escenarios autenticados futuros
-
-- **Alcance actual implementado (`e2e/`)**:
-  - `e2e/smoke-public.spec.ts`: carga inicial, redirección `/` → `/login`, carrusel interactivo, vista `/forbidden` (`403`) y vista `404` en contexto de navegador limpio (sin cookies, cuentas personales ni tokens de Entra ID).
-  - `e2e/auth-guards.spec.ts`: validación del guard de rutas en el cliente Angular (`MsalGuard`) ante accesos anónimos a `/dashboard`, `/productions`, `/catalog`, `/reports` y `/audit`, comprobando que nunca se monte el `AppShell` privado. *(Nota: esta prueba verifica la protección de rutas en el cliente Angular; la validación criptográfica de JWT en API Gateway/BFF se verifica en las pruebas de backend/API).*
-  - `e2e/responsive-public.spec.ts`: ausencia de overflow horizontal (`scrollWidth <= clientWidth`) y visibilidad de controles primarios a `390`, `768`, `1024` y `1440 px`.
-- **Escenarios autenticados planificados para etapas posteriores (no simulados en esta fase)**:
-  - Inicio de sesión con cuentas de prueba dedicadas en Microsoft Entra ID (`storageState` aislado y excluido de Git en `e2e/.auth/`).
-  - Control de acceso basado en roles (RBAC) E2E para `Admin`, `Productor`, `Organizador` y `Auditor` contra el BFF activo.
-  - Creación de producciones, transición a `CONFIRMADO` con reserva atómica de inventario y verificación de eventos en RabbitMQ/Auditoría.
-
----
-
-## Proyecto académico
-
-**Asignatura:** DSY1107 — Desarrollo Cloud Native I
-**Caso:** Caso 8 — EventoMax
-
-**Integrantes:**
-
-- Ignacio Valeria
-- Benjamín Flores
-- Benjamín Espinoza
+## 9. Estado Actual de Certificación EP2 y Trazabilidad Jira
+
+- **Pruebas Unitarias:** `199/199` aprobadas.
+- **Build de Producción:** Exitoso (`dist/frontend-eventomax/browser`, `590.28 kB` raw / `146.79 kB` transfer).
+- **Historias Jira:** `EMX-75/76` (Dashboards de Reportes y Auditoría), `EMX-Bloque-1A` (Catálogo, Equipos y Reservas), `T01` (Contratación de servicios y ranking), `EP2-FIX-01-B1` (Tickets de cuadrilla, contacto de organizador y descarga de Acta PDF).
