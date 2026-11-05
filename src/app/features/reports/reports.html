@@ -40,6 +40,11 @@
             <small>Transiciones observadas</small>
           </article>
           <article class="metric-card">
+            <span>Tiempo prom. montaje</span>
+            <strong class="metric-value">{{ averageMontageTime() }} min</strong>
+            <small>Duración EN_MONTAJE a EN_EJECUCIÓN</small>
+          </article>
+          <article class="metric-card">
             <span>Producciones cerradas</span>
             <strong class="metric-value">{{ result.metrics.closedCount }}</strong>
             <small>Transiciones a CERRADO</small>
@@ -93,6 +98,28 @@
                         <td>{{ transition.previousStatus }}</td>
                         <td>{{ transition.newStatus }}</td>
                         <td>{{ transition.count }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+
+          <section aria-labelledby="daily-events-heading">
+            <h3 id="daily-events-heading">Eventos por día</h3>
+            @if (eventsPerDay().length === 0) {
+              <p class="report-empty">Sin eventos por día registrados en este período.</p>
+            } @else {
+              <div class="report-table-scroll" role="region" aria-label="Tabla de eventos por día" tabindex="0">
+                <table class="data-table">
+                  <caption class="sr-only">Serie temporal de eventos por día</caption>
+                  <thead><tr><th scope="col">Fecha</th><th scope="col">Cantidad de eventos</th></tr></thead>
+                  <tbody>
+                    @for (day of eventsPerDay(); track day.date) {
+                      <tr>
+                        <td>{{ day.date }}</td>
+                        <td><strong>{{ day.count }}</strong></td>
                       </tr>
                     }
                   </tbody>

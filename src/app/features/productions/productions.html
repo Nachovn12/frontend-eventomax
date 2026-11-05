@@ -290,6 +290,12 @@
                 <dt>Estado operativo</dt>
                 <dd>{{ getReadableStatus(selected.status) }}</dd>
               </div>
+              @if (selected.crewName) {
+                <div class="meta-item">
+                  <dt>Cuadrilla técnica</dt>
+                  <dd>{{ selected.crewName }}</dd>
+                </div>
+              }
             </dl>
           </section>
 

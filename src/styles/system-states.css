@@ -113,6 +113,47 @@
   }
 }
 
+/* ── Secondary Clear / Cancel Action Button ── */
+.emx-workspace .btn-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding-inline: 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform var(--emx-motion-fast) var(--emx-ease-out);
+}
+
+.emx-workspace .btn-clear:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  border-color: #cbd5e1;
+  color: var(--brand-primary);
+}
+
+.emx-workspace .btn-clear:active:not(:disabled) {
+  transform: scale(0.98);
+  transition-duration: 100ms;
+}
+
+.emx-workspace .btn-clear:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion) {
+  .emx-workspace .btn-clear {
+    transition: none;
+  }
+}
+
 /* ── Skeletons ── */
 .emx-workspace .skeleton {
   background: linear-gradient(90deg, var(--bg-surface-hover) 25%, #f1f3f5 50%, var(--bg-surface-hover) 75%);

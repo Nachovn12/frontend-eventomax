@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, of } from 'rxjs';
+import { BehaviorSubject, combineLatest, of, timer } from 'rxjs';
 import { catchError, map, startWith, switchMap } from 'rxjs/operators';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
@@ -34,9 +34,18 @@ interface TopServicesViewState {
 export class Reports {
   private readonly authz = inject(AuthorizationService);
   private readonly reports = inject(ReportsDataService);
+  private readonly destroyRef = inject(DestroyRef);
+
   readonly canView = computed(() => this.authz.hasRole(AppRole.Admin) && this.authz.hasScope('access_as_user'));
   readonly rangeControl = new FormControl<ReportRange>('last24h', { nonNullable: true });
   private readonly refreshSubject = new BehaviorSubject<void>(undefined);
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const id = setInterval(() => this.retry(), 30000);
+      this.destroyRef.onDestroy(() => clearInterval(id));
+    }
+  }
 
   private readonly reportState = toSignal(
     combineLatest([
@@ -103,6 +112,13 @@ export class Reports {
   });
 
   readonly transitions = computed(() => this.response()?.metrics.transitions ?? []);
+
+  readonly averageMontageTime = computed(() => {
+    const val = this.response()?.metrics.averageMontageTimeMinutes;
+    return val !== undefined && val !== null ? val : 0;
+  });
+
+  readonly eventsPerDay = computed(() => this.response()?.metrics.eventsPerDay ?? []);
 
   errorText(code: number | null): string {
     if (code === 401) return 'La sesión expiró o el token fue rechazado. Inicia sesión nuevamente.';

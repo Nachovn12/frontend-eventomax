@@ -4,8 +4,37 @@
 .audit-filters label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-main); }
 .audit-filters input, .audit-filters select { min-width: 0; width: 100%; min-height: 42px; padding: 8px 10px; background: var(--bg-surface); color: var(--text-main); border-radius: 9px; border: 1px solid var(--border-base); font: inherit; }
 .audit-filters input:focus-visible, .audit-filters select:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
-.audit-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.audit-buttons { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .audit-buttons button { min-height: 42px; }
+.audit-buttons .btn-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 100ms ease;
+}
+.audit-buttons .btn-clear:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  border-color: #cbd5e1;
+  color: #0071e3;
+}
+.audit-buttons .btn-clear:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.audit-buttons .btn-clear:focus-visible {
+  outline: 2px solid #0071e3;
+  outline-offset: 2px;
+}
 .audit-feedback { padding: 28px 24px; color: var(--text-muted); }
 .audit-feedback strong { color: var(--text-main); }
 .audit-feedback p { margin: 12px 0; }

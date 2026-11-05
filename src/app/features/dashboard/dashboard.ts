@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, computed, DestroyRef } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthorizationService } from '../../core/auth/authorization.service';
@@ -41,6 +41,7 @@ export class Dashboard {
   private readonly authz = inject(AuthorizationService);
   private readonly dataService = inject(DashboardDataService);
   private readonly reportsData = inject(ReportsDataService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly canViewProductions = computed(() =>
     this.authz.roles().some((role) => [AppRole.Admin, AppRole.Productor].includes(role))
@@ -56,6 +57,12 @@ export class Dashboard {
 
   private readonly retrySubject = new BehaviorSubject<void>(undefined);
 
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const id = setInterval(() => this.retry(), 30000);
+      this.destroyRef.onDestroy(() => clearInterval(id));
+    }
+  }
 
   // EMX-106: la reportería es independiente del panel operativo. Un fallo de Report
   // NO debe ocultar los datos válidos de Productions y Catalog.

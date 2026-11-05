@@ -15,6 +15,8 @@ export interface Production {
   status: ProductionStatus;
   createdAt: string;
   updatedAt: string;
+  crewId?: string;
+  crewName?: string;
 }
 
 export interface CreateProductionRequest {
@@ -33,6 +35,8 @@ export interface ProductionStatusUpdateRequest {
   status: ProductionStatus;
   items?: readonly ProductionReservationItemRequest[];
   serviceIds?: readonly number[];
+  crewId?: string;
+  crewName?: string;
 }
 
 export type ProductionViewModel = Production;
@@ -46,6 +50,8 @@ export interface CrewTicket {
   readonly location: string;
   readonly status: ProductionStatus;
   readonly instructions?: string;
+  readonly crewId?: string;
+  readonly crewName?: string;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
