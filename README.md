@@ -24,7 +24,7 @@
 
 ```mermaid
 flowchart LR
-    USER["Usuario (Navegador)\nAdmin / Productor / Organizador / Auditor"] --> SPA["Angular 22 SPA\n(S3 + CloudFront HTTPS)"]
+    USER["Usuario (Navegador)\nAdmin / Productor / Organizador / Auditor"] --> SPA["Angular 22 SPA\n(Amazon S3 REST HTTPS /index.html)"]
     SPA <-->|OAuth2 Authorization Code + PKCE| ENTRA["Microsoft Entra ID\nTenant: f191bdc8-..."]
     SPA -->|HTTPS + Bearer Access Token| APIGW["AWS API Gateway\n(https://ntnnrohhj8.execute-api.us-east-1.amazonaws.com)"]
     APIGW --> BFF["ms-eventomax-bff"]
@@ -52,7 +52,7 @@ flowchart LR
 |---|---|---|
 | **Integración con Flujos Asíncronos RabbitMQ** | Consulta de tickets de cuadrilla (`/crew-ticket`), gestión de contacto de organizador (`/api/organizers/{id}/contact`) y descarga binaria de Acta PDF (`/quote-pdf` con `responseType: 'blob'`). | **CUMPLIDO** |
 | **Autenticación Microsoft Entra ID (SPA Pública)** | Configuración PKCE sin secretos en cliente, validación de `iss` y `aud` en `AuthorizationService`, guards (`MsalGuard`, `roleGuard`, `featureGuard`) e interceptor HTTP. | **CUMPLIDO** |
-| **Build Productivo Listo para AWS S3 + CloudFront** | `environment.prod.ts` con `redirectUri` dinámico basado en `window.location.origin + '/index.html'` y `apiGatewayUrl` apuntando al API Gateway de AWS. | **CUMPLIDO** |
+| **Build Productivo Listo para Amazon S3 HTTPS (Preservando Configuración EP1, Sin CloudFront)** | `environment.prod.ts` con `redirectUri` y `postLogoutRedirectUri` apuntando a `window.location.origin + '/index.html'`, redirección `{ path: 'index.html', redirectTo: 'login', pathMatch: 'full' }` en `app.routes.ts` y `apiGatewayUrl` apuntando al API Gateway de AWS (`ntnnrohhj8`). | **CUMPLIDO** |
 
 ---
 
@@ -92,33 +92,40 @@ npm run start:local
 # 3. Ejecutar suite completa de pruebas unitarias Vitest (24 archivos, 199 tests)
 npx ng test --watch=false
 
-# 4. Generar build productivo optimizado para S3 / CloudFront
+# 4. Generar build productivo optimizado para Amazon S3
 npm run build
 ```
 
-**Resultado certificado en EP2:** `Test Files: 24 passed (24), Tests: 199 passed (199)` — Bundle productivo generado en `dist/frontend-eventomax/browser`.
+**Resultado certificado en EP2:** `Test Files: 24 passed (24), Tests: 199 passed (199)` y `21/21` pruebas Playwright E2E aprobadas — Bundle productivo generado en `dist/frontend-eventomax/browser`.
 
 ---
 
-## 8. Guía de Despliegue en AWS S3 + CloudFront HTTPS y Microsoft Entra ID
+## 8. Guía de Publicación Manual en Amazon S3 (Preservando Configuración Aprobada en EP1, Sin CloudFront)
 
-> **Nota crítica OAuth2 / MSAL:** Microsoft Entra ID exige **HTTPS** para cualquier `Redirect URI` de tipo `Single-page application (SPA)` que no sea `http://localhost`. El endpoint HTTP de S3 Static Website Hosting (`http://<bucket>.s3-website-us-east-1.amazonaws.com`) no es aceptado por Entra ID ni por WebCrypto PKCE en navegadores modernos. Por ello, el bucket S3 debe servirse detrás de una distribución **Amazon CloudFront con HTTPS** (`https://<dist-id>.cloudfront.net`).
+> **Preservación de la arquitectura de hosting EP1:** En el Sandbox académico de AWS no está permitido utilizar Amazon CloudFront. Se preserva íntegramente el procedimiento y configuración de **Amazon S3 + Microsoft Entra ID (MSAL)** que fue certificado y aprobado en la **EP1**:
+> - **Bucket S3 existente de EP1:** `eventomax-frontend-085765167202-us-east-1` (región `us-east-1`).
+> - **URL HTTPS del frontend en S3:** `https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com/index.html` (o `/login` si se mantiene el objeto alias de EP1 en el bucket).
+> - **Redirect URI y Post-Logout Redirect URI en `environment.prod.ts`:** `window.location.origin + '/index.html'` (`https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com/index.html`), respaldado en `app.routes.ts` por `{ path: 'index.html', redirectTo: 'login', pathMatch: 'full' }`.
 
-### Pasos para Despliegue Futuro (cuando se autorice):
-1. Sincronizar el directorio `dist/frontend-eventomax/browser` al bucket S3:
-   ```bash
-   aws s3 sync dist/frontend-eventomax/browser/ s3://<NOMBRE_BUCKET_FRONTEND>/ --delete
-   ```
-2. Configurar en CloudFront las páginas de error personalizadas (`403` y `404` → `/index.html` con código `200`) para soportar el enrutamiento SPA de Angular.
-3. Registrar en **Microsoft Entra ID → App Registrations → `frontend-eventomax` → Authentication (Single-page application)**:
-   - `https://<DOMINIO_CLOUDFRONT>/`
-   - `https://<DOMINIO_CLOUDFRONT>/index.html`
-4. Verificar que en **AWS API Gateway → CORS** esté permitido el origen `https://<DOMINIO_CLOUDFRONT>`.
+### Funcionamiento del flujo S3 + MSAL + Angular Router (EP1/EP2):
+1. El usuario abre `https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com/index.html` (S3 entrega el objeto `index.html` por HTTPS con `200 OK`) y Angular redirige en el cliente a `/login`.
+2. Al iniciar sesión con **Microsoft Entra ID**, el flujo OAuth 2.0 Authorization Code + PKCE retorna a `https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com/index.html` (objeto físico existente en S3).
+3. `MsalRedirectComponent` procesa la respuesta de autenticación y la navegación posterior entre `/dashboard`, `/productions`, `/catalog`, `/reports`, `/audit` y `/rabbit-admin` ocurre íntegramente en el navegador mediante el router de Angular (`History API`), sin solicitar nuevos documentos HTML a S3.
+4. Al cerrar sesión (`logoutRedirect`), Microsoft Entra ID redirige nuevamente a `/index.html` y Angular lleva al usuario a `/login`.
+5. **Consideración operativa en S3 sin CloudFront:** Durante la demostración se debe ingresar siempre desde `/index.html` y navegar mediante el menú lateral de la SPA (evitando recargar con `F5` directamente sobre rutas virtuales como `/productions` o `/catalog`, salvo que en el bucket exista una copia de `index.html` con esa clave).
+
+### Pasos para Actualización Manual en AWS Management Console (Sin AWS CLI):
+1. Ingresar a **AWS Management Console → Amazon S3 → Buckets → `eventomax-frontend-085765167202-us-east-1`**.
+2. Preservar intactos los permisos públicos y la *Bucket Policy* ya configurados en EP1.
+3. Hacer clic en **Upload** y arrastrar el contenido compilado de `dist/frontend-eventomax/browser/` (disponible también en `.local-cert/ep2-aws-final-release/frontend-s3/browser/`): `index.html`, `main-*.js`, `chunk-*.js`, `styles-*.css`, `favicon.ico` y la carpeta `branding/`.
+4. Mantener sin cambios la configuración aprobada en **Microsoft Entra ID** (`App Registration: b577f07b-edd6-4c6c-8306-93aba3c6feba`, SPA Redirect URI `https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com/index.html`) y el origen **CORS** en **AWS API Gateway (`ntnnrohhj8`)** (`https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com`).
 
 ---
 
 ## 9. Estado Actual de Certificación EP2 y Trazabilidad Jira
 
-- **Pruebas Unitarias:** `199/199` aprobadas.
+- **Pruebas Unitarias (Vitest):** `199/199` aprobadas (`24` archivos).
+- **Pruebas E2E (Playwright):** `21/21` aprobadas.
 - **Build de Producción:** Exitoso (`dist/frontend-eventomax/browser`, `590.28 kB` raw / `146.79 kB` transfer).
+- **Verificación en AWS Real:** Preparado localmente preservando la configuración S3 + MSAL aprobada en EP1; pendiente de subida manual por el usuario en consola AWS S3.
 - **Historias Jira:** `EMX-75/76` (Dashboards de Reportes y Auditoría), `EMX-Bloque-1A` (Catálogo, Equipos y Reservas), `T01` (Contratación de servicios y ranking), `EP2-FIX-01-B1` (Tickets de cuadrilla, contacto de organizador y descarga de Acta PDF).
