@@ -540,6 +540,39 @@
                   </div>
                 }
 
+                @if (nextStatus.value === 'EN_MONTAJE') {
+                  <div class="reservation-builder">
+                    <div class="reservation-builder-head">
+                      <h4>Asignación de cuadrilla técnica</h4>
+                      <p>
+                        Indica la cuadrilla técnica responsable del montaje y operación del evento en terreno.
+                      </p>
+                    </div>
+                    <div class="picker-stack">
+                      <div class="picker-field">
+                        <label for="crew-name-input">Nombre de cuadrilla</label>
+                        <input
+                          id="crew-name-input"
+                          type="text"
+                          maxlength="150"
+                          [formControl]="crewNameControl"
+                          placeholder="Ej: Cuadrilla Técnica Alfa EP3"
+                        />
+                      </div>
+                      <div class="picker-field">
+                        <label for="crew-id-input">Código de cuadrilla</label>
+                        <input
+                          id="crew-id-input"
+                          type="text"
+                          maxlength="100"
+                          [formControl]="crewIdControl"
+                          placeholder="Ej: crew-alfa-ep3"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                }
+
                 <div class="workflow-actions">
                   <button
                     type="submit"
@@ -763,6 +796,12 @@
               <dt>Estado de Cuadrilla</dt>
               <dd><emx-status [status]="ticket.status" /></dd>
             </div>
+            @if (ticket.crewName) {
+              <div class="meta-item">
+                <dt>Cuadrilla Asignada</dt>
+                <dd>{{ ticket.crewName }}{{ ticket.crewId ? ' (' + ticket.crewId + ')' : '' }}</dd>
+              </div>
+            }
             <div class="meta-item full-width">
               <dt>Instrucciones de Montaje</dt>
               <dd class="ticket-instructions">{{ ticket.instructions }}</dd>

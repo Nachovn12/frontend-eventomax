@@ -170,6 +170,8 @@ export class Productions implements OnDestroy {
   readonly reservationsError = signal<string | null>(null);
   readonly selectedEquipmentId = new FormControl<string>('', { nonNullable: true });
   readonly selectedQuantity = new FormControl<number>(1, { nonNullable: true });
+  readonly crewIdControl = new FormControl<string>('', { nonNullable: true });
+  readonly crewNameControl = new FormControl<string>('', { nonNullable: true });
   readonly reservationInputError = signal('');
 
   // Ticket de cuadrilla
@@ -186,6 +188,8 @@ export class Productions implements OnDestroy {
     nextStatus: this.nextStatus,
     selectedEquipmentId: this.selectedEquipmentId,
     selectedQuantity: this.selectedQuantity,
+    crewId: this.crewIdControl,
+    crewName: this.crewNameControl,
   });
 
   readonly createForm = new FormGroup({
@@ -595,6 +599,8 @@ export class Productions implements OnDestroy {
     }
     let items: ProductionReservationItemRequest[] | undefined;
     let serviceIds: readonly number[] | undefined;
+    let crewId: string | undefined;
+    let crewName: string | undefined;
 
     if (next === 'CONFIRMADO') {
       if (this.reservationItems().length === 0) {
@@ -605,13 +611,30 @@ export class Productions implements OnDestroy {
       if (this.selectedServiceIds().length > 0) {
         serviceIds = this.selectedServiceIds();
       }
+    } else if (next === 'EN_MONTAJE') {
+      const trimmedCrewId = this.crewIdControl.value.trim();
+      const trimmedCrewName = this.crewNameControl.value.trim();
+      if (trimmedCrewId) crewId = trimmedCrewId;
+      if (trimmedCrewName) crewName = trimmedCrewName;
     }
 
     this.saving.set(true);
     this.operationError.set('');
     this.operationSuccess.set('');
 
-    this.dataService.updateStatus(id, { status: next, items, serviceIds }).subscribe({
+    const payload: {
+      status: ProductionStatus;
+      items?: ProductionReservationItemRequest[];
+      serviceIds?: readonly number[];
+      crewId?: string;
+      crewName?: string;
+    } = { status: next };
+    if (items !== undefined) payload.items = items;
+    if (serviceIds !== undefined) payload.serviceIds = serviceIds;
+    if (crewId !== undefined) payload.crewId = crewId;
+    if (crewName !== undefined) payload.crewName = crewName;
+
+    this.dataService.updateStatus(id, payload).subscribe({
       next: (production) => {
         this.saving.set(false);
         this.operationSuccess.set(`Producción #${production.id} actualizada a ${production.status}.`);

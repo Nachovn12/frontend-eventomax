@@ -2,14 +2,14 @@
   <header class="page-header">
     <div>
       <p class="eyebrow">
-        {{ isAuditor() ? 'PANEL DE AUDITORÍA' : 'RESUMEN OPERATIVO' }}
+        {{ (isAuditor() && !isAdmin()) ? 'PANEL DE AUDITORÍA' : 'RESUMEN OPERATIVO' }}
       </p>
       <h1 class="page-title">
-        {{ isAuditor() ? 'Bienvenido a EventoMax' : 'Panel de control' }}
+        {{ (isAuditor() && !isAdmin()) ? 'Bienvenido a EventoMax' : 'Panel de control' }}
       </h1>
       <p class="page-description">
         {{
-          isAuditor()
+          (isAuditor() && !isAdmin())
             ? 'Revisa los eventos reales y su trazabilidad en el módulo Auditoría.'
             : 'Indicadores operacionales y próximos eventos.'
         }}
