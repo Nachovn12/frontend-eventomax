@@ -268,7 +268,7 @@ test.describe('Certificación E2E Flujo Real Completo — EventoMax Plataforma D
     // Completar y guardar nueva producción
     const prodName = `Cumbre Cloud Native Playwright PW-${uniqueSuffix}`;
     await createDialog.locator('#create-name-input').fill(prodName);
-    await createDialog.locator('#create-organizer-input').fill('org-playwright-cert');
+    await createDialog.locator('#create-organizer-input').fill(`org-duoc-demo-${uniqueSuffix}`);
     await createDialog.locator('#create-scheduled-input').fill('2027-11-25T20:00');
     await createDialog.locator('#create-location-input').fill('Centro Parque - Gran Salón');
     await createDialog.getByRole('button', { name: 'Guardar producción' }).click();
@@ -424,6 +424,18 @@ test.describe('Certificación E2E Flujo Real Completo — EventoMax Plataforma D
     await expect(page.locator('text=audit.timeline').first()).toBeVisible({ timeout: 15_000 });
 
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'pw-11-kafka-ui-topics.png'), fullPage: true });
+
+    // =========================================================================
+    // 8. BANDEJA SMTP MAILPIT — CORREOS REALES A ig.valeria@duocuc.cl (http://localhost:8025)
+    // =========================================================================
+    await page.goto('http://localhost:8025');
+    const emailRow = page.locator('a.message', { hasText: prodName }).first();
+    await expect(emailRow).toBeVisible({ timeout: 15_000 });
+    await expect(emailRow).toContainText('ig.valeria@duocuc.cl');
+    await emailRow.click();
+    await expect(page.locator('text=ig.valeria@duocuc.cl').first()).toBeVisible({ timeout: 10_000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: path.join(ARTIFACT_DIR, 'pw-12-mailpit-email-duocuc.png'), fullPage: true });
 
     expect(apiErrors).toEqual([]);
   });
