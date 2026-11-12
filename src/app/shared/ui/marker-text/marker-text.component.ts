@@ -676,7 +676,12 @@ export class MarkerTextComponent
 
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.measure());
-      this.resizeObserver.observe(root);
+      const target = root.parentElement ?? root;
+      this.resizeObserver.observe(target);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', this.onWindowResize, { passive: true });
     }
 
     if (typeof document !== 'undefined' && document.fonts?.ready) {
@@ -704,11 +709,18 @@ export class MarkerTextComponent
     }
   }
 
+  private readonly onWindowResize = (): void => {
+    this.scheduleMeasure();
+  };
+
   ngOnDestroy(): void {
     this.destroyed = true;
     this.cancelRafs();
     this.resizeObserver?.disconnect();
     this.intersectionObserver?.disconnect();
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('resize', this.onWindowResize);
+    }
     if (this.drawnTimer) {
       clearTimeout(this.drawnTimer);
     }
