@@ -442,6 +442,14 @@
   }
 }
 
+@media (pointer: coarse), (max-width: 640px) {
+  .emx-date-trigger {
+    min-height: 44px;
+    height: auto;
+    font-size: 16px;
+  }
+}
+
 /* ═════════════════════════════════════════════════════════════════════════════
    Apple Pro 3D Dark Mode (Ace Studio Inspiration) - Date Picker
    ═════════════════════════════════════════════════════════════════════════════ */
