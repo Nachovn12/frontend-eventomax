@@ -93,8 +93,10 @@ app-login {
   transition: opacity 140ms ease;
 }
 
-.a-brand-link:hover {
-  opacity: 0.85;
+@media (hover: hover) and (pointer: fine) {
+  .a-brand-link:hover {
+    opacity: 0.85;
+  }
 }
 
 .a-logo {
@@ -203,13 +205,15 @@ app-login {
     transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.login-microsoft-button:hover:not(:disabled) {
-  background: #2c2c2e;
-  border-color: #2c2c2e;
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.18),
-    0 6px 16px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+@media (hover: hover) and (pointer: fine) {
+  .login-microsoft-button:hover:not(:disabled) {
+    background: #2c2c2e;
+    border-color: #2c2c2e;
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.18),
+      0 6px 16px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
 }
 
 .login-microsoft-button:active:not(:disabled) {
@@ -317,12 +321,6 @@ app-login {
   margin-bottom: 22px;
 }
 
-.a-btn-secondary:hover {
-  background: #f8fafc;
-  border-color: #d4d4d8;
-  color: #09090b;
-}
-
 .a-btn-secondary:active {
   transform: scale(0.985);
 }
@@ -334,9 +332,16 @@ app-login {
   transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), color 140ms ease;
 }
 
-.a-btn-secondary:hover svg {
-  transform: translateX(-2px);
-  color: #18181b;
+@media (hover: hover) and (pointer: fine) {
+  .a-btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #d4d4d8;
+    color: #09090b;
+  }
+  .a-btn-secondary:hover svg {
+    transform: translateX(-2px);
+    color: #18181b;
+  }
 }
 
 .a-help {
