@@ -6,7 +6,7 @@
           {{ (isAuditor() && !isAdmin()) ? 'Panel de auditoría' : 'Resumen operativo' }}
         </p>
         @if (canViewProductions()) {
-          <emx-status-pill tone="brand" size="sm" glyph="pulse">
+          <emx-status-pill tone="brand" size="sm" glyph="dot">
             Streaming operacional sincronizado
           </emx-status-pill>
         }
@@ -161,7 +161,7 @@
               <emx-tag>Particiones: 3</emx-tag>
               <emx-tag>ACK=all</emx-tag>
               <emx-tag tone="positive">
-                <span class="tag-indicator-dot pulse" aria-hidden="true"></span>
+                <span class="tag-indicator-dot" aria-hidden="true"></span>
                 0 lag
               </emx-tag>
             </div>
@@ -314,7 +314,7 @@
         <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
           <div class="kpi-top">
             <div class="kpi-label-group">
-              <span class="kpi-status-dot green pulse-dot" aria-hidden="true"></span>
+              <span class="kpi-status-dot green" aria-hidden="true"></span>
               <span>En operación</span>
             </div>
             <div class="kpi-icon-tile green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>

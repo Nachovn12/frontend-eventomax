@@ -125,12 +125,17 @@
   border-radius: 8px;
   background: #EFF6FF;
   border: 1px solid #DBEAFE;
-  transition: all 140ms ease;
+  transition:
+    background-color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
+    border-color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
+    color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
 }
 
-.btn-link-action:hover {
-  background: #DBEAFE;
-  border-color: #BFDBFE;
+@media (hover: hover) and (pointer: fine) {
+  .btn-link-action:hover {
+    background: #DBEAFE;
+    border-color: #BFDBFE;
+  }
 }
 
 /* Stat Strip: 4 Integrated Columns (Aligns with 4 KPIs below) */
@@ -147,7 +152,7 @@
   flex-direction: column;
   gap: 6px;
   position: relative;
-  transition: background 140ms ease;
+  transition: background-color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
 }
 
 .stat-col:not(:last-child)::after {
@@ -160,8 +165,10 @@
   background: #F1F5F9;
 }
 
-.stat-col:hover {
-  background: #F8FAFC;
+@media (hover: hover) and (pointer: fine) {
+  .stat-col:hover {
+    background: #F8FAFC;
+  }
 }
 
 .stat-col-header {
@@ -274,19 +281,22 @@
   width: 100%;
   border-radius: 3px;
   transition:
-    height var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
+    clip-path var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
     background-color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
     box-shadow var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
 }
 
 .hist-bar.resting {
-  height: 4px;
+  height: 8px;
+  clip-path: inset(50% 0 0 0 round 3px);
   background: #E2E8F0;
 }
 
-.hist-col:hover .hist-bar.resting {
-  background: #CBD5E1;
-  height: 8px;
+@media (hover: hover) and (pointer: fine) {
+  .hist-col:hover .hist-bar.resting {
+    background: #CBD5E1;
+    clip-path: inset(0 0 0 0 round 3px);
+  }
 }
 
 .hist-bar.active {
@@ -294,13 +304,16 @@
   box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25);
 }
 
-.hist-col:hover .hist-bar.active {
-  background: #1D4ED8;
+@media (hover: hover) and (pointer: fine) {
+  .hist-col:hover .hist-bar.active {
+    background: #1D4ED8;
+  }
 }
 
 .hist-col.live-now .hist-bar {
   background: #10B981;
   height: 12px;
+  clip-path: none;
   box-shadow: 0 1px 2px rgba(16, 185, 129, 0.3);
 }
 
@@ -343,6 +356,12 @@
   background: #2563EB;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
   flex-shrink: 0;
+  animation: radarDotPulse 2s var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)) infinite;
+}
+
+@keyframes radarDotPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
 
 .status-right {
@@ -566,24 +585,18 @@
   display: flex;
   margin-top: 12px;
   position: relative;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path var(--dur-slow, 280ms) var(--ease-enter, cubic-bezier(0.23, 1, 0.32, 1));
 }
 
-.emx-kpi-noticeline:hover .kpi-bicolor-track::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
-  animation: trackShimmer 1.2s infinite;
-}
-
-@keyframes trackShimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+@starting-style {
+  .kpi-bicolor-track {
+    clip-path: inset(0 100% 0 0);
+  }
 }
 
 .kpi-bicolor-fill {
   height: 100%;
-  transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .kpi-bicolor-fill.blue { background: #2563EB; }
 .kpi-bicolor-fill.slate { background: #CBD5E1; }
@@ -826,12 +839,19 @@
   border-radius: 2px;
   margin-top: 10px;
   overflow: hidden;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path var(--dur-slow, 280ms) var(--ease-enter, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+@starting-style {
+  .stage-micro-track {
+    clip-path: inset(0 100% 0 0);
+  }
 }
 
 .stage-micro-fill {
   height: 100%;
   border-radius: 2px;
-  transition: width 300ms ease;
 }
 .stage-micro-fill.amber { background: #F59E0B; }
 .stage-micro-fill.blue { background: #3B82F6; }
@@ -872,11 +892,18 @@
   overflow: hidden;
   display: flex;
   gap: 2px;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path var(--dur-slow, 280ms) var(--ease-enter, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+@starting-style {
+  .pipeline-multi-track {
+    clip-path: inset(0 100% 0 0);
+  }
 }
 
 .pipe-slice {
   height: 100%;
-  transition: width 300ms ease;
 }
 .pipe-slice.amber { background: #F59E0B; }
 .pipe-slice.blue { background: #3B82F6; }
@@ -982,7 +1009,7 @@
     background-color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
     color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
     box-shadow var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
-    transform 110ms var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
+    transform var(--dur-exit-fast, 110ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
   user-select: none;
   display: flex;
   align-items: center;
@@ -990,8 +1017,10 @@
   white-space: nowrap;
 }
 
-.pill-tab:hover {
-  color: #0F172A;
+@media (hover: hover) and (pointer: fine) {
+  .pill-tab:hover {
+    color: #0F172A;
+  }
 }
 
 .pill-tab:active {
@@ -1015,7 +1044,9 @@
   background: #F1F5F9;
   color: #64748B;
   font-weight: 600;
-  transition: background-color 140ms ease, color 140ms ease;
+  transition:
+    background-color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
+    color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
 }
 
 .pill-tab.active .seg-count {
@@ -1035,12 +1066,14 @@
   text-decoration: none;
   padding: 6px 10px;
   border-radius: 8px;
-  transition: background 140ms ease;
+  transition: background-color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
   white-space: nowrap;
 }
 
-.text-link-all:hover {
-  background: #EFF6FF;
+@media (hover: hover) and (pointer: fine) {
+  .text-link-all:hover {
+    background: #EFF6FF;
+  }
 }
 
 .count-badge {
@@ -1091,5 +1124,26 @@
 @media (max-width: 768px) {
   .dashboard-report-metrics {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kpi-bicolor-track,
+  .stage-micro-track,
+  .pipeline-multi-track {
+    transition: opacity var(--dur-instant, 90ms) ease;
+  }
+
+  .radar-dot-pulse {
+    animation: none;
+  }
+
+  @starting-style {
+    .kpi-bicolor-track,
+    .stage-micro-track,
+    .pipeline-multi-track {
+      clip-path: none;
+      opacity: 0;
+    }
   }
 }
