@@ -6,6 +6,13 @@
   backdrop-filter: blur(8px) saturate(140%);
   -webkit-backdrop-filter: blur(8px) saturate(140%);
   z-index: 1000;
+  overscroll-behavior: contain;
+  transition: opacity var(--dur-exit, 160ms) var(--ease-exit, cubic-bezier(0.23, 1, 0.32, 1));
+}
+@starting-style {
+  .ticket-backdrop {
+    opacity: 0;
+  }
 }
 .ticket-modal-card {
   position: fixed;
@@ -24,6 +31,16 @@
   outline: none;
   overflow: hidden;
   box-sizing: border-box;
+  overscroll-behavior: contain;
+  transition:
+    transform var(--dur-normal, 200ms) var(--ease-enter, cubic-bezier(0.23, 1, 0.32, 1)),
+    opacity var(--dur-normal, 200ms) var(--ease-enter, cubic-bezier(0.23, 1, 0.32, 1));
+}
+@starting-style {
+  .ticket-modal-card {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.97);
+  }
 }
 .ticket-modal-card .ticket-editorial-header {
   flex-shrink: 0;
@@ -73,6 +90,7 @@
 .ticket-modal-card .ticket-editorial-body {
   flex: 1 1 auto;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   overscroll-behavior: contain;
   padding: 18px 24px 20px;
   gap: 18px;
@@ -235,5 +253,19 @@
 :host-context(.dark) .ticket-modal-card .ticket-editorial-footer {
   background: #121319;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket-backdrop,
+  .ticket-modal-card {
+    transition: opacity var(--dur-instant, 90ms) ease;
+  }
+
+  @starting-style {
+    .ticket-modal-card {
+      opacity: 0;
+      transform: translate(-50%, -50%);
+    }
+  }
 }
 
