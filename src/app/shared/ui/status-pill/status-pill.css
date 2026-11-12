@@ -61,19 +61,23 @@
   height: 6px;
   border-radius: 50%;
   background: currentColor;
-  box-shadow: 0 0 6px currentColor;
   flex-shrink: 0;
-  animation: pillPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pillPulse 2s var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)) infinite;
 }
 
 @keyframes pillPulse {
   0%, 100% {
     opacity: 1;
-    transform: scale(1);
   }
   50% {
-    opacity: 0.55;
-    transform: scale(0.85);
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-pulse-dot,
+  .emx-tag .tag-indicator-dot.pulse {
+    animation: none;
   }
 }
 
@@ -272,21 +276,14 @@ emx-tag {
 }
 
 .emx-tag .tag-indicator-dot.pulse {
-  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
-  animation: tag-pulse 2.2s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+  animation: tag-pulse 2.2s var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)) infinite;
 }
 
 @keyframes tag-pulse {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+  0%, 100% {
+    opacity: 1;
   }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  50% {
+    opacity: 0.4;
   }
 }

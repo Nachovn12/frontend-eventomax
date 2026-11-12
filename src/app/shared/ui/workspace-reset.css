@@ -41,8 +41,24 @@
     *::before,
     *::after {
       scroll-behavior: auto !important;
-      animation: none !important;
-      transition: none !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-property: opacity !important;
+      transition-duration: var(--dur-instant, 90ms) !important;
+      transition-timing-function: ease !important;
+    }
+
+    button:not(:disabled):active,
+    .emx-btn:not(:disabled):active,
+    .btn-system:not(:disabled):active,
+    .btn-secondary:not(:disabled):active {
+      transform: translateY(1px);
     }
   }
+}
+
+/* Preserve native mobile pull-to-refresh on root while anchoring scroll under sticky header */
+html {
+  overscroll-behavior-y: auto;
+  scroll-padding-top: var(--emx-scroll-offset, 68px);
 }
