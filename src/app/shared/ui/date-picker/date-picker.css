@@ -445,9 +445,9 @@
 /* ═════════════════════════════════════════════════════════════════════════════
    Apple Pro 3D Dark Mode (Ace Studio Inspiration) - Date Picker
    ═════════════════════════════════════════════════════════════════════════════ */
-:root[data-theme="dark"] .emx-date-trigger,
-[data-theme="dark"] .emx-date-trigger,
-.dark .emx-date-trigger {
+:host-context([data-theme="dark"]) .emx-date-trigger,
+:host-context(.dark) .emx-date-trigger,
+:host-context(.dark-theme) .emx-date-trigger {
   background-color: #171821 !important;
   color: #F1F5F9 !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
@@ -455,86 +455,132 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  :root[data-theme="dark"] .emx-date-trigger:hover:not(:disabled),
-  [data-theme="dark"] .emx-date-trigger:hover:not(:disabled),
-  .dark .emx-date-trigger:hover:not(:disabled) {
+  :host-context([data-theme="dark"]) .emx-date-trigger:hover:not(:disabled),
+  :host-context(.dark) .emx-date-trigger:hover:not(:disabled),
+  :host-context(.dark-theme) .emx-date-trigger:hover:not(:disabled) {
     background-color: #1E202B !important;
     border-color: rgba(255, 255, 255, 0.18) !important;
     color: #FFFFFF !important;
   }
 }
 
-:root[data-theme="dark"] .emx-date-picker-popover,
-[data-theme="dark"] .emx-date-picker-popover,
-.dark .emx-date-picker-popover {
+:host-context([data-theme="dark"]) .emx-date-picker-popover,
+:host-context(.dark) .emx-date-picker-popover,
+:host-context(.dark-theme) .emx-date-picker-popover {
   background-color: #16171F !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
 }
 
-:root[data-theme="dark"] .emx-date-presets,
-[data-theme="dark"] .emx-date-presets,
-.dark .emx-date-presets {
+:host-context([data-theme="dark"]) .emx-date-presets,
+:host-context(.dark) .emx-date-presets,
+:host-context(.dark-theme) .emx-date-presets {
   background: #121319 !important;
   border-right-color: rgba(255, 255, 255, 0.06) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-:root[data-theme="dark"] .emx-preset-btn,
-[data-theme="dark"] .emx-preset-btn,
-.dark .emx-preset-btn {
+:host-context([data-theme="dark"]) .emx-preset-btn,
+:host-context(.dark) .emx-preset-btn,
+:host-context(.dark-theme) .emx-preset-btn {
   color: #94A3B8 !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  :root[data-theme="dark"] .emx-preset-btn:hover,
-  [data-theme="dark"] .emx-preset-btn:hover,
-  .dark .emx-preset-btn:hover {
+  :host-context([data-theme="dark"]) .emx-preset-btn:hover,
+  :host-context(.dark) .emx-preset-btn:hover,
+  :host-context(.dark-theme) .emx-preset-btn:hover {
     background: #1A1C26 !important;
     color: #F1F5F9 !important;
   }
 }
 
-:root[data-theme="dark"] .emx-preset-btn.active,
-[data-theme="dark"] .emx-preset-btn.active,
-.dark .emx-preset-btn.active {
+:host-context([data-theme="dark"]) .emx-preset-btn.active,
+:host-context(.dark) .emx-preset-btn.active,
+:host-context(.dark-theme) .emx-preset-btn.active {
   background: #2563EB !important;
   color: #FFFFFF !important;
 }
 
-:root[data-theme="dark"] .emx-date-picker-footer,
-[data-theme="dark"] .emx-date-picker-footer,
-.dark .emx-date-picker-footer {
+:host-context([data-theme="dark"]) .emx-month-panel,
+:host-context(.dark) .emx-month-panel,
+:host-context(.dark-theme) .emx-month-panel {
+  background-color: #16171F !important;
+}
+
+:host-context([data-theme="dark"]) .emx-month-title,
+:host-context(.dark) .emx-month-title,
+:host-context(.dark-theme) .emx-month-title {
+  color: #F1F5F9 !important;
+}
+
+:host-context([data-theme="dark"]) .emx-month-nav-btn,
+:host-context(.dark) .emx-month-nav-btn,
+:host-context(.dark-theme) .emx-month-nav-btn {
+  color: #94A3B8 !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :host-context([data-theme="dark"]) .emx-month-nav-btn:hover,
+  :host-context(.dark) .emx-month-nav-btn:hover,
+  :host-context(.dark-theme) .emx-month-nav-btn:hover {
+    background-color: #1E202B !important;
+    color: #F1F5F9 !important;
+  }
+}
+
+:host-context([data-theme="dark"]) .emx-date-picker-footer,
+:host-context(.dark) .emx-date-picker-footer,
+:host-context(.dark-theme) .emx-date-picker-footer {
   background: #121319 !important;
   border-top-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-:root[data-theme="dark"] .emx-date-chip-input,
-[data-theme="dark"] .emx-date-chip-input,
-.dark .emx-date-chip-input {
+:host-context([data-theme="dark"]) .emx-date-chip-input,
+:host-context(.dark) .emx-date-chip-input,
+:host-context(.dark-theme) .emx-date-chip-input {
   background: #16171F !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
   color: #F1F5F9 !important;
 }
 
-:root[data-theme="dark"] .emx-month-header,
-[data-theme="dark"] .emx-month-header,
-.dark .emx-month-header,
-:root[data-theme="dark"] .emx-weekday-header,
-[data-theme="dark"] .emx-weekday-header,
-.dark .emx-weekday-header {
+:host-context([data-theme="dark"]) .emx-month-header,
+:host-context(.dark) .emx-month-header,
+:host-context(.dark-theme) .emx-month-header,
+:host-context([data-theme="dark"]) .emx-weekday-header,
+:host-context(.dark) .emx-weekday-header,
+:host-context(.dark-theme) .emx-weekday-header {
   color: #94A3B8 !important;
 }
 
-:root[data-theme="dark"] .emx-day-cell,
-[data-theme="dark"] .emx-day-cell,
-.dark .emx-day-cell {
+:host-context([data-theme="dark"]) .emx-day-range-band,
+:host-context(.dark) .emx-day-range-band,
+:host-context(.dark-theme) .emx-day-range-band {
+  background-color: rgba(37, 99, 235, 0.22) !important;
+}
+
+:host-context([data-theme="dark"]) .emx-day-cell,
+:host-context(.dark) .emx-day-cell,
+:host-context(.dark-theme) .emx-day-cell {
   color: #F1F5F9 !important;
 }
 
+:host-context([data-theme="dark"]) .emx-day-cell.range-between,
+:host-context(.dark) .emx-day-cell.range-between,
+:host-context(.dark-theme) .emx-day-cell.range-between {
+  color: #93C5FD !important;
+}
+
+:host-context([data-theme="dark"]) .emx-day-cell.today:not(.selected):not(.range-edge),
+:host-context(.dark) .emx-day-cell.today:not(.selected):not(.range-edge),
+:host-context(.dark-theme) .emx-day-cell.today:not(.selected):not(.range-edge) {
+  color: #60A5FA !important;
+}
+
 @media (hover: hover) and (pointer: fine) {
-  :root[data-theme="dark"] .emx-day-cell:hover:not(:disabled),
-  [data-theme="dark"] .emx-day-cell:hover:not(:disabled),
-  .dark .emx-day-cell:hover:not(:disabled) {
+  :host-context([data-theme="dark"]) .emx-day-cell:hover:not(:disabled),
+  :host-context(.dark) .emx-day-cell:hover:not(:disabled),
+  :host-context(.dark-theme) .emx-day-cell:hover:not(:disabled) {
     background: #1E202B !important;
   }
 }
