@@ -153,9 +153,8 @@
         <div class="kpi-micro-meta">
           <span class="meta-dot amber"></span>{{ pending() }} requiere cotizar rider
         </div>
-        <div class="kpi-bicolor-track" aria-hidden="true">
-          <div class="kpi-bicolor-fill amber" [style.width.%]="pendingPct()"></div>
-          <div class="kpi-bicolor-fill blue" [style.width.%]="100 - pendingPct()"></div>
+        <div class="kpi-bicolor-track kpi-track-scaled kpi-track-bicolor-blue" aria-hidden="true">
+          <div class="kpi-bicolor-fill amber is-scaled" [style.--bar-scale]="pendingPct() / 100"></div>
         </div>
       </article>
 
@@ -176,8 +175,8 @@
         <div class="kpi-micro-meta">
           <span class="meta-dot green"></span>Cuadrilla técnica en terreno
         </div>
-        <div class="kpi-bicolor-track" aria-hidden="true">
-          <div class="kpi-bicolor-fill green" [style.width.%]="activePct()"></div>
+        <div class="kpi-bicolor-track kpi-track-scaled" aria-hidden="true">
+          <div class="kpi-bicolor-fill green is-scaled" [style.--bar-scale]="activePct() / 100"></div>
         </div>
       </article>
 
@@ -199,8 +198,8 @@
         <div class="kpi-micro-meta">
           <span class="meta-dot purple"></span>Acta de cierre completada
         </div>
-        <div class="kpi-bicolor-track" aria-hidden="true">
-          <div class="kpi-bicolor-fill purple" [style.width.%]="closedPct()"></div>
+        <div class="kpi-bicolor-track kpi-track-scaled" aria-hidden="true">
+          <div class="kpi-bicolor-fill purple is-scaled" [style.--bar-scale]="closedPct() / 100"></div>
         </div>
       </article>
     </section>
