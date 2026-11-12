@@ -1,13 +1,13 @@
-import { Component, ChangeDetectionStrategy, OnDestroy, computed, signal, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, DestroyRef, OnDestroy, OnInit, computed, signal, inject } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, of } from 'rxjs';
 import { switchMap, map, catchError, startWith, distinctUntilChanged } from 'rxjs/operators';
 import {
   LucideCalendarDays,
   LucideClock3,
-  LucideActivity,
   LucideCircleCheck,
   LucideSearch,
   LucideSearchX,
@@ -15,7 +15,12 @@ import {
   LucideCircleAlert,
   LucideX,
   LucideArrowRight,
-  LucideChevronDown
+  LucideChevronDown,
+  LucideMapPin,
+  LucideBuilding2,
+  LucideUsers,
+  LucideTicket,
+  LucideDownload
 } from '@lucide/angular';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthorizationService } from '../../core/auth/authorization.service';
@@ -23,10 +28,16 @@ import { AppRole } from '../../core/auth/models/app-role';
 import { Production, ProductionStatus, ProductionReservationItemRequest, CrewTicket } from '../../core/models/production.model';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { StatusChip } from '../../shared/ui/status-chip';
+import { Tag } from '../../shared/ui/status-pill/status-pill';
+import { ButtonDirective } from '../../shared/ui/button.component';
 import { ProductionsDataService } from './productions-data.service';
 import { CatalogDataService } from '../catalog/catalog-data.service';
 import { Equipment, EquipmentReservationItem } from '../catalog/models/equipment.model';
 import { CatalogService } from '../catalog/models/catalog-service.model';
+import {
+  removeExistingCrewTicketPrintFrame,
+  triggerCrewTicketSinglePagePrint,
+} from './crew-ticket-print';
 
 @Component({
   selector: 'app-productions',
@@ -37,9 +48,10 @@ import { CatalogService } from '../catalog/models/catalog-service.model';
     DecimalPipe,
     ProductionTable,
     StatusChip,
+    Tag,
+    ButtonDirective,
     LucideCalendarDays,
     LucideClock3,
-    LucideActivity,
     LucideCircleCheck,
     LucideSearch,
     LucideSearchX,
@@ -47,15 +59,24 @@ import { CatalogService } from '../catalog/models/catalog-service.model';
     LucideCircleAlert,
     LucideX,
     LucideArrowRight,
-    LucideChevronDown
+    LucideChevronDown,
+    LucideMapPin,
+    LucideBuilding2,
+    LucideUsers,
+    LucideTicket,
+    LucideDownload
   ],
   templateUrl: './productions.html',
-  styleUrl: './productions.css',
+  styleUrls: ['./productions.css', './crew-ticket-modal.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Productions implements OnDestroy {
+export class Productions implements OnInit, OnDestroy {
   private readonly dataService = inject(ProductionsDataService);
   private readonly catalogDataService = inject(CatalogDataService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+  private readonly destroyRef = inject(DestroyRef);
+  private lastDeepLinkedProductionId: number | null = null;
 
   readonly statuses = toSignal(this.dataService.getStatuses(), { initialValue: [] });
 
@@ -104,6 +125,19 @@ export class Productions implements OnDestroy {
   ).length);
   readonly pending = computed(() => this.allProductions().filter((item) => item.status === 'SOLICITADO').length);
   readonly closed = computed(() => this.allProductions().filter((item) => item.status === 'CERRADO').length);
+
+  readonly activePct = computed(() => {
+    const t = this.total();
+    return t > 0 ? Math.round((this.active() / t) * 100) : 0;
+  });
+  readonly closedPct = computed(() => {
+    const t = this.total();
+    return t > 0 ? Math.round((this.closed() / t) * 100) : 0;
+  });
+  readonly pendingPct = computed(() => {
+    const t = this.total();
+    return t > 0 ? Math.round((this.pending() / t) * 100) : 0;
+  });
 
   private readonly authz = inject(AuthorizationService);
   readonly canCreate = computed(() => this.authz.hasAnyRole([AppRole.Productor, AppRole.Organizador]) && this.authz.hasScope('access_as_user'));
@@ -179,6 +213,51 @@ export class Productions implements OnDestroy {
   readonly ticketError = signal<string | null>(null);
   readonly currentTicket = signal<CrewTicket | null>(null);
   readonly showTicketModal = signal<boolean>(false);
+  readonly ticketCopied = signal<boolean>(false);
+  readonly ticketEquipmentReservations = signal<readonly EquipmentReservationItem[]>([]);
+  private ticketCopyTimer: ReturnType<typeof setTimeout> | null = null;
+
+  readonly ticketReservations = computed(() => {
+    const fromTicket = this.ticketEquipmentReservations();
+    if (fromTicket.length > 0) return fromTicket;
+    const ticket = this.currentTicket();
+    const selected = this.detail();
+    return ticket && selected?.id === ticket.productionId ? this.productionReservations() : [];
+  });
+
+  readonly resolvedTicketCrew = computed<{ crewName: string | null; crewId: string | null }>(() => {
+    const ticket = this.currentTicket();
+    if (!ticket) return { crewName: null, crewId: null };
+
+    const selected = this.detail()?.id === ticket.productionId ? this.detail() : null;
+    let crewName = ticket.crewName?.trim() || selected?.crewName?.trim() || '';
+    let crewId = ticket.crewId?.trim() || selected?.crewId?.trim() || '';
+
+    if (!crewName && !crewId && ticket.instructions) {
+      const match = ticket.instructions.match(
+        /Cuadrilla asignada:\s*([^.()\n]+?)(?:\s*\(([^)]+)\))?\.(?:\s|$)/
+      );
+      if (match) {
+        crewName = match[1]?.trim() ?? '';
+        crewId = match[2]?.trim() ?? '';
+      }
+    }
+
+    return {
+      crewName: crewName || null,
+      crewId: crewId || null,
+    };
+  });
+
+  readonly resolvedTicketDirective = computed<string>(() => {
+    const raw = this.currentTicket()?.instructions?.trim();
+    if (!raw) return 'Sin instrucciones adicionales registradas.';
+
+    const autoMatch = raw.match(
+      /^Hoja de ruta para montaje de equipamiento[\s\S]*?Estado operacional:\s*[A-Z_]+\.(?:\s*Cuadrilla asignada:\s*(?:[^.()]|\([^)]*\))+\.)?\s*(.+)$/
+    );
+    return autoMatch?.[1]?.trim() || raw;
+  });
 
   // Descarga de PDF
   readonly quoteDownloading = signal<boolean>(false);
@@ -199,8 +278,66 @@ export class Productions implements OnDestroy {
     location: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
   });
 
+  ngOnInit(): void {
+    this.route?.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const action = params.get('action');
+        if (action === 'new') {
+          if (this.canCreate()) {
+            this.openCreateModal();
+          }
+          void this.router?.navigate([], {
+            queryParams: { action: null },
+            queryParamsHandling: 'merge',
+            replaceUrl: true,
+          });
+          return;
+        }
+
+        const rawId = params.get('productionId');
+        if (!rawId) return;
+        const id = Number(rawId);
+        if (!Number.isSafeInteger(id) || id < 1) return;
+
+        if (this.lastDeepLinkedProductionId !== id) {
+          this.lastDeepLinkedProductionId = id;
+          this.operationError.set('');
+          this.detailId.setValue(String(id));
+          this.updateId.setValue(String(id));
+          this.detail.set(null);
+          this.loadProductionContext(id);
+        }
+
+        if (action === 'download-pdf') {
+          this.downloadQuotePdf(id);
+          void this.router?.navigate([], {
+            queryParams: { action: null },
+            queryParamsHandling: 'merge',
+            replaceUrl: true,
+          });
+        } else if (action === 'view-ticket') {
+          this.viewCrewTicket(id);
+          void this.router?.navigate([], {
+            queryParams: { action: null },
+            queryParamsHandling: 'merge',
+            replaceUrl: true,
+          });
+        }
+      });
+  }
+
   ngOnDestroy(): void {
+    this.clearTicketCopyTimer();
+    removeExistingCrewTicketPrintFrame();
     this.setBodyScrollLocked(false);
+  }
+
+  private clearTicketCopyTimer(): void {
+    if (this.ticketCopyTimer !== null) {
+      clearTimeout(this.ticketCopyTimer);
+      this.ticketCopyTimer = null;
+    }
   }
 
   private syncBodyScrollLock(): void {
@@ -655,7 +792,12 @@ export class Productions implements OnDestroy {
   }
 
   getLabel(status: string): string {
-    return status === 'EN_EJECUCION' ? 'EN_EJECUCIÓN' : status;
+    return this.getReadableStatus(status);
+  }
+
+  getReservationStatusLabel(status: string): string {
+    if (status === 'RESERVED') return 'Reservado';
+    return this.getReadableStatus(status);
   }
 
   getReadableStatus(status: string): string {
@@ -685,14 +827,19 @@ export class Productions implements OnDestroy {
     this.ticketLoading.set(true);
     this.ticketError.set(null);
     this.currentTicket.set(null);
+    this.ticketEquipmentReservations.set([]);
     this.showTicketModal.set(true);
     this.syncBodyScrollLock();
+
+    this.catalogDataService.getReservationsByProduction(productionId).subscribe({
+      next: (res) => this.ticketEquipmentReservations.set(res ?? []),
+      error: () => this.ticketEquipmentReservations.set([]),
+    });
 
     setTimeout(() => {
       if (typeof document !== 'undefined') {
         const modal = document.querySelector<HTMLElement>('.ticket-modal-card');
-        const firstFocusable = modal?.querySelector<HTMLElement>('button:not([disabled]), [tabindex]:not([tabindex="-1"])');
-        (firstFocusable ?? modal)?.focus();
+        modal?.focus();
       }
     }, 0);
 
@@ -715,8 +862,12 @@ export class Productions implements OnDestroy {
   }
 
   closeTicketModal(): void {
+    this.clearTicketCopyTimer();
+    removeExistingCrewTicketPrintFrame();
+    this.ticketCopied.set(false);
     this.showTicketModal.set(false);
     this.currentTicket.set(null);
+    this.ticketEquipmentReservations.set([]);
     this.ticketError.set(null);
     this.syncBodyScrollLock();
     const trigger = this.ticketTriggerElement;
@@ -724,10 +875,57 @@ export class Productions implements OnDestroy {
     setTimeout(() => trigger?.focus(), 0);
   }
 
+  formatShortEventId(eventId: string): string {
+    if (!eventId || eventId.length <= 18) return eventId;
+    return `${eventId.slice(0, 8)}…${eventId.slice(-6)}`;
+  }
+
+  copyTicketEventId(eventId: string): void {
+    if (!eventId) return;
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(eventId).catch(() => {});
+    }
+    this.clearTicketCopyTimer();
+    this.ticketCopied.set(true);
+    this.announcement.set('Identificador de evento copiado al portapapeles.');
+    this.ticketCopyTimer = setTimeout(() => {
+      this.ticketCopied.set(false);
+      this.ticketCopyTimer = null;
+    }, 1800);
+  }
+
+  printCrewTicket(): void {
+    const ticket = this.currentTicket();
+    if (!ticket) return;
+    const crew = this.resolvedTicketCrew();
+    const prod =
+      (this.detail()?.id === ticket.productionId ? this.detail() : null) ??
+      this.allProductions().find((p) => p.id === ticket.productionId) ??
+      null;
+    triggerCrewTicketSinglePagePrint({
+      ticket,
+      crewName: crew.crewName,
+      crewId: crew.crewId,
+      directive: this.resolvedTicketDirective(),
+      statusLabel: this.getReadableStatus(ticket.status),
+      reservations: this.ticketReservations(),
+      organizerId: prod?.organizerId ?? null,
+      productionStatusLabel: prod ? this.getReadableStatus(prod.status) : null,
+      actorOwnerId: typeof this.authz.ownerId === 'function' ? this.authz.ownerId() || null : null,
+    });
+  }
+
   onTicketKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
       this.closeTicketModal();
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') {
+      if (this.currentTicket()) {
+        event.preventDefault();
+        this.printCrewTicket();
+      }
       return;
     }
     this.trapFocus(event);

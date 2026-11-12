@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal, Signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal, Signal, OnDestroy } from '@angular/core';
 import {
   AbstractControl,
   FormControl,
@@ -31,8 +31,13 @@ import {
   LucideCircleAlert,
   LucideBoxes,
   LucideLayers,
+  LucideX,
+  LucideUpload,
+  LucideTrash2,
+  LucideRefreshCw,
 } from '@lucide/angular';
 import { CatalogDataService } from './catalog-data.service';
+import { CatalogImageStorageService } from './services/catalog-image-storage.service';
 import { CatalogService, CatalogServiceUpsertRequest } from './models/catalog-service.model';
 import { Equipment, CreateEquipmentRequest, EquipmentUpdateRequest } from './models/equipment.model';
 import { BehaviorSubject, of, Observable } from 'rxjs';
@@ -41,6 +46,7 @@ import { CurrencyPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
+import { ButtonDirective } from '../../shared/ui/button.component';
 
 interface CatalogServicesState {
   readonly data: readonly CatalogService[];
@@ -60,6 +66,7 @@ interface EquipmentState {
   imports: [
     ReactiveFormsModule,
     CurrencyPipe,
+    ButtonDirective,
     LucidePackage,
     LucideCircleCheck,
     LucideCirclePause,
@@ -70,14 +77,23 @@ interface EquipmentState {
     LucideCircleAlert,
     LucideBoxes,
     LucideLayers,
+    LucideX,
+    LucideUpload,
+    LucideTrash2,
+    LucideRefreshCw,
   ],
   templateUrl: './catalog.html',
   styleUrl: './catalog.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Catalog {
+export class Catalog implements OnDestroy {
   private readonly dataService = inject(CatalogDataService);
   private readonly authz = inject(AuthorizationService);
+  private readonly imageStorage = inject(CatalogImageStorageService);
+
+  readonly serviceImageDraft = signal<string | null>(null);
+  readonly equipmentImageDraft = signal<string | null>(null);
+  readonly imageProcessingError = signal<string | null>(null);
 
   readonly activeTab = signal<'services' | 'equipment'>('services');
 
@@ -115,17 +131,20 @@ export class Catalog {
 
   readonly search = new FormControl('', { nonNullable: true });
   readonly status = new FormControl('', { nonNullable: true });
+  readonly serviceSort = new FormControl<'id-asc' | 'name-asc' | 'name-desc' | 'rate-desc' | 'rate-asc'>('id-asc', { nonNullable: true });
 
   private readonly query = toSignal(this.search.valueChanges, { initialValue: '' });
   private readonly selectedStatus = toSignal(this.status.valueChanges, { initialValue: '' });
+  private readonly selectedServiceSort = toSignal(this.serviceSort.valueChanges, { initialValue: 'id-asc' });
 
   readonly hasActiveFilters = computed(
-    () => this.query().trim() !== '' || this.selectedStatus() !== '',
+    () => this.query().trim() !== '' || this.selectedStatus() !== '' || this.selectedServiceSort() !== 'id-asc',
   );
 
   readonly rows: Signal<readonly CatalogService[]> = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('es');
-    return this.allServices().filter((item: CatalogService) => {
+    const sort = this.selectedServiceSort();
+    const filtered = this.allServices().filter((item: CatalogService) => {
       const matchesStatus =
         !this.selectedStatus() || (this.selectedStatus() === 'active' ? item.active : !item.active);
       return (
@@ -134,6 +153,22 @@ export class Catalog {
           value.toLocaleLowerCase('es').includes(query),
         )
       );
+    });
+
+    return [...filtered].sort((a, b) => {
+      switch (sort) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name, 'es');
+        case 'name-desc':
+          return b.name.localeCompare(a.name, 'es');
+        case 'rate-desc':
+          return b.rate - a.rate;
+        case 'rate-asc':
+          return a.rate - b.rate;
+        case 'id-asc':
+        default:
+          return a.id - b.id;
+      }
     });
   });
 
@@ -151,18 +186,83 @@ export class Catalog {
     active: new FormControl(true, { nonNullable: true }),
   });
 
+  readonly isServiceDragging = signal(false);
+  readonly isEquipmentDragging = signal(false);
+
+  private async handleServiceFile(file: File): Promise<void> {
+    try {
+      this.imageProcessingError.set(null);
+      const dataUrl = await this.imageStorage.processImageFile(file);
+      this.serviceImageDraft.set(dataUrl);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al procesar la imagen.';
+      this.imageProcessingError.set(msg);
+    }
+  }
+
+  async onServiceImageSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    await this.handleServiceFile(file);
+    input.value = '';
+  }
+
+  onServiceDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isServiceDragging.set(true);
+  }
+
+  onServiceDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isServiceDragging.set(false);
+  }
+
+  async onServiceDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isServiceDragging.set(false);
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      await this.handleServiceFile(files[0]);
+    }
+  }
+
+  removeServiceImage(): void {
+    this.serviceImageDraft.set(null);
+  }
+
+  private syncBodyScrollLock(): void {
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.style.overflow = (this.showEditor() || this.showEquipmentEditor()) ? 'hidden' : '';
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.style.overflow = '';
+    }
+  }
+
   openCreate(): void {
     if (!this.canManage()) return;
     this.editingService.set(null);
+    this.serviceImageDraft.set(null);
+    this.imageProcessingError.set(null);
     this.serviceForm.reset({ name: '', description: '', rate: 0, active: true });
     this.saveError.set('');
     this.saveMessage.set('');
     this.showEditor.set(true);
+    this.syncBodyScrollLock();
   }
 
   openEdit(item: CatalogService): void {
     if (!this.canManage()) return;
     this.editingService.set(item);
+    this.serviceImageDraft.set(this.imageStorage.getImage('service', item.id) || item.imageUrl || null);
+    this.imageProcessingError.set(null);
     this.serviceForm.setValue({
       name: item.name,
       description: item.description ?? '',
@@ -172,12 +272,16 @@ export class Catalog {
     this.saveError.set('');
     this.saveMessage.set('');
     this.showEditor.set(true);
+    this.syncBodyScrollLock();
   }
 
   closeEditor(): void {
     if (this.saving()) return;
     this.showEditor.set(false);
     this.editingService.set(null);
+    this.serviceImageDraft.set(null);
+    this.imageProcessingError.set(null);
+    this.syncBodyScrollLock();
   }
 
   submitService(): void {
@@ -208,9 +312,19 @@ export class Catalog {
       : this.dataService.createService(request);
     request$.subscribe({
       next: (result) => {
+        const targetId = result.id || existing?.id;
+        if (targetId) {
+          if (this.serviceImageDraft()) {
+            this.imageStorage.setImage('service', targetId, this.serviceImageDraft()!);
+          } else {
+            this.imageStorage.removeImage('service', targetId);
+          }
+        }
         this.saving.set(false);
         this.showEditor.set(false);
         this.editingService.set(null);
+        this.serviceImageDraft.set(null);
+        this.syncBodyScrollLock();
         this.saveMessage.set(`Servicio #${result.id} guardado correctamente.`);
         this.retry();
       },
@@ -233,6 +347,7 @@ export class Catalog {
   clearFilters(): void {
     this.search.setValue('');
     this.status.setValue('');
+    this.serviceSort.setValue('id-asc');
   }
 
   retry(): void {
@@ -271,17 +386,20 @@ export class Catalog {
 
   readonly equipmentSearch = new FormControl('', { nonNullable: true });
   readonly equipmentStatus = new FormControl('', { nonNullable: true });
+  readonly equipmentSort = new FormControl<'id-asc' | 'name-asc' | 'name-desc' | 'avail-desc' | 'avail-asc'>('id-asc', { nonNullable: true });
 
   private readonly equipmentQuery = toSignal(this.equipmentSearch.valueChanges, { initialValue: '' });
   private readonly selectedEquipmentStatus = toSignal(this.equipmentStatus.valueChanges, { initialValue: '' });
+  private readonly selectedEquipmentSort = toSignal(this.equipmentSort.valueChanges, { initialValue: 'id-asc' });
 
   readonly hasActiveEquipmentFilters = computed(
-    () => this.equipmentQuery().trim() !== '' || this.selectedEquipmentStatus() !== '',
+    () => this.equipmentQuery().trim() !== '' || this.selectedEquipmentStatus() !== '' || this.selectedEquipmentSort() !== 'id-asc',
   );
 
   readonly equipmentRows: Signal<readonly Equipment[]> = computed(() => {
     const query = this.equipmentQuery().trim().toLocaleLowerCase('es');
-    return this.allEquipment().filter((item: Equipment) => {
+    const sort = this.selectedEquipmentSort();
+    const filtered = this.allEquipment().filter((item: Equipment) => {
       const matchesStatus =
         !this.selectedEquipmentStatus() ||
         (this.selectedEquipmentStatus() === 'active' ? item.active : !item.active);
@@ -291,6 +409,22 @@ export class Catalog {
           value.toLocaleLowerCase('es').includes(query),
         )
       );
+    });
+
+    return [...filtered].sort((a, b) => {
+      switch (sort) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name, 'es');
+        case 'name-desc':
+          return b.name.localeCompare(a.name, 'es');
+        case 'avail-desc':
+          return (b.availableQty ?? 0) - (a.availableQty ?? 0);
+        case 'avail-asc':
+          return (a.availableQty ?? 0) - (b.availableQty ?? 0);
+        case 'id-asc':
+        default:
+          return a.id - b.id;
+      }
     });
   });
 
@@ -359,9 +493,56 @@ export class Catalog {
     this.equipmentForm.updateValueAndValidity();
   }
 
+  private async handleEquipmentFile(file: File): Promise<void> {
+    try {
+      this.imageProcessingError.set(null);
+      const dataUrl = await this.imageStorage.processImageFile(file);
+      this.equipmentImageDraft.set(dataUrl);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al procesar la imagen.';
+      this.imageProcessingError.set(msg);
+    }
+  }
+
+  async onEquipmentImageSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    await this.handleEquipmentFile(file);
+    input.value = '';
+  }
+
+  onEquipmentDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isEquipmentDragging.set(true);
+  }
+
+  onEquipmentDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isEquipmentDragging.set(false);
+  }
+
+  async onEquipmentDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isEquipmentDragging.set(false);
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      await this.handleEquipmentFile(files[0]);
+    }
+  }
+
+  removeEquipmentImage(): void {
+    this.equipmentImageDraft.set(null);
+  }
+
   openCreateEquipment(): void {
     if (!this.canManage()) return;
     this.editingEquipment.set(null);
+    this.equipmentImageDraft.set(null);
+    this.imageProcessingError.set(null);
     this.equipmentForm.reset({
       name: '',
       description: '',
@@ -374,11 +555,14 @@ export class Catalog {
     this.saveEquipmentError.set('');
     this.saveEquipmentMessage.set('');
     this.showEquipmentEditor.set(true);
+    this.syncBodyScrollLock();
   }
 
   openEditEquipment(item: Equipment): void {
     if (!this.canManage()) return;
     this.editingEquipment.set(item);
+    this.equipmentImageDraft.set(this.imageStorage.getImage('equipment', item.id) || item.imageUrl || null);
+    this.imageProcessingError.set(null);
     this.equipmentForm.reset({
       name: item.name,
       description: item.description ?? '',
@@ -391,13 +575,17 @@ export class Catalog {
     this.saveEquipmentError.set('');
     this.saveEquipmentMessage.set('');
     this.showEquipmentEditor.set(true);
+    this.syncBodyScrollLock();
   }
 
   closeEquipmentEditor(): void {
     if (this.savingEquipment()) return;
     this.showEquipmentEditor.set(false);
     this.editingEquipment.set(null);
+    this.equipmentImageDraft.set(null);
+    this.imageProcessingError.set(null);
     this.configureEquipmentFormMode(false);
+    this.syncBodyScrollLock();
   }
 
   submitEquipment(): void {
@@ -460,10 +648,20 @@ export class Catalog {
 
       this.dataService.updateEquipment(current.id, request).subscribe({
         next: (result) => {
+          const targetId = result.id || current.id;
+          if (targetId) {
+            if (this.equipmentImageDraft()) {
+              this.imageStorage.setImage('equipment', targetId, this.equipmentImageDraft()!);
+            } else {
+              this.imageStorage.removeImage('equipment', targetId);
+            }
+          }
           this.savingEquipment.set(false);
           this.showEquipmentEditor.set(false);
           this.editingEquipment.set(null);
+          this.equipmentImageDraft.set(null);
           this.configureEquipmentFormMode(false);
+          this.syncBodyScrollLock();
           this.saveEquipmentMessage.set(`Equipo #${result.id} (${result.name}) actualizado correctamente.`);
           this.retryEquipment();
         },
@@ -491,9 +689,18 @@ export class Catalog {
 
       this.dataService.createEquipment(request).subscribe({
         next: (result) => {
+          if (result.id) {
+            if (this.equipmentImageDraft()) {
+              this.imageStorage.setImage('equipment', result.id, this.equipmentImageDraft()!);
+            } else {
+              this.imageStorage.removeImage('equipment', result.id);
+            }
+          }
           this.savingEquipment.set(false);
           this.showEquipmentEditor.set(false);
+          this.equipmentImageDraft.set(null);
           this.configureEquipmentFormMode(false);
+          this.syncBodyScrollLock();
           this.saveEquipmentMessage.set(`Equipo #${result.id} (${result.name}) creado correctamente con stock inicial ${result.availableQty}.`);
           this.retryEquipment();
         },
@@ -518,9 +725,27 @@ export class Catalog {
   clearEquipmentFilters(): void {
     this.equipmentSearch.setValue('');
     this.equipmentStatus.setValue('');
+    this.equipmentSort.setValue('id-asc');
   }
 
   retryEquipment(): void {
     this.equipmentRetrySubject.next();
+  }
+
+  getServiceImage(item: CatalogService): string | null {
+    if (item.imageUrl) return item.imageUrl;
+    return this.imageStorage.getImage('service', item.id);
+  }
+
+  getEquipmentImage(item: Equipment): string | null {
+    if (item.imageUrl) return item.imageUrl;
+    return this.imageStorage.getImage('equipment', item.id);
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      img.style.display = 'none';
+    }
   }
 }

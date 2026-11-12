@@ -1,11 +1,12 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { Location } from '@angular/common';
+import { ButtonDirective } from '../../../shared/ui/button.component';
 
 @Component({
   selector: 'app-not-found',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, ButtonDirective],
   templateUrl: './not-found.html',
   styleUrl: './not-found.css',
   changeDetection: ChangeDetectionStrategy.OnPush

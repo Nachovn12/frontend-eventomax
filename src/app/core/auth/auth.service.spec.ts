@@ -90,4 +90,41 @@ describe('AuthService', () => {
 
     expect(msalServiceMock.logoutRedirect).toHaveBeenCalledWith(expectedRequest);
   });
+
+  it('awaits handleRedirectPromise and promotes redirect account before acquireTokenSilent', async () => {
+    instanceMock.initialize = vi.fn().mockResolvedValue(undefined);
+    instanceMock.handleRedirectPromise = vi.fn().mockResolvedValue({
+      account: mockAccount,
+      accessToken: 'redirect-token',
+    });
+    instanceMock.getActiveAccount
+      .mockReturnValueOnce(null)
+      .mockReturnValue(mockAccount);
+    instanceMock.getAllAccounts.mockReturnValue([mockAccount]);
+    msalServiceMock.acquireTokenSilent = vi.fn().mockReturnValue(
+      of({ account: mockAccount, accessToken: 'silent-token' })
+    );
+
+    const result = await service.acquireAccessToken();
+
+    expect(instanceMock.initialize).toHaveBeenCalled();
+    expect(instanceMock.handleRedirectPromise).toHaveBeenCalled();
+    expect(instanceMock.setActiveAccount).toHaveBeenCalledWith(mockAccount);
+    expect(result.accessToken).toBe('silent-token');
+  });
+
+  it('retries acquireTokenSilent once when MSAL transiently reports interaction_in_progress', async () => {
+    instanceMock.getActiveAccount.mockReturnValue(mockAccount);
+    const transientError = Object.assign(new Error('interaction_in_progress'), {
+      errorCode: 'interaction_in_progress',
+    });
+    msalServiceMock.acquireTokenSilent = vi.fn()
+      .mockReturnValueOnce(throwError(() => transientError))
+      .mockReturnValueOnce(of({ account: mockAccount, accessToken: 'recovered-token' }));
+
+    const result = await service.acquireAccessToken();
+
+    expect(msalServiceMock.acquireTokenSilent).toHaveBeenCalledTimes(2);
+    expect(result.accessToken).toBe('recovered-token');
+  });
 });

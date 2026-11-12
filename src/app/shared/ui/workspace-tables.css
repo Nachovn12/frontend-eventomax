@@ -1,8 +1,11 @@
 .emx-workspace .panel {
-  border-radius: var(--radius-xl);
-  background: var(--bg-surface);
+  border-radius: 14px;
+  background: var(--bg-surface, #FFFFFF);
+  border: none;
+  box-shadow: var(--shadow-card, 0 1px 2px 0 rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.08));
   overflow: hidden;
   min-width: 0;
+  transition: box-shadow var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
 }
 
 .emx-workspace .panel-heading {
@@ -43,7 +46,58 @@
   background: var(--bg-root);
 }
 
-/* Tables */
+/* Segmented Tabs: #EEF0F4 track, 9px radius outside, 7px inside Apple chiclet */
+.emx-workspace .emx-segmented-tabs,
+.emx-workspace .catalog-tabs {
+  display: inline-flex;
+  align-items: center;
+  background: #EEF0F4;
+  border-radius: 9px;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  margin-bottom: 24px;
+}
+
+.emx-workspace .emx-segmented-tab,
+.emx-workspace .catalog-tab-btn {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: 7px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 500;
+  color: #64748B;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: background-color 140ms ease, color 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+  user-select: none;
+}
+
+.emx-workspace .emx-segmented-tab:hover,
+.emx-workspace .catalog-tab-btn:hover {
+  color: #0F172A;
+}
+
+.emx-workspace .emx-segmented-tab.active,
+.emx-workspace .catalog-tab-btn.active,
+.emx-workspace .emx-segmented-tab[aria-selected="true"],
+.emx-workspace .catalog-tab-btn[aria-selected="true"] {
+  background: #FFFFFF;
+  color: #0F172A;
+  font-weight: 600;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04), inset 0 1px 0 #FFFFFF;
+}
+
+/* Tables: 44px rows, 1px #E2E8F0 lines */
 .emx-workspace .table-scroll {
   overflow-x: auto;
 }
@@ -55,34 +109,66 @@
   text-align: left;
 }
 
+.emx-workspace .data-table thead tr {
+  height: 38px;
+  background: #F8FAFC;
+  border-bottom: 1px solid #F1F5F9;
+}
+
 .emx-workspace .data-table th {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
   font-size: 12px;
-  font-weight: 500;
-  color: var(--text-light);
-  background: transparent;
-  padding: 14px 24px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  letter-spacing: 0.01em;
+  line-height: 16px;
+  font-weight: 600;
+  color: #64748B;
+  padding: 8px 18px;
+  border-bottom: 1px solid #F1F5F9;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.emx-workspace .data-table th:first-child {
+  padding-left: 24px;
+}
+
+.emx-workspace .data-table th:last-child {
+  padding-right: 24px;
+}
+
+.emx-workspace .data-table tbody tr {
+  min-height: 48px;
+  height: 48px;
+  border-bottom: 1px solid #F1F5F9;
+  transition: background-color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
 }
 
 .emx-workspace .data-table td {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  padding: 16px 24px;
+  padding: 10px 18px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
   font-size: 13px;
-  color: var(--text-main);
+  line-height: 18px;
+  font-weight: 500;
+  color: #0F172A;
+  border-bottom: 1px solid #F1F5F9;
   vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.emx-workspace .data-table td:first-child {
+  padding-left: 24px;
+}
+
+.emx-workspace .data-table td:last-child {
+  padding-right: 24px;
 }
 
 .emx-workspace .data-table tr:last-child td {
   border-bottom: none;
 }
 
-.emx-workspace .data-table tbody tr {
-  transition: background-color 140ms ease;
-}
-
 .emx-workspace .data-table tbody tr:hover {
-  background-color: rgba(0, 0, 0, 0.015);
+  background-color: #F8FAFC;
 }
 
 .emx-workspace .data-table strong {
@@ -118,54 +204,93 @@
   flex-shrink: 0;
 }
 
-/* Status Chips - Pill shape, filled */
+/* Status Chips - TuffUI-inspired pill shape with cutout glyphs & calibrated tones */
 .emx-workspace .status-chip {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
-  border-radius: 99px;
+  gap: 4.5px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 9999px;
   font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
-  background: var(--status-neutral-bg);
-  color: var(--status-neutral);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  box-sizing: border-box;
+  transition: all 140ms ease;
+}
+
+.emx-workspace .status-chip .status-dot-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.emx-workspace .status-chip .pill-glyph {
+  width: 12px;
+  height: 12px;
+  display: block;
 }
 
 .emx-workspace .status-chip .status-dot {
-  display: none; /* Hide the old dot style */
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
 }
 
-/* Status variants */
+.emx-workspace .status-chip .status-dot.live-pulse {
+  width: 6px;
+  height: 6px;
+  box-shadow: 0 0 6px currentColor;
+  animation: statusChipPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Status variants with TuffUI / Apple calibrated contrast (Light Mode) */
 .emx-workspace .status-chip[data-status='SOLICITADO'] {
-  background: var(--status-warning-bg);
-  color: var(--status-warning);
+  background: rgba(245, 158, 11, 0.14);
+  color: #D97706;
+  border: 1px solid rgba(245, 158, 11, 0.22);
 }
 
 .emx-workspace .status-chip[data-status='CONFIRMADO'] {
-  background: var(--status-info-bg);
-  color: var(--status-info);
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563EB;
+  border: 1px solid rgba(37, 99, 235, 0.2);
 }
 
 .emx-workspace .status-chip[data-status='EN_MONTAJE'] {
-  background: var(--status-purple-bg);
-  color: var(--status-purple);
+  background: rgba(147, 51, 234, 0.12);
+  color: #7E22CE;
+  border: 1px solid rgba(147, 51, 234, 0.2);
 }
 
 .emx-workspace .status-chip[data-status='EN_EJECUCION'],
 .emx-workspace .status-chip[data-status='EN_EJECUCIÓN'] {
-  background: var(--status-success-bg);
-  color: var(--status-success);
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .emx-workspace .status-chip[data-status='CERRADO'] {
-  background: var(--status-neutral-bg);
-  color: var(--status-neutral);
+  background: rgba(15, 23, 42, 0.065);
+  color: #475569;
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .emx-workspace .status-chip[data-status='CANCELADO'] {
-  background: var(--status-danger-bg);
-  color: var(--status-danger);
+  background: rgba(239, 68, 68, 0.12);
+  color: #DC2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+@keyframes statusChipPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
 }
 
 .emx-workspace .table-hint {
@@ -178,4 +303,139 @@
     color: var(--text-muted);
     padding: 0 16px 16px;
   }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   Dark Pro 3D Tables & Status Chips Overrides
+   ═════════════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] .emx-workspace .panel,
+[data-theme="dark"] .emx-workspace .panel {
+  background: #16171F;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px -4px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme="dark"] .emx-workspace .panel-heading,
+[data-theme="dark"] .emx-workspace .panel-heading {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme="dark"] .emx-workspace .panel-footer,
+[data-theme="dark"] .emx-workspace .panel-footer {
+  background: #121319;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: #64748B;
+}
+
+:root[data-theme="dark"] .emx-workspace .data-table thead tr,
+[data-theme="dark"] .emx-workspace .data-table thead tr {
+  background: #121319;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme="dark"] .emx-workspace .data-table th,
+[data-theme="dark"] .emx-workspace .data-table th {
+  color: #64748B;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme="dark"] .emx-workspace .data-table tbody tr,
+[data-theme="dark"] .emx-workspace .data-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="dark"] .emx-workspace .data-table tbody tr:hover,
+[data-theme="dark"] .emx-workspace .data-table tbody tr:hover {
+  background-color: #1C1D27;
+}
+
+:root[data-theme="dark"] .emx-workspace .data-table td,
+[data-theme="dark"] .emx-workspace .data-table td {
+  color: #F1F5F9;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="dark"] .emx-workspace .cell-meta,
+[data-theme="dark"] .emx-workspace .cell-meta {
+  color: #64748B;
+}
+
+:root[data-theme="dark"] .emx-workspace .status-chip[data-status='SOLICITADO'],
+[data-theme="dark"] .emx-workspace .status-chip[data-status='SOLICITADO'] {
+  background: rgba(245, 158, 11, 0.18);
+  color: #FBBF24;
+  border-color: rgba(251, 191, 36, 0.25);
+}
+
+:root[data-theme="dark"] .emx-workspace .status-chip[data-status='CONFIRMADO'],
+[data-theme="dark"] .emx-workspace .status-chip[data-status='CONFIRMADO'] {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60A5FA;
+  border-color: rgba(96, 165, 250, 0.25);
+}
+
+:root[data-theme="dark"] .emx-workspace .status-chip[data-status='EN_MONTAJE'],
+[data-theme="dark"] .emx-workspace .status-chip[data-status='EN_MONTAJE'] {
+  background: rgba(168, 85, 247, 0.18);
+  color: #C084FC;
+  border-color: rgba(192, 132, 252, 0.25);
+}
+
+:root[data-theme="dark"] .emx-workspace .status-chip[data-status='EN_EJECUCION'],
+:root[data-theme="dark"] .emx-workspace .status-chip[data-status='EN_EJECUCIÓN'],
+[data-theme="dark"] .emx-workspace .status-chip[data-status='EN_EJECUCION'],
+[data-theme="dark"] .emx-workspace .status-chip[data-status='EN_EJECUCIÓN'] {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34D399;
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+:root[data-theme="dark"] .emx-workspace .status-chip[data-status='CERRADO'],
+[data-theme="dark"] .emx-workspace .status-chip[data-status='CERRADO'] {
+  background: rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="dark"] .emx-workspace .status-chip[data-status='CANCELADO'],
+[data-theme="dark"] .emx-workspace .status-chip[data-status='CANCELADO'] {
+  background: rgba(239, 68, 68, 0.18);
+  color: #F87171;
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+/* Segmented Tabs - Dark Mode */
+:root[data-theme="dark"] .emx-workspace .emx-segmented-tabs,
+[data-theme="dark"] .emx-workspace .emx-segmented-tabs,
+:root[data-theme="dark"] .emx-workspace .catalog-tabs,
+[data-theme="dark"] .emx-workspace .catalog-tabs {
+  background: #0E0F14;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="dark"] .emx-workspace .emx-segmented-tab,
+[data-theme="dark"] .emx-workspace .emx-segmented-tab,
+:root[data-theme="dark"] .emx-workspace .catalog-tab-btn,
+[data-theme="dark"] .emx-workspace .catalog-tab-btn {
+  color: #94A3B8;
+}
+
+:root[data-theme="dark"] .emx-workspace .emx-segmented-tab:hover,
+[data-theme="dark"] .emx-workspace .emx-segmented-tab:hover,
+:root[data-theme="dark"] .emx-workspace .catalog-tab-btn:hover,
+[data-theme="dark"] .emx-workspace .catalog-tab-btn:hover {
+  color: #F1F5F9;
+}
+
+:root[data-theme="dark"] .emx-workspace .emx-segmented-tab.active,
+[data-theme="dark"] .emx-workspace .emx-segmented-tab.active,
+:root[data-theme="dark"] .emx-workspace .catalog-tab-btn.active,
+[data-theme="dark"] .emx-workspace .catalog-tab-btn.active,
+:root[data-theme="dark"] .emx-workspace .emx-segmented-tab[aria-selected="true"],
+[data-theme="dark"] .emx-workspace .emx-segmented-tab[aria-selected="true"],
+:root[data-theme="dark"] .emx-workspace .catalog-tab-btn[aria-selected="true"],
+[data-theme="dark"] .emx-workspace .catalog-tab-btn[aria-selected="true"] {
+  background: #2563EB;
+  color: #FFFFFF;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.4);
 }

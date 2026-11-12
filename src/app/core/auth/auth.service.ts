@@ -105,6 +105,16 @@ export class AuthService {
    * expiration metadata without exposing the raw JWT to UI.
    */
   async acquireAccessToken(): Promise<AuthenticationResult> {
+    if (typeof this.msal.instance.initialize === 'function') {
+      await this.msal.instance.initialize();
+    }
+    if (typeof this.msal.instance.handleRedirectPromise === 'function') {
+      const redirectResult = await this.msal.instance.handleRedirectPromise();
+      if (redirectResult?.account) {
+        this.msal.instance.setActiveAccount(redirectResult.account);
+      }
+    }
+
     const account = this.getAccount();
 
     if (!account) {
@@ -118,6 +128,16 @@ export class AuthService {
       account,
     };
 
-    return firstValueFrom(this.msal.acquireTokenSilent(request));
+    try {
+      return await firstValueFrom(this.msal.acquireTokenSilent(request));
+    } catch (error: unknown) {
+      const code = (error as { errorCode?: string })?.errorCode ?? '';
+      const msg = error instanceof Error ? error.message : '';
+      if (code === 'interaction_in_progress' || msg.includes('interaction_in_progress')) {
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        return firstValueFrom(this.msal.acquireTokenSilent(request));
+      }
+      throw error;
+    }
   }
 }

@@ -1,21 +1,28 @@
+:root,
 .emx-workspace {
-  /* Colors */
-  --bg-root: #fafafa;
-  --bg-surface: #ffffff;
-  --bg-surface-hover: #f9fafb;
+  /* Colors - Light Default (Apple Design System 3D Elevation) */
+  --bg-canvas: #F4F5F8;
+  --bg-root: #F4F5F8;
+  --bg-sidebar: #F8F9FA;
+  --bg-surface: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-surface-hover: #F8FAFC;
+  --bg-well: #EEF0F4;
 
-  --border-light: #f3f4f6;
-  --border-base: #e5e7eb;
-  --border-dark: #d1d5db;
+  --border-light: rgba(15, 23, 42, 0.04);
+  --border-base: rgba(15, 23, 42, 0.07);
+  --border-dark: rgba(15, 23, 42, 0.12);
+  --border-well: rgba(15, 23, 42, 0.06);
+  --border-card: rgba(15, 23, 42, 0.07);
 
-  --text-main: #111827;
-  --text-muted: #4b5563;
-  --text-light: #6b7280;
+  --text-main: #0F172A;
+  --text-muted: #475569;
+  --text-light: #64748B;
 
-  --brand-primary: #004ee6;
-  --brand-hover: #003bb5;
-  --brand-accent: #2563eb;
-  --brand-accent-bg: #f4f8ff;
+  --brand-primary: #2563EB;
+  --brand-hover: #1D4ED8;
+  --brand-accent: #2563EB;
+  --brand-accent-bg: #EFF6FF;
 
   --blue: #2563eb;
   --pale: #eff6ff;
@@ -33,16 +40,40 @@
   --status-purple: #6d28d9;
   --status-purple-bg: #ede9fe;
 
+  /* Apple Pro 3D tactile elevation tokens - Light */
+  --shadow-button: 0 1px 2px 0 rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  --shadow-toggle: var(--shadow-button);
+  --shadow-table: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 0 0 1px rgba(15, 23, 42, 0.07), 0 1px 2px 0 rgba(15, 23, 42, 0.06), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
+  --shadow-menu: 0 0 0 1px rgba(15, 23, 42, 0.08), 0 1px 2px 0 rgba(15, 23, 42, 0.12), 0 4px 12px -4px rgba(15, 23, 42, 0.16);
+  --shadow-modal: 0 0 0 1px rgba(15, 23, 42, 0.07), 0 1px 2px 0 rgba(15, 23, 42, 0.14), 0 12px 28px -6px rgba(15, 23, 42, 0.16);
+  --shadow-badge: 0 0 0 1px color-mix(in srgb, currentColor 14%, transparent), 0 1px 2px 0 color-mix(in srgb, currentColor 16%, transparent);
+  --shadow-primary: 0 0 0 1px var(--bg-surface, #FFFFFF);
+
+  --emx-3d-card-shadow: var(--shadow-card);
+  --emx-3d-card-hover-shadow: 0 0 0 1px rgba(15, 23, 42, 0.1), 0 2px 4px 0 rgba(15, 23, 42, 0.06), 0 6px 12px -2px rgba(15, 23, 42, 0.06);
+  --emx-3d-well-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+  --emx-top-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --emx-telemetry-gradient: linear-gradient(180deg, #3B82F6 0%, #2563EB 100%);
+  --emx-telemetry-glow: rgba(37, 99, 235, 0.15);
+
+  /* Tactile Motion & Physical Squeeze Curve */
+  --ease-tactile: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-tactile: 140ms;
+  --press-squeeze: scale(0.97);
+  --press-card: scale(0.99);
+  --press-icon: scale(0.94);
+
   /* Radii */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
-  --radius-xl: 12px;
+  --radius-xl: 14px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 
   background: var(--bg-root);
   color: var(--text-main);
@@ -51,6 +82,72 @@
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme="dark"],
+[data-theme="dark"] .emx-workspace,
+.dark-theme .emx-workspace,
+.dark .emx-workspace {
+  /* Colors - Dark Pro 3D Mode (Ace Studio Inspiration) */
+  --bg-canvas: #0A0B0E;
+  --bg-root: #0C0D11;
+  --bg-sidebar: #121318;
+  --bg-surface: #16171F;
+  --bg-card: #16171F;
+  --bg-surface-hover: #1E202B;
+  --bg-well: #0E0F14;
+
+  --border-light: rgba(255, 255, 255, 0.04);
+  --border-base: rgba(255, 255, 255, 0.08);
+  --border-dark: rgba(255, 255, 255, 0.14);
+  --border-well: rgba(255, 255, 255, 0.05);
+  --border-card: rgba(255, 255, 255, 0.08);
+
+  --text-main: #F1F5F9;
+  --text-muted: #94A3B8;
+  --text-light: #64748B;
+
+  --brand-primary: #2563EB;
+  --brand-hover: #3B82F6;
+  --brand-accent: #38BDF8;
+  --brand-accent-bg: rgba(56, 189, 248, 0.12);
+
+  --blue: #38bdf8;
+  --pale: rgba(56, 189, 248, 0.1);
+
+  --status-success: #34D399;
+  --status-success-bg: rgba(52, 211, 153, 0.12);
+  --status-warning: #FBBF24;
+  --status-warning-bg: rgba(251, 191, 36, 0.12);
+  --status-danger: #F87171;
+  --status-danger-bg: rgba(248, 113, 113, 0.12);
+  --status-info: #38BDF8;
+  --status-info-bg: rgba(56, 189, 248, 0.12);
+  --status-neutral: #94A3B8;
+  --status-neutral-bg: rgba(148, 163, 184, 0.12);
+  --status-purple: #C084FC;
+  --status-purple-bg: rgba(192, 132, 252, 0.12);
+
+  /* Apple Pro 3D tactile elevation tokens - Dark */
+  --shadow-button: 0 0 0 0.5px rgba(255, 255, 255, 0.12), 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-toggle: var(--shadow-button);
+  --shadow-table: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.5), 0 3px 6px -2px rgba(0, 0, 0, 0.4);
+  --shadow-menu: 0 0 0 0.5px rgba(255, 255, 255, 0.12), 0 1px 2px 0 rgba(0, 0, 0, 0.5), 0 4px 12px -4px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 0 0 0.5px rgba(255, 255, 255, 0.12), 0 1px 2px 0 rgba(0, 0, 0, 0.5), 0 12px 28px -6px rgba(0, 0, 0, 0.6);
+  --shadow-badge: 0 0 0 0.5px color-mix(in srgb, currentColor 34%, #000), 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-primary: 0 0 0 0.5px rgba(255, 255, 255, 0.2), 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+
+  --emx-3d-card-shadow: var(--shadow-card);
+  --emx-3d-card-hover-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.16), 0 2px 4px 0 rgba(0, 0, 0, 0.5), 0 8px 16px -2px rgba(0, 0, 0, 0.6);
+  --emx-3d-well-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.03);
+  --emx-top-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --emx-telemetry-gradient: linear-gradient(180deg, #A855F7 0%, #00D2FF 100%);
+  --emx-telemetry-glow: rgba(0, 210, 255, 0.35);
+
+  --shadow-sm: var(--shadow-button);
+  --shadow-md: var(--shadow-card);
+  --shadow-lg: var(--shadow-modal);
 }
 
 .emx-workspace h1,
@@ -71,7 +168,7 @@
   cursor: pointer;
 }
 
-.emx-workspace button:disabled {
+.emx-workspace button:not(.emx-btn):disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -84,6 +181,22 @@
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
+  animation: emx-page-enter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes emx-page-enter {
+  from {
+    opacity: 0.92;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emx-workspace .page-content {
+    animation: none;
+  }
 }
 
 .emx-workspace .page-header {
@@ -94,26 +207,28 @@
 }
 
 .emx-workspace .eyebrow {
-  color: var(--text-light);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 11px;
+  color: var(--brand-accent);
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 12px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .emx-workspace .page-title {
-  font-size: 24px; /* Slightly smaller, more refined */
+  font-size: 24px;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-main);
+  margin: 0 0 6px;
 }
 
 .emx-workspace .page-description {
   color: var(--text-muted);
-  margin-top: 6px;
-  font-size: 14px;
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
 }
 
 .emx-workspace .header-actions {
@@ -147,28 +262,35 @@
 }
 
 .emx-workspace .btn-primary {
-  background: var(--brand-primary);
-  border: 1px solid var(--brand-primary);
-  color: #fff;
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
+  border: 1px solid #1D4ED8;
+  color: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 3px 8px -1px rgba(37, 99, 235, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-lg);
 }
 
 .emx-workspace .btn-primary:hover {
-  background: var(--brand-hover);
-  border-color: var(--brand-hover);
+  background: linear-gradient(180deg, #1D4ED8 0%, #1E40AF 100%);
+  border-color: #1E40AF;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 6px 16px -2px rgba(37, 99, 235, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
 }
 
 .emx-workspace .btn,
 .emx-workspace .btn-secondary {
-  background: #fff;
-  border: 1px solid var(--border-dark);
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.1);
   color: var(--text-main);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), inset 0 1px 0 #FFFFFF;
+  border-radius: var(--radius-lg);
 }
 
 .emx-workspace .btn:hover,
 .emx-workspace .btn-secondary:hover {
-  background: var(--bg-surface-hover);
+  background: #F8FAFC;
+  border-color: rgba(15, 23, 42, 0.16);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06), inset 0 1px 0 #FFFFFF;
+  transform: translateY(-1px);
 }
 
 .emx-workspace .text-link {
@@ -184,7 +306,7 @@
   text-decoration: underline;
 }
 
-/* Metric Grid */
+/* Metric Grid - Executive SaaS Design (Ace Studio Inspiration) */
 .emx-workspace .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -192,91 +314,111 @@
 }
 
 .emx-workspace .metric-card {
-  background: var(--bg-surface);
-  border-radius: 16px;
-  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  padding: 18px 20px 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 140px;
+  min-height: 120px;
+  box-shadow: var(--emx-3d-card-shadow);
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.emx-workspace .metric-card:hover {
+  border-color: var(--border-dark);
+  box-shadow: var(--emx-3d-card-hover-shadow);
+  transform: translateY(-2px);
 }
 
 .emx-workspace .metric-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 500;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .emx-workspace .icon-tile {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-md);
-  color: var(--brand-accent);
-  background: var(--brand-accent-bg);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: #2563EB;
+  background: #EFF6FF;
+  flex-shrink: 0;
 }
 
 .emx-workspace .icon-tile.green {
-  background: var(--status-success-bg);
-  color: var(--status-success);
+  background: #ECFDF5;
+  color: #059669;
 }
 
 .emx-workspace .icon-tile.amber {
-  background: var(--status-warning-bg);
-  color: var(--status-warning);
+  background: #FFFBEB;
+  color: #D97706;
 }
 
 .emx-workspace .icon-tile.purple {
-  background: var(--status-purple-bg);
-  color: var(--status-purple);
+  background: #F5F3FF;
+  color: #7C3AED;
 }
 
 .emx-workspace .metric-icon {
-  width: 20px;
-  height: 20px;
-  stroke-width: 1.75px;
-  color: var(--text-muted);
-  opacity: 0.8;
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8px;
+  color: currentColor;
 }
 
 .emx-workspace .metric-icon.amber {
-  color: #b45309; /* muted amber */
+  color: #D97706;
 }
 
 .emx-workspace .metric-icon.green {
-  color: #047857; /* muted green */
+  color: #059669;
 }
 
 .emx-workspace .metric-icon.purple {
-  color: #6d28d9; /* muted purple */
+  color: #7C3AED;
 }
 
 .emx-workspace .link-icon {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   stroke-width: 2px;
   color: currentColor;
 }
 
 .emx-workspace .metric-value {
   display: block;
-  font-size: 34px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 28px;
+  line-height: 32px;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
   font-weight: 600;
   color: var(--text-main);
-  margin: 16px 0 4px;
-  line-height: 1;
+  margin: 10px 0 4px;
 }
 
 .emx-workspace .metric-foot {
-  color: var(--text-light);
-  font-size: 13px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  margin: 0;
 }
 
 @container (max-width: 800px) {

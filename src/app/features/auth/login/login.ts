@@ -35,30 +35,19 @@ export class Login implements OnInit {
   /** Error message to display. */
   readonly errorMsg = this.auth.loginError;
 
-  /** Carousel state */
+  /** Dashboard presentation slide */
   readonly slides = [
     {
       image: '/branding/eventomax/login/eventomax-login-produccion.jpg',
       eyebrow: 'PRODUCCIÓN',
       title: 'Del plan al montaje,\ntodo coordinado.',
       description: 'Centraliza la preparación, el montaje y la ejecución\ndesde una sola operación.'
-    },
-    {
-      image: '/branding/eventomax/login/eventomax-login-recursos.jpg',
-      eyebrow: 'RECURSOS',
-      title: 'Todo el equipamiento,\nuna sola coordinación.',
-      description: 'Gestiona equipos, inventario y cuadrillas\nalrededor de una misma operación.'
-    },
-    {
-      image: '/branding/eventomax/login/eventomax-login-trazabilidad.jpg',
-      eyebrow: 'TRAZABILIDAD',
-      title: 'Visibilidad operativa\nde principio a fin.',
-      description: 'Conserva el contexto de cada cambio y etapa\nhasta el cierre de la producción.'
     }
   ];
 
   readonly activeSlide = signal(0);
-  readonly currentSlide = computed(() => this.slides[this.activeSlide()]);
+  readonly currentSlide = computed(() => this.slides[0]);
+
   ngOnInit(): void {
     this.broadcastService.inProgress$
       .pipe(

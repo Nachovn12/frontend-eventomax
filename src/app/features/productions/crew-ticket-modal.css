@@ -1,0 +1,239 @@
+.tabular-nums { font-variant-numeric: tabular-nums; }
+.ticket-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  z-index: 1000;
+}
+.ticket-modal-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1010;
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(88dvh, 780px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface, #FFFFFF);
+  border: none;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px -12px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  outline: none;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.ticket-modal-card .ticket-editorial-header {
+  flex-shrink: 0;
+  padding: 18px 24px 16px;
+  background: var(--bg-surface);
+}
+.ticket-header-main { display: grid; gap: 8px; min-width: 0; flex: 1; }
+.ticket-brand-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--border-light);
+}
+.ticket-brand-logo {
+  height: 40px;
+  width: auto;
+  display: block;
+  margin: -6px 0 -6px -8px;
+}
+.ticket-doc-tag {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--brand-primary);
+}
+.ticket-breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ticket-crumb-sep { color: var(--border-dark); font-size: 12px; }
+.ticket-folio, .ticket-crew-code, .ticket-event-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 500;
+}
+.ticket-folio { color: var(--text-muted); }
+.ticket-modal-card .ticket-editorial-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+.ticket-modal-card .ticket-editorial-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 24px 20px;
+  gap: 18px;
+}
+.ticket-empty-state {
+  padding: 24px 16px;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+.ticket-empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #64748B;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+.ticket-empty-icon svg { width: 20px; height: 20px; stroke: #64748B; }
+.ticket-empty-title { margin: 0; font-size: 15px; font-weight: 600; color: #0F172A; }
+.ticket-empty-desc { margin: 0; font-size: 13px; color: #64748B; max-width: 360px; line-height: 1.45; }
+.ticket-prop-list {
+  margin: 0;
+  border-block: 1px solid var(--border-light);
+  display: grid;
+}
+.ticket-prop-row {
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+.ticket-prop-row:last-child { border-bottom: 0; }
+.ticket-prop-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-light);
+  flex-shrink: 0;
+}
+.ticket-prop-icon { width: 16px; height: 16px; color: var(--text-light); flex-shrink: 0; }
+.ticket-prop-value {
+  margin: 0;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ticket-prop-muted { color: var(--text-muted); font-weight: 400; }
+.ticket-crew-code {
+  color: var(--text-muted);
+  background: var(--status-neutral-bg);
+  border: 1px solid var(--border-base);
+  padding: 1px 7px;
+  border-radius: 5px;
+}
+.ticket-section { display: grid; gap: 8px; }
+.ticket-section h3 { margin: 0; font-size: 12px; font-weight: 600; color: var(--text-main); }
+.ticket-instructions {
+  margin: 0;
+  white-space: pre-wrap;
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--border-dark);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.ticket-modal-card .ticket-editorial-footer {
+  flex-shrink: 0;
+  padding: 14px 24px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  justify-content: space-between;
+  background: #F8FAFC;
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.ticket-copy-icon.copied, .ticket-copied-text { color: var(--status-success); font-weight: 500; }
+.ticket-footer-actions { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; }
+@media (max-width: 640px) {
+  .ticket-modal-card::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 5px;
+    border-radius: 99px;
+    background: #CBD5E1;
+    margin: 10px auto 4px;
+    flex-shrink: 0;
+  }
+  .ticket-modal-card { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 14px; }
+  .ticket-modal-card .ticket-editorial-header { padding: 16px 18px 14px; }
+  .ticket-modal-card .ticket-editorial-title { font-size: 16px; }
+  .ticket-modal-card .ticket-editorial-body { padding: 16px 18px; gap: 16px; }
+  .ticket-modal-card .ticket-editorial-footer { padding: 12px 18px; }
+}
+@media (max-width: 520px) {
+  .ticket-prop-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .ticket-prop-value { justify-content: flex-start; text-align: left; padding-left: 24px; }
+}
+@media (max-width: 360px) {
+  .ticket-modal-card { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
+  .ticket-modal-card .ticket-editorial-header,
+  .ticket-modal-card .ticket-editorial-body { padding: 14px; }
+  .ticket-modal-card .ticket-editorial-footer { padding: 10px 14px; }
+  .btn-copy-event-id { margin-left: 0; width: 100%; }
+  .ticket-footer-actions { width: 100%; justify-content: flex-end; }
+}
+
+/* ==========================================================================
+   Dark Mode Support for Crew Ticket Modal
+   ========================================================================== */
+:host-context([data-theme="dark"]) .ticket-backdrop,
+:host-context(.dark) .ticket-backdrop {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+:host-context([data-theme="dark"]) .ticket-modal-card,
+:host-context(.dark) .ticket-modal-card {
+  background: #16171F;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+:host-context([data-theme="dark"]) .ticket-modal-card .ticket-editorial-header,
+:host-context(.dark) .ticket-modal-card .ticket-editorial-header {
+  background: #121319;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+:host-context([data-theme="dark"]) .ticket-brand-logo,
+:host-context(.dark) .ticket-brand-logo {
+  filter: brightness(0) invert(1);
+}
+
+:host-context([data-theme="dark"]) .ticket-modal-card .ticket-editorial-title,
+:host-context(.dark) .ticket-modal-card .ticket-editorial-title {
+  color: #F1F5F9;
+}
+
+:host-context([data-theme="dark"]) .ticket-modal-card .ticket-editorial-footer,
+:host-context(.dark) .ticket-modal-card .ticket-editorial-footer {
+  background: #121319;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+

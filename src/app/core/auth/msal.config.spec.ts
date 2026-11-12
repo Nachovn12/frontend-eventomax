@@ -1,8 +1,15 @@
-﻿import { InteractionType } from '@azure/msal-browser';
-import { msalInterceptorConfigFactory } from './msal.config';
+import { BrowserCacheLocation, InteractionType } from '@azure/msal-browser';
+import { createMsalInstance, msalInterceptorConfigFactory } from './msal.config';
 import { environment } from '../../../environments/environment';
 
 describe('MSAL Configuration', () => {
+  describe('createMsalInstance', () => {
+    it('uses LocalStorage cache so email deep-links opened in a new browser tab share the session', () => {
+      const instance = createMsalInstance();
+      expect(instance.getConfiguration().cache.cacheLocation).toBe(BrowserCacheLocation.LocalStorage);
+    });
+  });
+
   describe('msalInterceptorConfigFactory', () => {
     it('should create a valid interceptor config mapped exclusively to the API Gateway', () => {
       const config = msalInterceptorConfigFactory();

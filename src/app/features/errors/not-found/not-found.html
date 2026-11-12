@@ -17,12 +17,12 @@
     </div>
 
     <div class="not-found-actions">
-      <button type="button" class="not-found-back" (click)="goBack()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-        Volver
+      <button type="button" emxButton variant="secondary" size="medium" class="not-found-back" (click)="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        <span>Volver</span>
       </button>
-      <a routerLink="/dashboard" class="not-found-home">
-        Ir al panel
+      <a routerLink="/dashboard" emxButtonLink variant="primary" size="medium" class="not-found-home">
+        <span>Ir al panel</span>
       </a>
     </div>
   </div>

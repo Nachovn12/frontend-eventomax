@@ -3,77 +3,85 @@
     <section class="p-auth" aria-labelledby="h-auth">
       <div class="auth-inner">
         <header class="a-hd">
-          <img src="/branding/eventomax/logos/eventomax-logo-dark.svg" alt="EventoMax" class="a-logo">
-          <h1 id="h-auth">Acceso a EventoMax</h1>
-          <p class="a-sub">Plataforma de producción y montaje de eventos.</p>
+          <a href="/" class="a-brand-link" aria-label="Volver al inicio de EventoMax">
+            <img src="/branding/eventomax/logos/eventomax-logo-dark.svg" alt="EventoMax" class="a-logo">
+          </a>
         </header>
 
-        <div class="a-bd">
-          <p class="a-inst">Accede con tu cuenta corporativa de Microsoft para continuar.</p>
-
-          @if (errorMsg()) {
-            <div class="err" role="alert">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-              <span>{{ errorMsg() }}</span>
-            </div>
-          }
-
-          <button type="button" class="login-microsoft-button" (click)="onLogin()" [disabled]="isLoading()" [attr.aria-busy]="isLoading()">
-            <div class="btn-c" [class.inv]="isLoading()">
-              <img src="/branding/eventomax/auth/microsoft.svg" alt="" aria-hidden="true" class="microsoft-mark" />
-              <span>Iniciar sesión con Microsoft</span>
-            </div>
-            @if (isLoading()) {
-              <div class="btn-ld" aria-hidden="true">
-                <span class="spin"></span>
-                <span>Conectando con Microsoft...</span>
-              </div>
-            }
-          </button>
-
-          <div class="a-trust">
-            <svg class="ic-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <path d="M12 3 19 6v5c0 4.5-2.9 8.5-7 10-4.1-1.5-7-5.5-7-10V6l7-3Z" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-              <path d="m9 12 2 2 4-4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <span>Acceso protegido mediante Microsoft Entra ID</span>
+        <div class="a-center-form">
+          <div class="a-title-block">
+            <h1 id="h-auth">Acceso a EventoMax</h1>
+            <p class="a-sub">Inicia sesión con tu cuenta corporativa para continuar</p>
           </div>
 
-          <div class="a-div" aria-hidden="true"></div>
+          <div class="a-bd">
+            @if (errorMsg()) {
+              <div class="err" role="alert">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>{{ errorMsg() }}</span>
+              </div>
+            }
 
-          <div class="a-help">
-            <p>¿Problemas para ingresar? <a href="#">Contacta al administrador.</a></p>
+            <button type="button" class="login-microsoft-button" (click)="onLogin()" [disabled]="isLoading()" [attr.aria-busy]="isLoading()">
+              <div class="btn-c" [class.inv]="isLoading()">
+                <img src="/branding/eventomax/auth/microsoft.svg" alt="" aria-hidden="true" class="microsoft-mark" />
+                <span>Iniciar sesión con Microsoft</span>
+              </div>
+              @if (isLoading()) {
+                <div class="btn-ld" aria-hidden="true">
+                  <span class="spin"></span>
+                  <span>Conectando con Microsoft...</span>
+                </div>
+              }
+            </button>
+
+            <div class="a-divider" aria-hidden="true">
+              <span>o</span>
+            </div>
+
+            <a href="/" class="a-btn-secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+              <span>Volver a la página de inicio</span>
+            </a>
+
+            <div class="a-help">
+              <svg class="ic-lock-quiet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <p>Acceso corporativo protegido con <span>Microsoft Entra ID</span></p>
+            </div>
           </div>
         </div>
 
         <footer class="a-ft">
-          <p>© 2026 EventoMax &mdash; Acceso corporativo seguro</p>
+          <p>© 2026 EventoMax</p>
         </footer>
       </div>
     </section>
 
-    <section class="p-brand" aria-label="Funciones de EventoMax">
+    <section class="p-brand" aria-label="Plataforma EventoMax">
       <div class="b-crsl">
-        @for (slide of slides; track slide.image; let i = $index) {
-          <div class="b-slide" [class.active]="activeSlide() === i">
-            <img [src]="slide.image" class="b-img" alt="" aria-hidden="true" [attr.fetchpriority]="i === 0 ? 'high' : 'auto'">
-            <div class="b-over"></div>
-            <div class="b-copy">
-              <span class="eyebrow">{{ slide.eyebrow }}</span>
-              <h2>{{ slide.title }}</h2>
-              <p>{{ slide.description }}</p>
-            </div>
+        <div class="b-slide active">
+          <!-- Screen-reader accessible metadata required by contract -->
+          <div class="b-copy sr-only">
+            <span class="eyebrow">{{ slides[0].eyebrow }}</span>
+            <h2>{{ slides[0].title }}</h2>
+            <p>{{ slides[0].description }}</p>
           </div>
-        }
-      </div>
 
-      <nav class="b-dots" aria-label="Funciones de EventoMax">
-        @for (slide of slides; track slide.image; let i = $index) {
-          <button type="button" class="b-dot" [class.active]="activeSlide() === i" (click)="goToSlide(i)" [attr.aria-current]="activeSlide() === i ? 'true' : null" [attr.aria-label]="'Ir a ' + slide.eyebrow">
-            <span class="dot-v"></span>
-          </button>
-        }
-      </nav>
+          <!-- Conduit Style Elevated Dashboard Interface Window -->
+          <div class="conduit-window-frame">
+            <img [src]="slides[0].image" class="b-img" alt="Panel de control EventoMax" fetchpriority="high">
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 </main>

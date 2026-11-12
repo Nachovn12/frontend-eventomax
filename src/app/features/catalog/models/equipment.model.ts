@@ -3,6 +3,7 @@ export interface Equipment {
   readonly name: string;
   readonly description?: string | null;
   readonly category?: string | null;
+  readonly imageUrl?: string | null;
   readonly active: boolean;
   readonly availableQty: number;
   readonly reservedQty: number;
@@ -38,6 +39,7 @@ export interface BackendEquipmentResponse {
   readonly name: string;
   readonly description?: string | null;
   readonly category?: string | null;
+  readonly imageUrl?: string | null;
   readonly active?: boolean | null;
   readonly availableQty?: number | null;
   readonly reservedQty?: number | null;

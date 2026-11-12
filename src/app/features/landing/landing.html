@@ -1,0 +1,735 @@
+<div class="editorial-landing">
+  <!-- 1. Senior SaaS Frosted Glass Header (Inspired by Stacker & Twenty) -->
+  <header class="editorial-nav" role="banner">
+    <div class="nav-shell">
+      <div class="nav-left">
+        <a routerLink="/" class="brand-anchor" aria-label="EventoMax Inicio">
+          <img src="/branding/eventomax/logos/eventomax-logo-dark.svg" alt="EventoMax" class="brand-img" />
+        </a>
+      </div>
+
+      <nav class="nav-menu" aria-label="Navegación principal">
+        <a href="#simulador" (click)="scrollToSection('simulador', $event)" class="nav-link">Demostración en Vivo</a>
+        <a href="#impacto" (click)="scrollToSection('impacto', $event)" class="nav-link">Métricas Operativas</a>
+        <a href="#arquitectura" (click)="scrollToSection('arquitectura', $event)" class="nav-link">Arquitectura Cloud Native</a>
+      </nav>
+
+      <div class="nav-right">
+        <a routerLink="/login" class="btn-apple-black nav-cta">
+          <span>Ingresar al Portal</span>
+          <svg lucideArrowRight class="btn-icon" />
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. Ruixen-Style ScrollOverHero Stage -->
+  <div class="scroll-over-hero-container" id="hero-scroll-container">
+    <!-- Atmospheric Backdrop (Sky Ethereal Aura & Micro-Grid) -->
+    <div class="hero-atmosphere" aria-hidden="true">
+      <div class="hero-grid-overlay"></div>
+      <div class="hero-sky-glow"></div>
+    </div>
+
+    <!-- Pinned Editorial Headline & CTAs (Stays sticky at top while macOS window glides over it) -->
+    <div class="editorial-hero-pinned" [style.transform]="heroContentTransform()" [style.opacity]="heroContentOpacity()">
+      <div class="hero-shell">
+        <div class="hero-eyebrow">
+          <span class="badge-dot-halo" aria-hidden="true">
+            <span class="badge-dot-core"></span>
+          </span>
+          <span class="badge-text">PLATAFORMA PARA PRODUCCIÓN Y MONTAJE DE EVENTOS</span>
+          <svg lucideChevronRight class="badge-chevron" aria-hidden="true" />
+        </div>
+
+        <h1 id="hero-title" class="editorial-title">
+          <span class="title-primary">Producción de eventos sin imprevistos.</span>
+          <span class="title-secondary">
+            <emx-word-roll
+              lead="De la planificación al"
+              [words]="heroRollWords"
+            />
+          </span>
+        </h1>
+
+        <p class="editorial-lead">
+          La plataforma unificada que reemplaza las planillas y la improvisación: reserva garantizada de equipamiento, asignación clara a equipos de trabajo y seguimiento de cada montaje en tiempo real.
+        </p>
+
+        <div class="hero-actions">
+          <a routerLink="/login" class="btn-apple-black hero-btn-main">
+            <img src="/branding/eventomax/auth/microsoft.svg" alt="" aria-hidden="true" class="ms-brand-icon" />
+            <span>Acceso Corporativo Microsoft</span>
+            <svg lucideArrowRight class="btn-icon" />
+          </a>
+
+          <a href="#simulador" (click)="scrollToSection('simulador', $event)" class="btn-apple-secondary hero-btn-sub">
+            <svg lucidePlay class="btn-icon-sub" />
+            <span>Ver Demostración</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rising Overlap Media Panel: Unified Double-Bezel macOS Application Window -->
+    <div id="simulador" class="hero-rising-media-panel">
+      <div class="panel-shell">
+        <div class="window-bezel-frame">
+          <!-- Simulator Application Window Frame -->
+          <div class="simulator-window">
+            <!-- Tier 1: Window Chrome Titlebar (macOS Traffic Lights + URL + Mode Controls) -->
+            <div class="window-titlebar">
+              <div class="window-titlebar-left">
+                <div class="window-controls" aria-hidden="true">
+                  <span class="ctrl-dot dot-red"></span>
+                  <span class="ctrl-dot dot-yellow"></span>
+                  <span class="ctrl-dot dot-green"></span>
+                </div>
+
+                <!-- Authentic macOS Safari Sidebar & History Chevrons -->
+                <div class="safari-nav-group" aria-hidden="true">
+                  <span class="safari-chrome-btn safari-sidebar-ic">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                      <rect x="2" y="2.5" width="12" height="11" rx="2" />
+                      <line x1="6" y1="2.5" x2="6" y2="13.5" />
+                    </svg>
+                  </span>
+                  <span class="safari-chrome-divider"></span>
+                  <button type="button" class="safari-chrome-btn" (click)="prevTab()" tabindex="-1" title=" Etapa anterior">
+                    <svg lucideChevronLeft class="safari-chevron-ic" />
+                  </button>
+                  <button type="button" class="safari-chrome-btn" (click)="nextTab()" tabindex="-1" title="Etapa siguiente">
+                    <svg lucideChevronRight class="safari-chevron-ic" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Senior SaaS Safari Smart Address & Security Pill -->
+              <div class="window-address-pill">
+                <div class="address-url-group">
+                  <svg class="address-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  <span class="address-scheme">https://</span>
+                  <span class="address-domain">app.eventomax.cl</span>
+                  <span class="address-path">
+                    @if (displayMode() === 'video') {
+                      /demo/recorrido-plataforma
+                    } @else {
+                      {{ currentStep().routePath }}
+                    }
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  class="window-refresh-btn"
+                  (click)="refreshSimulatorView()"
+                  title="Reiniciar vista actual"
+                  aria-label="Reiniciar vista actual"
+                >
+                  <svg lucideRotateCw class="window-refresh-ic" aria-hidden="true" />
+                </button>
+              </div>
+
+              <!-- Mode & Hotspot Toggles Integrated in Window Chrome -->
+              <div class="simulator-extra-controls">
+                <div class="mode-toggle-group" role="group" aria-label="Selector de modalidad de demostración">
+                  <button
+                    type="button"
+                    class="btn-mode-toggle"
+                    [class.active]="displayMode() === 'interactive'"
+                    (click)="setMode('interactive')"
+                    title="Recorrido guiado interactivo paso a paso con la interfaz real"
+                  >
+                    <svg lucideEye class="mode-ic" />
+                    <span>Interactivo</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-mode-toggle"
+                    [class.active]="displayMode() === 'video'"
+                    (click)="setMode('video')"
+                    title="Ver video grabado del flujo completo de la plataforma"
+                  >
+                    <svg lucideVideo class="mode-ic" />
+                    <span>Video</span>
+                  </button>
+                </div>
+
+                @if (displayMode() === 'interactive') {
+                  <button
+                    type="button"
+                    class="btn-hotspots-toggle"
+                    [class.active]="showHotspots()"
+                    (click)="toggleHotspots()"
+                    title="Activar o desactivar puntos informativos interactivos"
+                  >
+                    <svg lucideInfo class="mode-ic" />
+                    <span>Puntos Clave</span>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Tier 2: Integrated Segmented Workflow Navigation Bar -->
+            <div class="simulator-toolbar-container">
+              <div class="simulator-segmented-bar" role="tablist" aria-label="Etapas operativas de EventoMax">
+                @for (step of steps; track step.id; let i = $index) {
+                  <button
+                    type="button"
+                    role="tab"
+                    class="segmented-pill"
+                    [class.active]="activeTab() === i && displayMode() === 'interactive'"
+                    [attr.aria-selected]="activeTab() === i && displayMode() === 'interactive'"
+                    (click)="setMode('interactive'); setTab(i)"
+                  >
+                    <span class="pill-num">0{{ i + 1 }}</span>
+                    <span class="pill-title">{{ step.tabLabel }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Main Viewport Canvas -->
+            <div class="storylane-viewport">
+              <!-- Viewport Content: Interactive Image + Hotspots OR Video Player -->
+              @if (displayMode() === 'interactive') {
+                @for (step of steps; track step.id; let i = $index) {
+                  @if (activeTab() === i) {
+                    <div class="storylane-slide-wrapper">
+                      <div class="storylane-stage-container">
+                        <!-- Real Application Screen Image -->
+                        <img
+                          [src]="step.image"
+                          [alt]="step.imageAlt"
+                          class="storylane-screen-image"
+                          loading="eager"
+                        />
+
+                        <!-- Interactive Storylane Hotspots / Beacons Overlay -->
+                        @if (showHotspots()) {
+                          <div class="storylane-hotspots-overlay" aria-label="Balizas explicativas interactivas">
+                            @for (h of step.hotspots; track h.id) {
+                              <div
+                                class="storylane-hotspot"
+                                [class.expanded]="activeHotspot() === h.id"
+                                [style.top]="h.top"
+                                [style.left]="h.left"
+                              >
+                                <!-- Pulsing Radar Beacon Trigger -->
+                                <button
+                                  type="button"
+                                  class="beacon-trigger"
+                                  (click)="selectHotspot(h.id)"
+                                  [attr.aria-label]="h.title"
+                                  [attr.aria-expanded]="activeHotspot() === h.id"
+                                >
+                                  <span class="beacon-ripple"></span>
+                                  <span class="beacon-core">{{ h.stepNumber }}</span>
+                                </button>
+
+                                <!-- Storylane Flyout Context Card -->
+                                <div class="hotspot-flyout-card" [class.visible]="activeHotspot() === h.id">
+                                  <div class="flyout-header">
+                                    <span class="flyout-tag">{{ h.tag }}</span>
+                                    <span class="flyout-metric">{{ h.metric }}</span>
+                                  </div>
+                                  <h4 class="flyout-title">{{ h.title }}</h4>
+                                  <p class="flyout-desc">{{ h.description }}</p>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+
+                      <!-- Step Contextual Editorial Banner (Integrated in Bottom Window HUD) -->
+                      <div class="storylane-step-banner">
+                        <div class="step-badge-tag">{{ step.badge }}</div>
+                        <h3 class="step-main-title">{{ step.title }}</h3>
+                        <span class="step-banner-sep" aria-hidden="true">·</span>
+                        <p class="step-main-subtitle">{{ step.subtitle }}</p>
+                      </div>
+                    </div>
+                  }
+                }
+              } @else {
+                <!-- Recorded Real Platform Video Player -->
+                <div class="storylane-video-wrapper">
+                  <div class="video-info-strip">
+                    <div class="vis-left">
+                      <svg lucideVideo class="ic-btn" aria-hidden="true" />
+                      <span>Recorrido completo: Panel Principal → Producciones → Orden de Cuadrilla → Auditoría</span>
+                    </div>
+                    <button type="button" class="btn-back-interactive" (click)="setMode('interactive')">
+                      <svg lucideEye class="ic-btn" />
+                      <span>Volver al Recorrido Interactivo</span>
+                    </button>
+                  </div>
+
+                  <div class="video-player-frame">
+                    <video
+                      src="/branding/eventomax/demo/eventomax-real-demo.webm"
+                      controls
+                      autoplay
+                      muted
+                      loop
+                      playsinline
+                      poster="/branding/eventomax/demo/demo-real-1-dashboard.png"
+                      class="native-demo-video"
+                      aria-label="Video del flujo operativo de EventoMax en la plataforma real"
+                    ></video>
+                  </div>
+                </div>
+              }
+
+              <!-- Simulator Bottom Control Dock -->
+              <div class="simulator-dock">
+                <div class="dock-navigation">
+                  <button
+                    type="button"
+                    class="dock-btn"
+                    (click)="prevTab()"
+                    aria-label="Paso anterior del recorrido"
+                  >
+                    <svg lucideChevronLeft class="dock-ic" />
+                    <span>Paso anterior</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="dock-btn dock-btn-accent"
+                    (click)="togglePlay()"
+                    aria-label="Pausar o reanudar avance automático"
+                  >
+                    @if (isPlaying()) {
+                      <svg lucidePause class="dock-ic" />
+                      <span>Pausar</span>
+                    } @else {
+                      <svg lucidePlay class="dock-ic" />
+                      <span>Reproducir</span>
+                    }
+                  </button>
+
+                  <button
+                    type="button"
+                    class="dock-btn"
+                    (click)="nextTab()"
+                    aria-label="Paso siguiente del recorrido"
+                  >
+                    <span>Paso siguiente</span>
+                    <svg lucideChevronRight class="dock-ic" />
+                  </button>
+                </div>
+
+                <!-- Storylane Step Progress Indicator -->
+                <div class="dock-step-indicator">
+                  <div class="step-dots-track">
+                    @for (step of steps; track step.id; let i = $index) {
+                      <span
+                        class="step-progress-dot"
+                        [class.active]="activeTab() === i"
+                        (click)="setTab(i)"
+                        [title]="step.tabLabel"
+                      ></span>
+                    }
+                  </div>
+                  <span class="step-progress-label">Paso {{ activeTab() + 1 }} de {{ steps.length }}</span>
+                </div>
+
+                <!-- Floating Action Toast -->
+                <div class="simulator-floating-toast" role="status" aria-live="polite">
+                  <svg lucideCheck class="toast-ic" />
+                  <span class="toast-text">{{ currentStep().toast }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Enterprise Capabilities Infinite Marquee Section -->
+  <section class="hero-marquee-section" aria-label="Capacidades y estándares enterprise">
+    <div class="marquee-shell">
+      <p class="hero-marquee-title">ESTÁNDARES ENTERPRISE & INFRAESTRUCTURA CLOUD</p>
+      <div class="hero-marquee-mask">
+        <div class="marquee-track">
+          <!-- Group 1 -->
+          <div class="marquee-group">
+            <div class="marquee-badge">
+              <img src="/branding/tech/microsoft.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Microsoft Entra ID</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/aws.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Infraestructura Cloud AWS</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/aws-s3.svg" alt="" aria-hidden="true" class="marquee-logo marquee-logo-service" />
+              <span>Almacenamiento Amazon S3</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/aws-ec2.svg" alt="" aria-hidden="true" class="marquee-logo marquee-logo-service" />
+              <span>Cómputo Elástico EC2</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/aws-rds.svg" alt="" aria-hidden="true" class="marquee-logo marquee-logo-service" />
+              <span>Base de Datos AWS RDS</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/apache-kafka.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Streaming en Tiempo Real</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/rabbitmq.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Despacho a Cuadrillas</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/postgresql.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Auditoría y Trazabilidad Operativa</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/docker.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Contenedores Docker</span>
+            </div>
+          </div>
+          <!-- Group 2 (Exact duplicate for seamless infinite loop) -->
+          <div class="marquee-group" aria-hidden="true">
+            <div class="marquee-badge">
+              <img src="/branding/tech/microsoft.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Microsoft Entra ID</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/aws.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Infraestructura Cloud AWS</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/aws-s3.svg" alt="" aria-hidden="true" class="marquee-logo marquee-logo-service" />
+              <span>Almacenamiento Amazon S3</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/aws-ec2.svg" alt="" aria-hidden="true" class="marquee-logo marquee-logo-service" />
+              <span>Cómputo Elástico EC2</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/aws-rds.svg" alt="" aria-hidden="true" class="marquee-logo marquee-logo-service" />
+              <span>Base de Datos AWS RDS</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/apache-kafka.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Streaming en Tiempo Real</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/rabbitmq.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Despacho a Cuadrillas</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/postgresql.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Auditoría y Trazabilidad Operativa</span>
+            </div>
+            <div class="marquee-badge">
+              <img src="/branding/tech/docker.svg" alt="" aria-hidden="true" class="marquee-logo" />
+              <span>Contenedores Docker</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Operational Impact Metrics Band -->
+  <section id="impacto" class="metrics-section reveal-on-scroll" aria-labelledby="metrics-title">
+    <div class="section-shell">
+      <div class="section-header">
+        <span class="section-badge">IMPACTO OPERACIONAL</span>
+        <h2 id="metrics-title" class="section-heading">
+          <emx-marker-text>
+            Lo que ganan las productoras y empresas de montaje <span emxMark="underline">con EventoMax</span>
+          </emx-marker-text>
+        </h2>
+        <p class="section-subheading">
+          Indicadores operacionales comprobados frente a la coordinación tradicional por grupos de mensajería y hojas de cálculo.
+        </p>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-top">
+            <span class="metric-big-number">0</span>
+            <span class="metric-unit">quiebres</span>
+          </div>
+          <h3 class="metric-title">Cero Sobre-Arriendos Imprevistos</h3>
+          <p class="metric-desc">
+            Reserva garantizada de equipamiento. El sistema impide que dos eventos reserven los mismos equipos, coordinando recursos entre las sedes de la red antes de confirmar.
+          </p>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-top">
+            <span class="metric-big-number">75</span>
+            <span class="metric-unit">min</span>
+          </div>
+          <h3 class="metric-title">Ahorro Promedio en Montaje</h3>
+          <p class="metric-desc">
+            Equipos técnicos notificados de forma automática con funciones, accesos y horarios definidos. La llegada y descarga se realiza con lista de chequeo digital verificada.
+          </p>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-top">
+            <span class="metric-big-number">100</span>
+            <span class="metric-unit">%</span>
+          </div>
+          <h3 class="metric-title">Trazabilidad en Tiempo Real</h3>
+          <p class="metric-desc">
+            Cada cambio de estado se registra de inmediato en un historial protegido, dejando constancia exacta de quién confirmó, montó y cerró el evento.
+          </p>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-top">
+            <span class="metric-big-number">20</span>
+            <span class="metric-unit">productoras</span>
+          </div>
+          <h3 class="metric-title">Red Colaborativa Unificada</h3>
+          <p class="metric-desc">
+            Catálogo compartido de servicios audiovisuales y equipamiento de alto estándar, protegido mediante acceso corporativo seguro.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Cloud Native Enterprise Architecture Stack -->
+  <section id="arquitectura" class="architecture-section reveal-on-scroll" aria-labelledby="arch-title">
+    <div class="section-shell">
+      <div class="section-header">
+        <span class="section-badge">ESTÁNDAR CLOUD NATIVE</span>
+        <h2 id="arch-title" class="section-heading">Infraestructura diseñada para la industria del espectáculo</h2>
+        <p class="section-subheading">
+          El espectáculo en vivo no admite fallas de red ni caídas de servidor. Arquitectura desacoplada y tolerante a fallos.
+        </p>
+      </div>
+
+      <div class="arch-cards-grid">
+        <div class="arch-card">
+          <div class="arch-card-hd">
+            <div class="arch-badge">SEGURIDAD & IDaaS</div>
+            <img src="/branding/tech/microsoft-azure.svg" alt="Microsoft Azure / Entra ID" class="arch-brand-logo" />
+          </div>
+          <h3 class="arch-name">Microsoft Entra ID</h3>
+          <p class="arch-text">
+            Autenticación federada corporativa mediante MSAL Angular 6.2 y JWT Authorizer en AWS API Gateway. Control de acceso estricto por roles (Admin, Productor, Organizador, Auditor).
+          </p>
+          <div class="arch-footer-code">
+            <code>issuer: login.microsoftonline.com · MSAL v6</code>
+          </div>
+        </div>
+
+        <div class="arch-card">
+          <div class="arch-card-hd">
+            <div class="arch-badge">COLAS DE TRABAJO</div>
+            <img src="/branding/tech/rabbitmq.svg" alt="RabbitMQ" class="arch-brand-logo" />
+          </div>
+          <h3 class="arch-name">RabbitMQ 4.3 Async Dispatch</h3>
+          <p class="arch-text">
+            Cola <code>q.cmd.crew</code> para tickets de montaje y notificaciones transaccionales a organizadores. Desacoplamiento total con colas durables y dead-letter exchange (DLQ).
+          </p>
+          <div class="arch-footer-code">
+            <code>exchange: cmd.direct (AMQP 0-9-1)</code>
+          </div>
+        </div>
+
+        <div class="arch-card">
+          <div class="arch-card-hd">
+            <div class="arch-badge">STREAMING DE EVENTOS</div>
+            <img src="/branding/tech/apache-kafka.svg" alt="Apache Kafka" class="arch-brand-logo" />
+          </div>
+          <h3 class="arch-name">Apache Kafka 7.8 Cluster</h3>
+          <p class="arch-text">
+            Topic <code>productions.events</code> y <code>audit.timeline</code> con 3 brokers y persistencia distribuida. Analítica de KPIs operacionales y timeline de auditoría forense con acuse ACK=all.
+          </p>
+          <div class="arch-footer-code">
+            <code>replication-factor: 3 · partitions: 3 · Outbox Pattern</code>
+          </div>
+        </div>
+
+        <div class="arch-card">
+          <div class="arch-card-hd">
+            <div class="arch-badge">MICROSERVICIOS & UI</div>
+            <div class="arch-dual-brand">
+              <img src="/branding/tech/spring-boot.svg" alt="Spring Boot" class="arch-brand-logo" />
+              <img src="/branding/tech/angular.svg" alt="Angular" class="arch-brand-logo" />
+            </div>
+          </div>
+          <h3 class="arch-name">Spring Boot 4.1 + Angular 22</h3>
+          <p class="arch-text">
+            Microservicios de dominio (<code>productions</code>, <code>catalog</code>, <code>notify</code>, <code>audit</code>, <code>report</code>, <code>bff</code>) con persistencia PostgreSQL 17 y frontend de alta reactividad con Signals.
+          </p>
+          <div class="arch-footer-code">
+            <code>Java 25 (Temurin) · PostgreSQL 17 ACID · Angular Signals</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filmo-Inspired Official Tech Stack Grid (Vendored via @thesvg/cli) -->
+      <div class="tech-stack-ecosystem reveal-on-scroll">
+        <div class="stack-intro">
+          <span class="stack-badge">PROVEEDORES Y ESTÁNDARES OFICIALES</span>
+          <h3 class="stack-title">Siempre sincronizado con el ecosistema Cloud Native</h3>
+          <p class="stack-desc">
+            Cada servicio de EventoMax se integra de forma desacoplada con plataformas de grado enterprise y especificaciones abiertas.
+          </p>
+        </div>
+
+        <div class="stack-grid">
+          <div class="stack-tile">
+            <div class="stack-tile-icon-box">
+              <img src="/branding/tech/microsoft.svg" alt="Microsoft Entra ID" class="stack-tile-icon" />
+            </div>
+            <div class="stack-tile-meta">
+              <span class="stack-tile-name">Microsoft Entra ID</span>
+              <span class="stack-tile-role">Federación SSO & RBAC (MSAL Angular 6.2)</span>
+            </div>
+          </div>
+
+          <div class="stack-tile">
+            <div class="stack-tile-icon-box">
+              <img src="/branding/tech/rabbitmq.svg" alt="RabbitMQ" class="stack-tile-icon" />
+            </div>
+            <div class="stack-tile-meta">
+              <span class="stack-tile-name">RabbitMQ 4.3</span>
+              <span class="stack-tile-role">Broker AMQP 0-9-1 & Colas Durables (q.cmd.crew)</span>
+            </div>
+          </div>
+
+          <div class="stack-tile">
+            <div class="stack-tile-icon-box">
+              <img src="/branding/tech/apache-kafka.svg" alt="Apache Kafka" class="stack-tile-icon" />
+            </div>
+            <div class="stack-tile-meta">
+              <span class="stack-tile-name">Apache Kafka 7.8</span>
+              <span class="stack-tile-role">Cluster 3 Brokers & ZooKeeper (ACK=all)</span>
+            </div>
+          </div>
+
+          <div class="stack-tile">
+            <div class="stack-tile-icon-box">
+              <img src="/branding/tech/spring-boot.svg" alt="Spring Boot" class="stack-tile-icon" />
+            </div>
+            <div class="stack-tile-meta">
+              <span class="stack-tile-name">Spring Boot 4.1</span>
+              <span class="stack-tile-role">Java 25 (Temurin) & Virtual Threads</span>
+            </div>
+          </div>
+
+          <div class="stack-tile">
+            <div class="stack-tile-icon-box">
+              <img src="/branding/tech/angular.svg" alt="Angular" class="stack-tile-icon" />
+            </div>
+            <div class="stack-tile-meta">
+              <span class="stack-tile-name">Angular 22</span>
+              <span class="stack-tile-role">Signals Reactivas & Zoneless UI</span>
+            </div>
+          </div>
+
+          <div class="stack-tile">
+            <div class="stack-tile-icon-box">
+              <img src="/branding/tech/docker.svg" alt="Docker" class="stack-tile-icon" />
+            </div>
+            <div class="stack-tile-meta">
+              <span class="stack-tile-name">Docker (OCI)</span>
+              <span class="stack-tile-role">Multi-Stage Temurin 25 & Non-Root Containers</span>
+            </div>
+          </div>
+
+          <div class="stack-tile">
+            <div class="stack-tile-icon-box">
+              <img src="/branding/tech/postgresql.svg" alt="PostgreSQL" class="stack-tile-icon" />
+            </div>
+            <div class="stack-tile-meta">
+              <span class="stack-tile-name">PostgreSQL 17</span>
+              <span class="stack-tile-role">Persistencia Transaccional ACID & Flyway</span>
+            </div>
+          </div>
+
+          <div class="stack-tile">
+            <div class="stack-tile-icon-box">
+              <img src="/branding/tech/aws.svg" alt="Amazon Web Services" class="stack-tile-icon" />
+            </div>
+            <div class="stack-tile-meta">
+              <span class="stack-tile-name">Amazon Web Services</span>
+              <span class="stack-tile-role">S3 Static HTTPS + API Gateway + EC2 (SSM)</span>
+            </div>
+          </div>
+
+          <div class="stack-tile">
+            <div class="stack-tile-icon-box">
+              <img src="/branding/tech/github.svg" alt="GitHub" class="stack-tile-icon" />
+            </div>
+            <div class="stack-tile-meta">
+              <span class="stack-tile-name">GitHub Actions</span>
+              <span class="stack-tile-role">CI/CD Verificado (Node 22 / JDK 25 / Vitest)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Apple Final Call to Action - Light Luxury Glass -->
+  <section class="final-cta-section reveal-on-scroll" aria-labelledby="cta-title">
+    <div class="cta-shell">
+      <div class="cta-inner">
+        <div class="cta-badge">
+          <span class="cta-badge-dot"></span>
+          <span class="cta-badge-text">ACCESO CORPORATIVO DISPONIBLE</span>
+        </div>
+        <h2 id="cta-title" class="cta-title">
+          <emx-marker-text>
+            Comienza a coordinar tus montajes con <mark emxMark="highlight">estándar profesional</mark>
+          </emx-marker-text>
+        </h2>
+        <p class="cta-sub">
+          Accede al panel de control operacional de EventoMax con tus credenciales federadas de Microsoft.
+        </p>
+        <div class="cta-actions">
+          <a routerLink="/login" class="btn-apple-black cta-btn">
+            <img src="/branding/eventomax/auth/microsoft.svg" alt="" aria-hidden="true" class="ms-brand-icon" />
+            <span>Ingresar al Portal Operativo</span>
+            <svg lucideArrowRight class="btn-icon" />
+          </a>
+          <div class="cta-trust-bar">
+            <span>Autenticación SSO Microsoft</span>
+            <span class="trust-sep" aria-hidden="true">•</span>
+            <span>Despliegue Cloud Native AWS</span>
+            <span class="trust-sep" aria-hidden="true">•</span>
+            <span>Disponibilidad 99.9%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Enterprise Footer UI (Ruixen Architecture) -->
+  <emx-footer-enterprise (sectionNavigate)="onFooterSectionNavigate($event)" />
+
+  <!-- 8. Tactile Scroll-to-Top Floating Control -->
+  <button
+    type="button"
+    class="scroll-to-top-btn"
+    [class.visible]="showScrollTop()"
+    [attr.tabindex]="showScrollTop() ? 0 : -1"
+    [attr.aria-hidden]="!showScrollTop()"
+    (click)="scrollToTop()"
+    aria-label="Volver al inicio"
+    title="Volver al inicio"
+  >
+    <svg lucideArrowUp class="scroll-to-top-ic" aria-hidden="true" />
+  </button>
+</div>

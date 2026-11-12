@@ -48,40 +48,94 @@
     }
 
     .mobile-backdrop {
-      display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4);
-      z-index: 150; animation: backdrop-fade-in var(--emx-motion-base) ease;
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.32);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 150;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        opacity var(--sb-dur-drawer-close) var(--sb-ease-out) 0ms,
+        visibility 0ms linear var(--sb-dur-drawer-close);
     }
-    @keyframes backdrop-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .mobile-backdrop.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition:
+        opacity var(--sb-dur-drawer-open) var(--sb-ease-out) 0ms,
+        visibility 0ms linear 0ms;
+    }
 
     .shell-sidebar {
-      position: fixed; inset: 0 auto 0 0; width: min(320px, calc(100vw - 40px)); height: 100vh;
-      overflow: visible; z-index: 200; background: var(--bg-surface);
-      box-shadow: var(--shadow-lg); transform: translateX(-100%);
-      transition: transform var(--emx-motion-drawer) var(--emx-ease-out);
-      display: flex; flex-direction: column;
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: min(280px, calc(100vw - 48px));
+      height: 100dvh;
+      overflow: hidden;
+      z-index: 200;
+      background-color: var(--sb-bg-solid);
+      background: var(--sb-bg);
+      backdrop-filter: var(--sb-backdrop-filter);
+      -webkit-backdrop-filter: var(--sb-backdrop-filter);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+      transform: translate3d(-100%, 0, 0);
+      transition: transform var(--sb-dur-drawer-close) var(--sb-ease-out);
+      display: flex;
+      flex-direction: column;
+      touch-action: pan-y;
     }
-    .shell-sidebar.is-open { transform: translateX(0); }
+    .shell-sidebar.is-open {
+      transform: translate3d(0, 0, 0);
+      transition: transform var(--sb-dur-drawer-open) var(--sb-ease-out);
+    }
 
     .sidebar-header {
-      min-height: 64px; padding: 12px 20px; display: flex; flex-direction: row;
-      justify-content: space-between; align-items: center; gap: 0;
+      min-height: 60px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
     }
 
     .mobile-toggle {
-      width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 10px; flex: 0 0 auto; background: transparent; border: 1px solid transparent;
-      color: var(--text-main); padding: 0; transition: background 150ms ease, box-shadow 150ms ease;
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--sb-item-radius);
+      flex: 0 0 auto;
+      background: transparent;
+      border: none;
+      color: var(--sb-text-secondary);
+      padding: 0;
+      transition: background-color var(--sb-transition-item), color var(--sb-transition-item);
     }
-    .mobile-toggle:hover { background: rgba(0,0,0,0.04); }
-    .mobile-toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0,113,227,0.14); }
-    .mobile-toggle .nav-icon { width: 18px; height: 18px; stroke-width: 1.75; }
+    .mobile-toggle:hover {
+      background: var(--sb-toggle-hover-bg);
+      color: var(--sb-text-primary);
+    }
+    .mobile-toggle:focus-visible {
+      outline: 2px solid var(--sb-accent-focus);
+      outline-offset: 1px;
+    }
+    .mobile-toggle .nav-icon {
+      width: var(--sb-icon-size);
+      height: var(--sb-icon-size);
+      stroke-width: var(--sb-icon-stroke);
+    }
 
-    .sidebar-content { display: flex; flex: 1; }
-    .sidebar-nav { padding: 0 16px; }
-    .nav-link, .btn-logout { height: 44px; justify-content: flex-start; padding: 0 12px; width: 100%; }
-    .workspace-label { margin-bottom: 16px; }
-    .sidebar-footer { margin-top: 16px; }
-    .collapse-toggle, .desktop-toggle { display: none; }
+    .sidebar-content { display: flex; flex: 1; overflow-y: auto; }
+    .sidebar-nav { padding: 8px 12px 20px; }
+    .nav-link { height: 40px; min-height: 40px; justify-content: flex-start; padding: 0 12px; width: 100%; }
+    .collapse-toggle, .desktop-toggle, emx-sidebar-toggle { display: none; }
     .topbar { min-height: 56px; padding: 0 16px; }
     .user-name-role { display: none; }
     .account-trigger, .account-menu-item { min-height: 44px; }
@@ -89,106 +143,131 @@
     .shell-main { padding: 24px 16px; }
   }
 
-  /* Desktop collapsed rules moved for budget */
-
-
-
-
-
-
-  .shell-sidebar.is-collapsed .nav-link,
-  .shell-sidebar.is-collapsed .btn-logout {
-    padding:0 11px;width:40px;gap:0;
-  }
-  .shell-sidebar.is-collapsed .nav-link.active {
-    /* morphes to a small square pill */
-    border-radius: 10px;
-  }
-  .shell-sidebar.is-collapsed .workspace-label {
-    padding: 0 4px;
-    width: 40px;
-    background: transparent;
-    cursor: default;
-    gap: 0;
-  }
-  .shell-sidebar.is-collapsed .workspace-label:hover {
-    background: transparent; /* No hover background since it's just a label now */
-  }
-  .shell-sidebar.is-collapsed .brand-copy,
-  .shell-sidebar.is-collapsed .nav-label,
-  .shell-sidebar.is-collapsed .workspace-info {
-    opacity: 0;
-    transform: translateX(-4px);
-    pointer-events: none;
-    width: 0;
-    margin: 0;
-    padding: 0;
-    height: 0;
-    overflow: hidden;
-  }
-
   .topbar {
     position: sticky;
     top: 0;
     z-index: 50;
-    min-height: 56px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    min-height: 52px;
+    height: 52px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.07);
     display: flex;
     align-items: center;
     padding: 0 32px;
+    box-sizing: border-box;
   }
   .topbar-inner {
     width: 100%;
-    max-width: 1280px;
-    margin: 0 auto;
+    margin: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 16px;
+  }
+  .topbar-context {
+    display: flex;
+    align-items: center;
+    min-width: 0;
   }
   .breadcrumb {
-    font-size: 14px;
-    color: var(--text-light);
+    font-size: 13.5px;
+    color: #64748B;
     display: inline-flex;
     align-items: center;
     gap: 8px;
     font-weight: 500;
   }
-  .breadcrumb-icon {
-    width: 14px;
-    height: 14px;
-    color: rgba(0, 0, 0, 0.3);
+  .breadcrumb-root {
+    color: #64748B;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 120ms ease;
   }
-  .breadcrumb strong {
-    color: var(--text-main);
+  .breadcrumb-root:hover {
+    color: #0F172A;
+  }
+  .breadcrumb-icon {
+    width: 13px;
+    height: 13px;
+    color: #94A3B8;
+    stroke-width: 2px;
+    flex-shrink: 0;
+  }
+  .breadcrumb strong,
+  .breadcrumb-current {
+    color: #0F172A;
     font-weight: 600;
   }
   .topbar-meta {
     position: relative;
     display: flex;
     align-items: center;
+    gap: 12px;
   }
-
-  .account-trigger {
-    display: flex;
+  .topbar-status-pill {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #F0FDF4;
+    border: 1px solid #DCFCE7;
+    font-size: 12px;
+    font-weight: 500;
+    color: #15803D;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #16A34A;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    flex-shrink: 0;
+  }
+  .account-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    height: 36px;
     min-height: 36px;
-    border-radius: 10px;
-    padding: 3px 6px 3px 3px;
-    background: transparent;
+    border-radius: 8px;
+    padding: 0 10px 0 5px;
+    background: #FFFFFF;
     border: none;
     outline: none;
     cursor: pointer;
-    transition: background-color 150ms ease;
+    box-shadow: var(--shadow-button, 0 1px 2px 0 rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.08));
+    transition:
+      background-color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
+      box-shadow var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
+      transform 110ms var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
   }
-  .account-trigger:hover, .account-trigger:focus-visible, .account-trigger[aria-expanded="true"] {
-    background: rgba(0, 0, 0, 0.035);
+  .account-trigger:hover,
+  .account-trigger:focus-visible {
+    background: #F8FAFC;
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.14);
+  }
+  .account-trigger[aria-expanded="true"],
+  .account-trigger.is-expanded {
+    background: #F1F5F9;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(15, 23, 42, 0.12);
   }
   .account-trigger:active {
-    background: rgba(0, 0, 0, 0.06);
+    transform: var(--press-squeeze, scale(0.97));
+  }
+  .trigger-icon {
+    width: 14px;
+    height: 14px;
+    color: #64748B;
+    margin-left: 2px;
+    transition: transform 160ms var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
+  }
+  .trigger-icon.is-rotated {
+    transform: rotate(180deg);
   }
 
 
@@ -205,74 +284,520 @@
 
 
 
-
-  /* Desktop collapsed rules */
-  .shell-sidebar.is-collapsed {
-    width: 68px;
-    overflow: visible;
-  }
-
-
-
-
-  .nav-link:active, .btn-logout:active, .desktop-toggle:active { transform: scale(0.98); }
 
   @keyframes emx-dropdown-entry {
-    from { opacity: 0; transform: translateY(-4px) scale(0.985); }
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   .account-menu {
     position: absolute;
-    top: calc(100% + 4px);
+    top: calc(100% + 6px);
     right: 0;
     transform-origin: top right;
-    background: var(--bg-surface);
-    border-radius: 12px;
-    min-width: 220px;
+    background: #FFFFFF !important;
+    border: none;
+    border-radius: 14px;
+    width: 284px;
     display: flex;
     flex-direction: column;
-    padding: 6px;
-    z-index: 100;
-    animation: emx-dropdown-entry 160ms var(--emx-ease-out) forwards;
+    padding: 8px;
+    z-index: 1000;
+    box-shadow: var(--shadow-menu, 0 10px 38px -10px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(15, 23, 42, 0.08));
+    animation: emx-dropdown-entry 140ms var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)) forwards;
   }
+
+  /* 1. Identity Header: Authentic Apple macOS style */
   .account-menu-header {
-    padding: 10px 12px;
+    padding: 8px 10px 8px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 6px;
   }
-  .account-menu-divider {
-    height: 1px;
-    background: rgba(0, 0, 0, 0.06);
-    margin: 4px 0;
+
+  .account-profile-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
-  .account-menu-item {
+
+  .account-avatar-container {
+    flex-shrink: 0;
+  }
+
+  .account-avatar-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+    color: #F8FAFC;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+
+  .account-profile-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .account-user-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0F172A;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .account-user-email {
+    font-size: 11.5px;
+    color: #64748B;
+    line-height: 1.35;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .account-sso-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: #475569;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    margin-top: 4px;
+    width: fit-content;
+  }
+
+  .sso-shield-icon {
+    width: 12px;
+    height: 12px;
+    color: #0284C7;
+    flex-shrink: 0;
+  }
+
+  /* 2. Workspace Context: Apple Inset Card */
+  .account-workspace-section {
+    padding: 2px 4px;
+  }
+
+  .account-workspace-card {
     display: flex;
     align-items: center;
     gap: 10px;
+    padding: 8px 10px;
+    background: #F8FAFC;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 10px;
+  }
+
+  .account-workspace-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: #EEF2F6;
+    display: grid;
+    place-items: center;
+    color: #475569;
+    flex-shrink: 0;
+  }
+
+  .account-workspace-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .account-workspace-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .account-workspace-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1E293B;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .account-workspace-sub {
+    font-size: 11px;
+    color: #64748B;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 3. Roles Section: Refined Apple tag pills */
+  .account-menu-section {
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .account-section-eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94A3B8;
+    margin-bottom: 2px;
+    display: block;
+  }
+
+  .account-roles-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .role-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    background: #FFFFFF;
+    border: 1px solid rgba(15, 23, 42, 0.09);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #334155;
+    line-height: 1.3;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  }
+
+  .role-pill-empty {
+    color: #94A3B8;
+    font-style: italic;
+  }
+
+  .account-menu-divider {
+    height: 1px;
+    background: rgba(15, 23, 42, 0.06);
+    margin: 6px 4px;
+  }
+
+  /* 4. Logout action: Clean destructive button */
+  .account-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
-    padding: 8px 12px;
+    min-height: 36px;
+    padding: 8px 10px;
     border: none;
     background: transparent;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 500;
-    color: var(--text-main);
+    color: #475569;
     border-radius: 8px;
     cursor: pointer;
     text-align: left;
-    transition: background-color var(--emx-motion-fast) ease, color var(--emx-motion-fast) ease, transform var(--emx-motion-fast) var(--emx-ease-out);
+    transition: background-color 120ms ease-out, color 120ms ease-out;
   }
-  .account-menu-item:hover,
-  .account-menu-item:focus-visible {
-    background: rgba(0, 0, 0, 0.04);
+
+  .account-logout-btn {
+    color: #DC2626;
+    margin-top: 2px;
   }
-  .account-menu-item:active {
+
+  .account-logout-btn:hover,
+  .account-logout-btn:focus-visible {
+    background: #FEF2F2;
+    color: #B91C1C;
+  }
+
+  .account-logout-btn:active {
     transform: scale(0.98);
-    transition-duration: 100ms;
+    transition-duration: 80ms;
   }
+
   .account-menu-item .menu-icon {
-    width: 16px;
-    height: 16px;
-    color: var(--text-light);
+    width: 15px;
+    height: 15px;
+    color: inherit;
+    flex-shrink: 0;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     Apple Pro Theme Toggle & Dark Mode Architecture (Ace Studio Inspiration)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .topbar-theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+    border-radius: 9px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    color: #475569;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    outline: none;
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .topbar-theme-toggle:hover {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+    color: #0F172A;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px -1px rgba(15, 23, 42, 0.08);
+  }
+
+  .topbar-theme-toggle:active {
+    transform: scale(0.95);
+  }
+
+  .theme-toggle-icon {
+    width: 15px;
+    height: 15px;
+    stroke-width: 2px;
+    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .topbar-theme-toggle:hover .theme-toggle-icon {
+    transform: rotate(20deg) scale(1.1);
+  }
+
+  /* Account menu theme switch */
+  .account-theme-section {
+    padding: 6px 8px;
+  }
+
+  .account-theme-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .account-theme-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .account-theme-title {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #1E293B;
+  }
+
+  .account-theme-desc {
+    font-size: 10px;
+    color: #64748B;
+  }
+
+  .emx-theme-switch {
+    width: 36px;
+    height: 20px;
+    border-radius: 9999px;
+    background: #CBD5E1;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    position: relative;
+    transition: background-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .emx-theme-switch[aria-checked="true"] {
+    background: #2563EB;
+  }
+
+  .emx-theme-switch-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    display: block;
+  }
+
+  .emx-theme-switch-thumb.is-checked {
+    transform: translateX(16px);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     Dark Pro 3D Overrides for Shell Topbar & Account Menu
+     (Sidebar Dark Mode is governed centrally by --sb-* tokens in app-shell.css)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  :root[data-theme="dark"] .shell-layout,
+  [data-theme="dark"] .shell-layout {
+    background: #0C0D11;
+  }
+
+  :root[data-theme="dark"] .topbar,
+  [data-theme="dark"] .topbar {
+    background: rgba(18, 19, 24, 0.85);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  :root[data-theme="dark"] .breadcrumb-root,
+  [data-theme="dark"] .breadcrumb-root {
+    color: #94A3B8;
+  }
+
+  :root[data-theme="dark"] .breadcrumb-root:hover,
+  [data-theme="dark"] .breadcrumb-root:hover {
+    color: #F1F5F9;
+  }
+
+  :root[data-theme="dark"] .breadcrumb-current,
+  [data-theme="dark"] .breadcrumb-current {
+    color: #F1F5F9;
+  }
+
+  :root[data-theme="dark"] .topbar-status-pill,
+  [data-theme="dark"] .topbar-status-pill {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.25);
+    color: #34D399;
+  }
+
+  :root[data-theme="dark"] .topbar-theme-toggle,
+  [data-theme="dark"] .topbar-theme-toggle {
+    background: #171821;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #FBBF24;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  :root[data-theme="dark"] .topbar-theme-toggle:hover,
+  [data-theme="dark"] .topbar-theme-toggle:hover {
+    background: #1E202B;
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #FDE047;
+  }
+
+  :root[data-theme="dark"] .account-trigger,
+  [data-theme="dark"] .account-trigger {
+    background: #171821;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #F1F5F9;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  :root[data-theme="dark"] .account-trigger:hover,
+  [data-theme="dark"] .account-trigger:focus-visible {
+    background: #1E202B;
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  :root[data-theme="dark"] .user-name-role,
+  [data-theme="dark"] .user-name-role {
+    color: #F1F5F9;
+  }
+
+  :root[data-theme="dark"] .account-menu,
+  [data-theme="dark"] .account-menu {
+    background: #141720 !important;
+    border: none !important;
+    box-shadow: var(--shadow-menu, 0 0 0 0.5px rgba(255, 255, 255, 0.14), 0 12px 32px 0 rgba(0, 0, 0, 0.65)) !important;
+  }
+
+  :root[data-theme="dark"] .account-avatar-badge,
+  [data-theme="dark"] .account-avatar-badge {
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  :root[data-theme="dark"] .account-user-name,
+  [data-theme="dark"] .account-user-name {
+    color: #F8FAFC;
+  }
+
+  :root[data-theme="dark"] .account-user-email,
+  [data-theme="dark"] .account-user-email {
+    color: #94A3B8;
+  }
+
+  :root[data-theme="dark"] .account-sso-meta,
+  [data-theme="dark"] .account-sso-meta {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #94A3B8;
+  }
+
+  :root[data-theme="dark"] .account-workspace-card,
+  [data-theme="dark"] .account-workspace-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+
+  :root[data-theme="dark"] .account-workspace-icon,
+  [data-theme="dark"] .account-workspace-icon {
+    background: rgba(255, 255, 255, 0.06);
+    color: #94A3B8;
+  }
+
+  :root[data-theme="dark"] .account-workspace-name,
+  [data-theme="dark"] .account-workspace-name {
+    color: #F1F5F9;
+  }
+
+  :root[data-theme="dark"] .account-workspace-sub,
+  [data-theme="dark"] .account-workspace-sub {
+    color: #64748B;
+  }
+
+  :root[data-theme="dark"] .account-theme-title,
+  [data-theme="dark"] .account-theme-title {
+    color: #F1F5F9;
+  }
+
+  :root[data-theme="dark"] .account-menu-divider,
+  [data-theme="dark"] .account-menu-divider {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  :root[data-theme="dark"] .role-pill,
+  [data-theme="dark"] .role-pill {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #CBD5E1;
+    box-shadow: none;
+  }
+
+  :root[data-theme="dark"] .account-menu-item,
+  [data-theme="dark"] .account-menu-item {
+    color: #CBD5E1;
+  }
+
+  :root[data-theme="dark"] .account-menu-item:hover,
+  [data-theme="dark"] .account-menu-item:focus-visible {
+    background: rgba(255, 255, 255, 0.05);
+    color: #F1F5F9;
+  }
+
+  :root[data-theme="dark"] .account-logout-btn,
+  [data-theme="dark"] .account-logout-btn {
+    color: #F87171;
+  }
+
+  :root[data-theme="dark"] .account-logout-btn:hover,
+  [data-theme="dark"] .account-logout-btn:focus-visible {
+    background: rgba(220, 38, 38, 0.12);
+    color: #FCA5A5;
   }

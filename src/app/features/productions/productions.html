@@ -1,7 +1,7 @@
 <div class="page-content">
   <header class="page-header productions-header">
     <div class="header-copy">
-      <p class="eyebrow">PLANIFICACIÓN Y COORDINACIÓN</p>
+      <p class="eyebrow">Planificación y coordinación</p>
       <h1 class="page-title">Producciones</h1>
       <p class="page-description">
         Planifica eventos, supervisa su estado operativo y coordina la asignación de equipamiento.
@@ -12,12 +12,19 @@
         <button
           #createTrigger
           type="button"
-          class="btn-system btn-create-primary"
+          emxButton
+          variant="primary"
+          size="medium"
+          class="btn-create-primary"
           [attr.aria-expanded]="showCreate()"
           aria-haspopup="dialog"
           (click)="openCreateModal(createTrigger)"
         >
-          Nueva producción
+          <svg class="action-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Nueva producción</span>
         </button>
       </div>
     }
@@ -50,10 +57,14 @@
   @if (isLoading()) {
     <section class="metric-grid productions-metrics" aria-busy="true" aria-label="Cargando métricas">
       @for (card of [1, 2, 3, 4]; track card) {
-        <article class="metric-card smooth-shadow-ring-sm emx-elevate-kpi">
-          <div class="skeleton skeleton-text medium"></div>
-          <div class="skeleton skeleton-title"></div>
-          <div class="skeleton skeleton-text short"></div>
+        <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm emx-kpi-skeleton">
+          <div class="kpi-top">
+            <div class="skeleton skeleton-pill" style="width: 96px; height: 16px;"></div>
+            <div class="skeleton skeleton-icon-tile"></div>
+          </div>
+          <div class="skeleton skeleton-val" style="width: 50px; height: 28px; margin: 12px 0 6px;"></div>
+          <div class="skeleton skeleton-text short" style="width: 140px; height: 11px; margin-bottom: 12px;"></div>
+          <div class="skeleton skeleton-bar" style="width: 100%; height: 4px;"></div>
         </article>
       }
     </section>
@@ -68,10 +79,19 @@
       <div class="toolbar">
         <div class="skeleton skeleton-toolbar"></div>
       </div>
-      <div class="panel-body">
-        <div class="skeleton skeleton-text"></div>
-        <div class="skeleton skeleton-text"></div>
-        <div class="skeleton skeleton-text medium"></div>
+      <div class="productions-table-skeleton" aria-hidden="true">
+        @for (row of [1, 2, 3, 4, 5, 6]; track row) {
+          <div class="skeleton-table-row">
+            <div class="skeleton skeleton-date-tile"></div>
+            <div class="skeleton-row-content">
+              <div class="skeleton skeleton-text" style="width: 48%; height: 14px;"></div>
+              <div class="skeleton skeleton-text short" style="width: 32%; height: 11px;"></div>
+            </div>
+            <div class="skeleton skeleton-text" style="width: 20%; height: 12px;"></div>
+            <div class="skeleton skeleton-pill" style="width: 76px; height: 22px;"></div>
+            <div class="skeleton skeleton-btn" style="width: 80px; height: 28px;"></div>
+          </div>
+        }
       </div>
     </section>
   } @else if (isError()) {
@@ -81,59 +101,112 @@
       </div>
       <h3>No pudimos cargar las producciones</h3>
       <p>No fue posible obtener la información en este momento.</p>
-      <button type="button" class="btn-system" (click)="retry()">
+      <button type="button" emxButton variant="secondary" size="medium" (click)="retry()">
         Reintentar
       </button>
     </div>
   } @else {
-    <section class="metric-grid productions-metrics" aria-label="Resumen operativo">
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-        <div class="metric-top">
-          <span>Producciones</span>
-          <span class="icon-tile" aria-hidden="true">
-            <svg lucideCalendarDays class="metric-icon" strokeWidth="1.75" />
-          </span>
+    <section class="metric-grid productions-metrics emx-noticeline-grid emx-content-fade-in" aria-label="Resumen operativo">
+      <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+        <div class="kpi-top">
+          <div class="kpi-label-group">
+            <span class="kpi-status-dot blue" aria-hidden="true"></span>
+            <span>Producciones</span>
+          </div>
+          <div class="kpi-icon-tile blue" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
         </div>
-        <strong class="metric-value">{{ total() }}</strong>
+        <strong class="metric-value font-mono-num">{{ total() }}</strong>
         <p class="metric-foot">Eventos registrados en agenda</p>
+        <div class="kpi-micro-meta">
+          <span class="meta-dot blue"></span>{{ active() }} activas
+          <span class="meta-sep">·</span>
+          <span class="meta-dot purple"></span>{{ closed() }} cerradas
+        </div>
+        <div class="kpi-bicolor-track" aria-hidden="true">
+          <div class="kpi-bicolor-fill blue" [style.width.%]="activePct()"></div>
+          <div class="kpi-bicolor-fill purple" [style.width.%]="closedPct()"></div>
+        </div>
       </article>
 
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-        <div class="metric-top">
-          <span>Por confirmar</span>
-          <span class="icon-tile amber" aria-hidden="true">
-            <svg lucideClock3 class="metric-icon amber" strokeWidth="1.75" />
-          </span>
+      <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+        <div class="kpi-top">
+          <div class="kpi-label-group">
+            <span class="kpi-status-dot amber" aria-hidden="true"></span>
+            <span>Por confirmar</span>
+          </div>
+          <div class="kpi-icon-tile amber" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
         </div>
-        <strong class="metric-value">{{ pending() }}</strong>
+        <strong class="metric-value font-mono-num">{{ pending() }}</strong>
         <p class="metric-foot">Solicitudes pendientes de revisión</p>
+        <div class="kpi-micro-meta">
+          <span class="meta-dot amber"></span>{{ pending() }} requiere cotizar rider
+        </div>
+        <div class="kpi-bicolor-track" aria-hidden="true">
+          <div class="kpi-bicolor-fill amber" [style.width.%]="pendingPct()"></div>
+          <div class="kpi-bicolor-fill blue" [style.width.%]="100 - pendingPct()"></div>
+        </div>
       </article>
 
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-        <div class="metric-top">
-          <span>En operación</span>
-          <span class="icon-tile green" aria-hidden="true">
-            <svg lucideActivity class="metric-icon green" strokeWidth="1.75" />
-          </span>
+      <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+        <div class="kpi-top">
+          <div class="kpi-label-group">
+            <span class="kpi-status-dot green pulse-dot" aria-hidden="true"></span>
+            <span>En operación</span>
+          </div>
+          <div class="kpi-icon-tile green" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon" aria-hidden="true">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
         </div>
-        <strong class="metric-value">{{ active() }}</strong>
+        <strong class="metric-value font-mono-num">{{ active() }}</strong>
         <p class="metric-foot">Montaje y ejecución en curso</p>
+        <div class="kpi-micro-meta">
+          <span class="meta-dot green"></span>Cuadrilla técnica en terreno
+        </div>
+        <div class="kpi-bicolor-track" aria-hidden="true">
+          <div class="kpi-bicolor-fill green" [style.width.%]="activePct()"></div>
+        </div>
       </article>
 
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-        <div class="metric-top">
-          <span>Finalizadas</span>
-          <span class="icon-tile purple" aria-hidden="true">
-            <svg lucideCircleCheck class="metric-icon purple" strokeWidth="1.75" />
-          </span>
+      <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+        <div class="kpi-top">
+          <div class="kpi-label-group">
+            <span class="kpi-status-dot purple" aria-hidden="true"></span>
+            <span>Finalizadas</span>
+          </div>
+          <div class="kpi-icon-tile purple" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
         </div>
-        <strong class="metric-value">{{ closed() }}</strong>
+        <strong class="metric-value font-mono-num">{{ closed() }}</strong>
         <p class="metric-foot">Producciones cerradas</p>
+        <div class="kpi-micro-meta">
+          <span class="meta-dot purple"></span>Acta de cierre completada
+        </div>
+        <div class="kpi-bicolor-track" aria-hidden="true">
+          <div class="kpi-bicolor-fill purple" [style.width.%]="closedPct()"></div>
+        </div>
       </article>
     </section>
 
     <section
-      class="panel agenda-panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel"
+      class="panel agenda-panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel emx-content-fade-in"
       aria-labelledby="agenda-heading"
     >
       <div class="panel-heading agenda-heading">
@@ -174,7 +247,7 @@
           <svg lucideChevronDown class="select-chevron" strokeWidth="1.75" aria-hidden="true" />
         </div>
         @if (hasActiveFilters()) {
-          <button class="btn-clear" type="button" (click)="clearFilters(); searchInput.focus()">
+          <button class="btn-clear" type="button" emxButton variant="ghost" size="small" (click)="clearFilters(); searchInput.focus()">
             Limpiar filtros
           </button>
         }
@@ -198,9 +271,16 @@
               #emptyCreateTrigger
               type="button"
               class="btn-system"
+              emxButton
+              variant="primary"
+              size="medium"
               (click)="openCreateModal(emptyCreateTrigger)"
             >
-              Nueva producción
+              <svg class="action-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Nueva producción</span>
             </button>
           }
         </div>
@@ -211,7 +291,7 @@
           </div>
           <h3>No encontramos producciones</h3>
           <p>Prueba con otro nombre, ubicación o estado.</p>
-          <button type="button" class="btn-system" (click)="clearFilters(); searchInput.focus()">
+          <button type="button" emxButton variant="secondary" size="small" (click)="clearFilters(); searchInput.focus()">
             Limpiar filtros
           </button>
         </div>
@@ -250,7 +330,7 @@
         <div class="modal-header detail-heading">
           <div class="detail-heading-main">
             <div class="detail-badges">
-              <span class="detail-id-badge">Producción #{{ selected.id }}</span>
+              <emx-tag class="detail-id-badge">Producción #{{ selected.id }}</emx-tag>
               <emx-status [status]="selected.status" />
             </div>
             <h2 id="detail-panel-title" class="modal-title detail-title">{{ selected.name }}</h2>
@@ -275,24 +355,24 @@
           <section aria-label="Resumen de producción">
             <dl class="detail-meta-grid">
               <div class="meta-item">
-                <dt>Fecha programada</dt>
+                <dt><svg lucideCalendarDays class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Fecha programada</dt>
                 <dd>{{ selected.scheduledAt | date:'dd MMM yyyy, HH:mm' }} h</dd>
               </div>
               <div class="meta-item">
-                <dt>Ubicación</dt>
+                <dt><svg lucideMapPin class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Ubicación</dt>
                 <dd>{{ selected.location }}</dd>
               </div>
               <div class="meta-item">
-                <dt>Organizador</dt>
+                <dt><svg lucideBuilding2 class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Organizador</dt>
                 <dd>{{ selected.organizerId }}</dd>
               </div>
               <div class="meta-item">
-                <dt>Estado operativo</dt>
+                <dt><svg lucideCircleCheck class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Estado operativo</dt>
                 <dd>{{ getReadableStatus(selected.status) }}</dd>
               </div>
               @if (selected.crewName) {
-                <div class="meta-item">
-                  <dt>Cuadrilla técnica</dt>
+                <div class="meta-item meta-item-full">
+                  <dt><svg lucideUsers class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Cuadrilla técnica asignada</dt>
                   <dd>{{ selected.crewName }}</dd>
                 </div>
               }
@@ -313,25 +393,31 @@
                 <button
                   #ticketBtn
                   type="button"
-                  class="btn-secondary btn-ticket-view"
+                  emxButton
+                  variant="secondary"
+                  size="medium"
+                  class="btn-ticket-view"
                   [attr.aria-label]="'Ver ticket de cuadrilla para producción #' + selected.id"
                   (click)="viewCrewTicket(selected.id, ticketBtn)"
                 >
-                  <svg lucideActivity class="icon-inline" strokeWidth="1.75" aria-hidden="true" />
-                  Ver Ticket de Cuadrilla
+                  <svg lucideTicket class="icon-inline" strokeWidth="1.75" aria-hidden="true" />
+                  <span>Ver Ticket de Cuadrilla</span>
                 </button>
               }
 
               @if (selected.status === 'CERRADO' && canDownloadQuote()) {
                 <button
                   type="button"
-                  class="btn-secondary btn-quote-download"
+                  emxButton
+                  variant="secondary"
+                  size="medium"
+                  class="btn-quote-download"
                   [disabled]="quoteDownloading()"
                   [attr.aria-label]="'Descargar acta de cierre en PDF para producción #' + selected.id"
                   (click)="downloadQuotePdf(selected.id)"
                 >
-                  <svg lucideCircleCheck class="icon-inline" strokeWidth="1.75" aria-hidden="true" />
-                  {{ quoteDownloading() ? 'Descargando Acta…' : 'Descargar Acta de Cierre (PDF)' }}
+                  <svg lucideDownload class="icon-inline" strokeWidth="1.75" aria-hidden="true" />
+                  <span>{{ quoteDownloading() ? 'Descargando Acta…' : 'Descargar Acta de Cierre (PDF)' }}</span>
                 </button>
               }
             </div>
@@ -355,6 +441,9 @@
                 </div>
                 <button
                   type="button"
+                  emxButton
+                  variant="secondary"
+                  size="small"
                   class="btn-retry-reservations"
                   (click)="retryReservations()"
                 >
@@ -369,9 +458,12 @@
                       <strong>{{ r.equipmentName }}</strong>
                       <span class="reservation-item-meta">Reserva #{{ r.reservationId }}</span>
                     </div>
-                    <div class="reservation-item-badges">
-                      <span class="qty-badge">{{ r.quantity }} u.</span>
-                      <span class="badge available">{{ r.status }}</span>
+                    <div class="reservation-item-status-col">
+                      <span class="reservation-qty">{{ r.quantity }} u.</span>
+                      <span class="reservation-status-tag">
+                        <span class="status-dot" aria-hidden="true"></span>
+                        {{ getReservationStatusLabel(r.status) }}
+                      </span>
                     </div>
                   </li>
                 }
@@ -388,21 +480,27 @@
               <div class="terminal-notice-card" [class.cancelled]="selected.status === 'CANCELADO'">
                 <div class="terminal-notice-header">
                   @if (selected.status === 'CERRADO') {
-                    <svg lucideCircleCheck class="terminal-notice-icon closed" strokeWidth="1.75" aria-hidden="true" />
+                    <div class="terminal-notice-icon-wrapper closed">
+                      <svg lucideCircleCheck class="terminal-notice-icon closed" strokeWidth="2" aria-hidden="true" />
+                    </div>
                   } @else {
-                    <svg lucideCircleAlert class="terminal-notice-icon cancelled" strokeWidth="1.75" aria-hidden="true" />
+                    <div class="terminal-notice-icon-wrapper cancelled">
+                      <svg lucideCircleAlert class="terminal-notice-icon cancelled" strokeWidth="2" aria-hidden="true" />
+                    </div>
                   }
-                  <h3 class="terminal-notice-title">
-                    {{ selected.status === 'CERRADO' ? 'Producción cerrada' : 'Producción cancelada' }}
-                  </h3>
+                  <div>
+                    <h3 class="terminal-notice-title">
+                      {{ selected.status === 'CERRADO' ? 'Producción cerrada' : 'Producción cancelada' }}
+                    </h3>
+                    <p class="terminal-notice-desc">
+                      {{
+                        selected.status === 'CERRADO'
+                          ? 'Producción cerrada. No se permiten nuevas transiciones de estado.'
+                          : 'Producción cancelada. No se permiten nuevas transiciones de estado.'
+                      }}
+                    </p>
+                  </div>
                 </div>
-                <p class="terminal-notice-desc">
-                  {{
-                    selected.status === 'CERRADO'
-                      ? 'Producción cerrada. No se permiten nuevas transiciones de estado.'
-                      : 'Producción cancelada. No se permiten nuevas transiciones de estado.'
-                  }}
-                </p>
               </div>
             </section>
           } @else if (canUpdate()) {
@@ -472,7 +570,7 @@
                           <label for="equipment-qty">Cantidad</label>
                           <input id="equipment-qty" type="number" min="1" [formControl]="selectedQuantity" />
                         </div>
-                        <button type="button" class="btn-secondary btn-add-item" (click)="addReservationItem()">
+                        <button type="button" emxButton variant="secondary" size="small" class="btn-add-item" (click)="addReservationItem()">
                           Agregar ítem
                         </button>
                       </div>
@@ -488,6 +586,9 @@
                             </div>
                             <button
                               type="button"
+                              emxButton
+                              variant="danger"
+                              size="xs"
                               class="btn-remove-item"
                               [attr.aria-label]="'Quitar ' + getEquipmentName(item.equipmentId)"
                               (click)="removeReservationItem(idx)"
@@ -556,7 +657,7 @@
                           type="text"
                           maxlength="150"
                           [formControl]="crewNameControl"
-                          placeholder="Ej: Cuadrilla Técnica Alfa EP3"
+                          placeholder="Ej: Cuadrilla Técnica Alfa (Santiago Centro)"
                         />
                       </div>
                       <div class="picker-field">
@@ -566,7 +667,7 @@
                           type="text"
                           maxlength="100"
                           [formControl]="crewIdControl"
-                          placeholder="Ej: crew-alfa-ep3"
+                          placeholder="Ej: crew-alfa-stgo"
                         />
                       </div>
                     </div>
@@ -576,7 +677,10 @@
                 <div class="workflow-actions">
                   <button
                     type="submit"
-                    class="btn-system btn-submit-status"
+                    emxButton
+                    variant="primary"
+                    size="medium"
+                    class="btn-submit-status"
                     [disabled]="saving()"
                   >
                     {{
@@ -599,7 +703,7 @@
   @if (canCreate() && showCreate()) {
     <div class="modal-backdrop" aria-hidden="true" (click)="closeCreateModal()"></div>
     <div
-      class="modal-drawer smooth-shadow-ring-md"
+      class="modal-drawer create-production-dialog smooth-shadow-ring-md"
       role="dialog"
       aria-modal="true"
       aria-labelledby="create-production-title"
@@ -727,18 +831,22 @@
         <div class="modal-footer">
           <button
             type="button"
-            class="btn-secondary"
+            emxButton
+            variant="secondary"
+            size="medium"
             [disabled]="saving()"
             (click)="closeCreateModal()"
           >
-            Cancelar
+            <span>Cancelar</span>
           </button>
           <button
             type="submit"
-            class="btn-system"
+            emxButton
+            variant="primary"
+            size="medium"
             [disabled]="saving()"
           >
-            {{ saving() ? 'Guardando…' : 'Guardar producción' }}
+            <span>{{ saving() ? 'Guardando…' : 'Guardar producción' }}</span>
           </button>
         </div>
       </form>
@@ -755,10 +863,29 @@
       tabindex="-1"
       (keydown)="onTicketKeydown($event)"
     >
-      <div class="modal-header">
-        <div>
-          <p class="eyebrow">HOJA DE RUTA OPERATIVA</p>
-          <h2 id="ticket-modal-title" class="modal-title">Ticket de Cuadrilla Técnica</h2>
+      <div class="modal-header ticket-editorial-header">
+        <div class="ticket-header-main">
+          <div class="ticket-brand-bar">
+            <img
+              class="ticket-brand-logo"
+              src="/branding/eventomax/logos/eventomax-logo-dark.svg"
+              alt="EventoMax — Operaciones de Eventos"
+            />
+            <span class="ticket-doc-tag">Orden de Trabajo Técnica</span>
+          </div>
+          @if (currentTicket(); as ticket) {
+            <div class="ticket-breadcrumbs">
+              <emx-tag class="detail-id-badge tabular-nums">Producción #{{ ticket.productionId }}</emx-tag>
+              <span class="ticket-crumb-sep" aria-hidden="true">/</span>
+              <emx-tag class="ticket-folio tabular-nums">Ticket #{{ ticket.id }}</emx-tag>
+              <emx-status [status]="ticket.status" />
+            </div>
+          } @else {
+            <p class="eyebrow">HOJA DE RUTA OPERATIVA</p>
+          }
+          <h2 id="ticket-modal-title" class="modal-title ticket-editorial-title">
+            {{ currentTicket()?.productionName || 'Ticket de Cuadrilla Técnica' }}
+          </h2>
         </div>
         <button
           type="button"
@@ -766,55 +893,152 @@
           aria-label="Cerrar ticket de cuadrilla"
           (click)="closeTicketModal()"
         >
-          <svg lucideX class="close-svg" strokeWidth="2" aria-hidden="true" />
+          <svg lucideX class="close-svg" strokeWidth="1.75" aria-hidden="true" />
         </button>
       </div>
 
-      <div class="modal-body">
+      <div class="modal-body ticket-editorial-body">
         @if (ticketLoading()) {
           <div class="reservations-loading" aria-live="polite" aria-busy="true">
             <div class="skeleton skeleton-text medium"></div>
+            <div class="skeleton skeleton-text"></div>
             <div class="skeleton skeleton-text short"></div>
           </div>
         } @else if (ticketError()) {
-          <div class="field-error-banner" role="alert">{{ ticketError() }}</div>
+          <div class="ticket-empty-state" role="alert">
+            <div class="ticket-empty-icon" aria-hidden="true">
+              <svg lucideCircleAlert strokeWidth="1.75" />
+            </div>
+            <h3 class="ticket-empty-title">Orden de cuadrilla no disponible</h3>
+            <p class="ticket-empty-desc">{{ ticketError() }}</p>
+          </div>
         } @else if (currentTicket(); as ticket) {
-          <dl class="detail-meta-grid">
-            <div class="meta-item">
-              <dt>RabbitMQ Event ID</dt>
-              <dd><code>{{ ticket.eventId }}</code></dd>
+          @let crew = resolvedTicketCrew();
+
+          <dl class="ticket-prop-list">
+            <div class="ticket-prop-row">
+              <dt class="ticket-prop-label">
+                <svg class="ticket-prop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                <span>Cuadrilla asignada</span>
+              </dt>
+              <dd class="ticket-prop-value">
+                @if (crew.crewName || crew.crewId) {
+                  @if (crew.crewName) {
+                    <span>{{ crew.crewName }}</span>
+                  }
+                  @if (crew.crewId) {
+                    <code class="ticket-crew-code">{{ crew.crewId }}</code>
+                  }
+                } @else {
+                  <span class="ticket-prop-muted">Cuadrilla operativa general</span>
+                }
+              </dd>
             </div>
-            <div class="meta-item">
-              <dt>Producción</dt>
-              <dd>#{{ ticket.productionId }} — {{ ticket.productionName }}</dd>
+
+            <div class="ticket-prop-row">
+              <dt class="ticket-prop-label">
+                <svg lucideCalendarDays class="ticket-prop-icon" strokeWidth="1.75" aria-hidden="true" />
+                <span>Fecha programada</span>
+              </dt>
+              <dd class="ticket-prop-value tabular-nums">
+                {{ ticket.scheduledAt | date:'dd MMM yyyy, HH:mm' }} h
+              </dd>
             </div>
-            <div class="meta-item">
-              <dt>Recinto / Ubicación</dt>
-              <dd>{{ ticket.location }}</dd>
+
+            <div class="ticket-prop-row">
+              <dt class="ticket-prop-label">
+                <svg class="ticket-prop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <span>Ubicación</span>
+              </dt>
+              <dd class="ticket-prop-value">{{ ticket.location }}</dd>
             </div>
-            <div class="meta-item">
-              <dt>Estado de Cuadrilla</dt>
-              <dd><emx-status [status]="ticket.status" /></dd>
-            </div>
-            @if (ticket.crewName) {
-              <div class="meta-item">
-                <dt>Cuadrilla Asignada</dt>
-                <dd>{{ ticket.crewName }}{{ ticket.crewId ? ' (' + ticket.crewId + ')' : '' }}</dd>
-              </div>
-            }
-            <div class="meta-item full-width">
-              <dt>Instrucciones de Montaje</dt>
-              <dd class="ticket-instructions">{{ ticket.instructions }}</dd>
-            </div>
-            <div class="meta-item">
-              <dt>Fecha de Registro</dt>
-              <dd>{{ ticket.createdAt | date:'dd MMM yyyy, HH:mm' }}</dd>
+
+            <div class="ticket-prop-row">
+              <dt class="ticket-prop-label">
+                <svg lucideClock3 class="ticket-prop-icon" strokeWidth="1.75" aria-hidden="true" />
+                <span>Registro de emisión</span>
+              </dt>
+              <dd class="ticket-prop-value tabular-nums">
+                {{ ticket.createdAt | date:'dd MMM yyyy, HH:mm' }} h
+              </dd>
             </div>
           </dl>
+
+          @if (ticketReservations().length > 0) {
+            <section class="ticket-section" aria-label="Equipos para montaje">
+              <div class="detail-section-header">
+                <h3>Equipos para montaje</h3>
+                <span class="count-pill subtle tabular-nums">{{ ticketReservations().length }}</span>
+              </div>
+              <ul class="reservations-card-list">
+                @for (r of ticketReservations(); track r.reservationId) {
+                  <li class="reservation-card-item">
+                    <div class="reservation-item-info">
+                      <strong>{{ r.equipmentName }}</strong>
+                      <span class="reservation-item-meta tabular-nums">Reserva #{{ r.reservationId }}</span>
+                    </div>
+                    <span class="qty-badge tabular-nums">{{ r.quantity }} u.</span>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
+          <section class="ticket-section" aria-label="Directiva de terreno">
+            <h3>Directiva de terreno</h3>
+            <p class="ticket-instructions">{{ resolvedTicketDirective() }}</p>
+          </section>
         }
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-secondary" (click)="closeTicketModal()">Cerrar</button>
+
+      <div class="modal-footer ticket-editorial-footer">
+        @if (currentTicket(); as ticket) {
+          <button
+            type="button"
+            emxButton
+            variant="secondary"
+            size="xs"
+            class="btn-copy-event-id"
+            [title]="'Copiar RabbitMQ Event ID: ' + ticket.eventId"
+            [attr.aria-label]="'Copiar identificador de evento ' + ticket.eventId"
+            (click)="copyTicketEventId(ticket.eventId)"
+          >
+            <span class="ticket-event-code tabular-nums">evt · {{ formatShortEventId(ticket.eventId) }}</span>
+            @if (ticketCopied()) {
+              <svg class="ticket-copy-icon copied" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+              <span class="ticket-copied-text">Copiado</span>
+            } @else {
+              <svg class="ticket-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+              </svg>
+            }
+          </button>
+        }
+
+        <div class="ticket-footer-actions">
+          @if (currentTicket()) {
+            <button type="button" emxButton variant="secondary" size="medium" class="btn-ticket-print" (click)="printCrewTicket()">
+              <svg class="ticket-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" />
+                <rect x="6" y="14" width="12" height="8" rx="1" />
+              </svg>
+              <span>Imprimir</span>
+            </button>
+          }
+          <button type="button" emxButton variant="secondary" size="medium" class="btn-ticket-close" (click)="closeTicketModal()"><span>Cerrar</span></button>
+        </div>
       </div>
     </div>
   }

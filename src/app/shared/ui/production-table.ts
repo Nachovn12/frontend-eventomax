@@ -2,11 +2,12 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { DatePipe } from '@angular/common';
 import { ProductionViewModel } from '../../core/models/production.model';
 import { StatusChip } from './status-chip';
+import { ButtonDirective } from './button.component';
 
 @Component({
   selector: 'emx-production-table',
   standalone: true,
-  imports: [StatusChip, DatePipe],
+  imports: [StatusChip, DatePipe, ButtonDirective],
   template: `
     <div class="table-scroll" role="region" [attr.aria-label]="caption()" tabindex="0">
       <table class="data-table production-table" [class.is-selectable]="selectable()">
@@ -43,21 +44,43 @@ import { StatusChip } from './status-chip';
             >
               <td class="cell-production">
                 <div class="event-cell">
-                  <span class="event-monogram" aria-hidden="true">{{ event.name.slice(0, 1) }}</span>
+                  <div class="cal-date-tile" aria-hidden="true">
+                    <span class="cal-month-strip">{{ event.scheduledAt | date:'MMM' }}</span>
+                    <span class="cal-day-num font-mono-num">{{ event.scheduledAt | date:'dd' }}</span>
+                  </div>
                   <div class="event-info">
                     <strong class="event-name">{{ event.name }}</strong>
-                    <span class="cell-meta">#{{ event.id }} · {{ event.organizerId }}</span>
+                    <div class="cell-meta-strip">
+                      <span class="id-tag font-mono-num"><span class="id-hash">#</span>{{ event.id }}</span>
+                      <span class="tenant-badge font-mono-num">
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                        {{ event.organizerId }}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </td>
               <td class="cell-location">
-                <span class="mobile-cell-label" aria-hidden="true">Ubicación</span>
-                <span class="venue-text">{{ event.location }}</span>
+                <div class="cell-location-wrap">
+                  <svg class="location-pin-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <div>
+                    <span class="mobile-cell-label" aria-hidden="true">Ubicación</span>
+                    <span class="venue-text">{{ event.location }}</span>
+                  </div>
+                </div>
               </td>
               <td class="cell-schedule">
                 <span class="mobile-cell-label" aria-hidden="true">Fecha programada</span>
-                <strong class="schedule-date">{{ event.scheduledAt | date:'dd MMM yyyy' }}</strong>
-                <span class="cell-meta">{{ event.scheduledAt | date:'HH:mm' }} h</span>
+                <div class="schedule-time-row font-mono-num">
+                  <strong class="schedule-time">{{ event.scheduledAt | date:'HH:mm' }} hrs</strong>
+                  <span class="schedule-date">{{ event.scheduledAt | date:'dd MMM yyyy' }}</span>
+                </div>
               </td>
               <td class="cell-status">
                 <span class="mobile-cell-label" aria-hidden="true">Estado</span>
@@ -67,13 +90,16 @@ import { StatusChip } from './status-chip';
                 <td class="cell-action">
                   <button
                     type="button"
+                    emxButton
+                    [variant]="selectedId() === event.id ? 'primary' : 'secondary'"
+                    size="small"
                     class="row-select-btn"
                     [class.active]="selectedId() === event.id"
                     [attr.aria-pressed]="selectedId() === event.id"
                     [attr.aria-label]="(selectedId() === event.id ? 'Producción seleccionada: ' : 'Gestionar producción ') + event.name"
                     (click)="onButtonSelect(event, $event)"
                   >
-                    {{ selectedId() === event.id ? 'Seleccionada' : 'Gestionar' }}
+                    <span>{{ selectedId() === event.id ? 'Seleccionada' : 'Gestionar' }}</span>
                   </button>
                 </td>
               }
@@ -95,83 +121,330 @@ import { StatusChip } from './status-chip';
       width: 100%;
       table-layout: fixed;
       white-space: normal;
+      border-collapse: collapse;
     }
-    .col-production { width: 35%; }
-    .col-location { width: 25%; }
+    .col-production { width: 36%; }
+    .col-location { width: 26%; }
     .col-schedule { width: 22%; }
-    .col-status { width: 18%; }
-    .data-table.production-table.is-selectable .col-production { width: 30%; }
-    .data-table.production-table.is-selectable .col-location { width: 19%; }
-    .data-table.production-table.is-selectable .col-schedule { width: 18%; }
-    .data-table.production-table.is-selectable .col-status { width: 14%; }
-    .data-table.production-table.is-selectable .col-action { width: 19%; }
-    .data-table.production-table th,
+    .col-status { width: 16%; }
+    .data-table.production-table.is-selectable .col-production { width: 33%; }
+    .data-table.production-table.is-selectable .col-location { width: 23%; }
+    .data-table.production-table.is-selectable .col-schedule { width: 20%; }
+    .data-table.production-table.is-selectable .col-status { width: 12%; }
+    .data-table.production-table.is-selectable .col-action { width: 12%; }
+
+    .data-table.production-table thead tr {
+      height: 38px;
+      background: #FAFAFB;
+      border-bottom: 1px solid #F1F5F9;
+    }
+    .data-table.production-table th {
+      padding: 8px 18px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 600;
+      letter-spacing: normal;
+      text-transform: none;
+      color: #64748B;
+      border-bottom: 1px solid #F1F5F9;
+      text-align: left;
+    }
+    .data-table.production-table th:first-child {
+      padding-left: 24px;
+    }
+    .data-table.production-table th:last-child {
+      padding-right: 24px;
+    }
+    .data-table.production-table tbody tr {
+      min-height: 52px;
+      height: 52px;
+      border-bottom: 1px solid #F1F5F9;
+      transition: background-color var(--dur-tactile, 140ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
+    }
     .data-table.production-table td {
-      padding-inline: 16px;
+      padding: 10px 18px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+      font-size: 13px;
+      line-height: 18px;
+      font-weight: 500;
+      color: #0F172A;
+      border-bottom: 1px solid #F1F5F9;
+      vertical-align: middle;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+    .data-table.production-table td:first-child {
+      padding-left: 24px;
+    }
+    .data-table.production-table td:last-child {
+      padding-right: 24px;
+    }
+    .data-table.production-table tbody tr:hover {
+      background-color: #F8FAFC;
     }
     .th-action,
     .cell-action {
       text-align: right;
       white-space: nowrap;
     }
+    .event-cell {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .cal-date-tile {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: #FFFFFF;
+      border: none;
+      box-shadow: var(--shadow-button, 0 1px 2px 0 rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.08));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .cal-month-strip {
+      width: 100%;
+      height: 15px;
+      background: #2563EB;
+      color: #FFFFFF;
+      font-size: 8.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cal-day-num {
+      width: 100%;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: #0F172A;
+      line-height: 1;
+    }
+    .event-monogram {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #EFF6FF;
+      color: #2563EB;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
     .event-info {
       min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
     }
     .event-name {
+      font-size: 13.5px;
+      line-height: 19px;
+      font-weight: 600;
+      color: #111827;
       overflow-wrap: anywhere;
-      line-height: 1.35;
+    }
+    .cell-meta-strip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      color: #64748B;
+    }
+    .id-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 1.5px;
+      height: 19px;
+      padding: 0 6px;
+      border-radius: 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "SF Pro Text", monospace;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1;
+      color: #334155;
+      background: rgba(15, 23, 42, 0.045);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 1px 1px 0 rgba(15, 23, 42, 0.02);
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      letter-spacing: -0.01em;
+      user-select: none;
+      vertical-align: middle;
+      transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+    }
+    .id-tag .id-hash {
+      color: #94A3B8;
+      font-weight: 400;
+      font-size: 10px;
+    }
+    .id-tag:hover {
+      background: rgba(15, 23, 42, 0.08);
+      border-color: rgba(15, 23, 42, 0.14);
+      color: #0F172A;
+    }
+    .id-tag:hover .id-hash {
+      color: #64748B;
+    }
+    .tenant-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #64748B;
+    }
+    .cell-meta {
+      font-size: 12px;
+      line-height: 16px;
+      color: #6B7280;
+    }
+    .cell-location-wrap {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+    }
+    .location-pin-icon {
+      color: #94A3B8;
+      margin-top: 2px;
+      flex-shrink: 0;
     }
     .venue-text {
-      color: var(--text-muted);
-      font-weight: 400;
+      color: #1E293B;
+      font-weight: 500;
+      font-size: 13px;
+      line-height: 19px;
       overflow-wrap: anywhere;
-      line-height: 1.4;
     }
     .cell-schedule {
       font-variant-numeric: tabular-nums;
+      vertical-align: middle;
+    }
+    .schedule-time-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .schedule-time {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0F172A;
+      line-height: 1.2;
     }
     .schedule-date {
       font-weight: 500;
+      color: #64748B;
+      font-size: 11.5px;
+      line-height: 1.3;
     }
     .row-selectable {
       cursor: pointer;
     }
     .row-selected {
-      background-color: var(--brand-accent-bg) !important;
+      background-color: #F4F7FF !important;
     }
     .row-selected td:first-child {
-      box-shadow: inset 3px 0 0 var(--brand-primary);
+      box-shadow: inset 3px 0 0 #2563EB;
     }
     .row-select-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 32px;
-      padding: 4px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border-base);
-      background: var(--bg-surface);
-      color: var(--text-main);
-      font: inherit;
-      font-size: 12px;
-      font-weight: 600;
-      white-space: nowrap;
       flex-shrink: 0;
-      transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
     }
-    .row-select-btn:hover {
-      border-color: var(--brand-accent);
-      color: var(--brand-primary);
-      background: #fff;
+
+    /* Dark Pro 3D Mode Calibrations */
+    :host-context([data-theme="dark"]) .data-table.production-table thead tr,
+    :host-context(.dark) .data-table.production-table thead tr {
+      background: #121319;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
-    .row-select-btn.active {
-      background: var(--brand-primary);
-      border-color: var(--brand-primary);
-      color: #fff;
+    :host-context([data-theme="dark"]) .data-table.production-table th,
+    :host-context(.dark) .data-table.production-table th {
+      color: #64748B;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
-    .row-select-btn:focus-visible {
-      outline: 2px solid var(--brand-primary);
-      outline-offset: 2px;
+    :host-context([data-theme="dark"]) .data-table.production-table tbody tr,
+    :host-context(.dark) .data-table.production-table tbody tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    :host-context([data-theme="dark"]) .data-table.production-table tbody tr:hover,
+    :host-context(.dark) .data-table.production-table tbody tr:hover {
+      background-color: #1C1D27;
+    }
+    :host-context([data-theme="dark"]) .data-table.production-table td,
+    :host-context(.dark) .data-table.production-table td {
+      color: #F1F5F9;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    :host-context([data-theme="dark"]) .cal-date-tile,
+    :host-context(.dark) .cal-date-tile {
+      background: #1A1C26;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    :host-context([data-theme="dark"]) .cal-day-num,
+    :host-context(.dark) .cal-day-num {
+      color: #F1F5F9;
+    }
+    :host-context([data-theme="dark"]) .event-name,
+    :host-context(.dark) .event-name {
+      color: #F1F5F9;
+    }
+    :host-context([data-theme="dark"]) .venue-text,
+    :host-context(.dark) .venue-text {
+      color: #CBD5E1;
+    }
+    :host-context([data-theme="dark"]) .schedule-time,
+    :host-context(.dark) .schedule-time {
+      color: #F1F5F9;
+    }
+    :host-context([data-theme="dark"]) .schedule-date,
+    :host-context(.dark) .schedule-date {
+      color: #94A3B8;
+    }
+    :host-context([data-theme="dark"]) .id-tag,
+    :host-context(.dark) .id-tag {
+      background: rgba(255, 255, 255, 0.06);
+      color: #E2E8F0;
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: none;
+    }
+    :host-context([data-theme="dark"]) .id-tag .id-hash,
+    :host-context(.dark) .id-tag .id-hash {
+      color: #64748B;
+    }
+    :host-context([data-theme="dark"]) .id-tag:hover,
+    :host-context(.dark) .id-tag:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #FFFFFF;
+    }
+    :host-context([data-theme="dark"]) .id-tag:hover .id-hash,
+    :host-context(.dark) .id-tag:hover .id-hash {
+      color: #94A3B8;
+    }
+    :host-context([data-theme="dark"]) .tenant-badge,
+    :host-context(.dark) .tenant-badge {
+      color: #94A3B8;
+    }
+    :host-context([data-theme="dark"]) .location-pin-icon,
+    :host-context(.dark) .location-pin-icon {
+      stroke: #64748B;
+    }
+    :host-context([data-theme="dark"]) .row-selected,
+    :host-context(.dark) .row-selected {
+      background-color: rgba(37, 99, 235, 0.14) !important;
+    }
+    :host-context([data-theme="dark"]) .row-selected td:first-child,
+    :host-context(.dark) .row-selected td:first-child {
+      box-shadow: inset 3px 0 0 #38BDF8;
     }
     .mobile-cell-label {
       display: none;
@@ -188,9 +461,11 @@ import { StatusChip } from './status-chip';
       .data-table.production-table tbody tr {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
-        gap: 12px 16px;
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--border-base);
+        gap: 10px 14px;
+        padding: 14px 16px;
+        border-bottom: 1px solid #EEEFF2;
+        height: auto;
+        min-height: 0;
       }
       .data-table.production-table tbody tr:last-child {
         border-bottom: 0;
@@ -200,6 +475,7 @@ import { StatusChip } from './status-chip';
         padding: 0;
         border: 0;
         min-width: 0;
+        height: auto;
       }
       .cell-production {
         grid-column: 1 / 2;
@@ -224,16 +500,17 @@ import { StatusChip } from './status-chip';
       .cell-action {
         grid-column: 1 / -1;
         text-align: stretch;
-        padding-top: 4px;
+        padding-top: 6px;
       }
       .row-select-btn {
         width: 100%;
-        min-height: 38px;
+        min-height: 36px;
+        height: 36px;
       }
       .mobile-cell-label {
         display: block;
         font-size: 11px;
-        color: var(--text-light);
+        color: #888888;
         margin-bottom: 2px;
       }
     }

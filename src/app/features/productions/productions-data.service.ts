@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, tap } from 'rxjs';
 import { Production, ProductionStatus, CreateProductionRequest, ProductionStatusUpdateRequest, CrewTicket } from '../../core/models/production.model';
 import { ApiClientService } from '../../core/http/api-client.service';
 import { environment } from '../../../environments/environment';
+import { ActiveProductionsStore } from '../../core/state/active-productions.store';
 
 export const PRODUCTION_STATUSES: readonly ProductionStatus[] = [
   'SOLICITADO',
@@ -16,9 +17,12 @@ export const PRODUCTION_STATUSES: readonly ProductionStatus[] = [
 @Injectable({ providedIn: 'root' })
 export class ProductionsDataService {
   private readonly apiClient = inject(ApiClientService);
+  private readonly activeStore = inject(ActiveProductionsStore);
 
   getProductions(): Observable<readonly Production[]> {
-    return this.apiClient.get<readonly Production[]>(`${environment.apiGatewayUrl}/api/productions`);
+    return this.apiClient.get<readonly Production[]>(`${environment.apiGatewayUrl}/api/productions`).pipe(
+      tap((productions) => this.activeStore.updateFromProductions(productions))
+    );
   }
 
   getProduction(id: number): Observable<Production> {

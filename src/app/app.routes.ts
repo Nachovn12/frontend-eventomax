@@ -7,6 +7,16 @@ import { AppRole } from './core/auth/models/app-role';
 
 export const routes: Routes = [
   {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () => import('./features/landing/landing').then(m => m.Landing)
+  },
+  {
+    path: 'landing',
+    redirectTo: '',
+    pathMatch: 'full'
+  },
+  {
     path: 'login',
     loadComponent: () => import('./features/auth/login/login').then(m => m.Login)
   },
@@ -14,7 +24,6 @@ export const routes: Routes = [
     path: 'forbidden',
     loadComponent: () => import('./features/auth/forbidden/forbidden').then(m => m.Forbidden)
   },
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
   {
     path: '',
     loadComponent: () => import('./layout/app-shell/app-shell').then(m => m.AppShell),
