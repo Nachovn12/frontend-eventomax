@@ -49,7 +49,7 @@
 .emx-workspace input::placeholder {
   color: var(--text-light);
 }
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 640px) {
   .emx-workspace input,
   .emx-workspace select,
   .emx-workspace textarea {
