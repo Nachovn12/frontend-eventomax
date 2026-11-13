@@ -8,13 +8,12 @@ import { AppRole } from './core/auth/models/app-role';
 export const routes: Routes = [
   {
     path: '',
-    pathMatch: 'full',
-    loadComponent: () => import('./features/landing/landing').then(m => m.Landing)
+    redirectTo: 'landing',
+    pathMatch: 'full'
   },
   {
     path: 'landing',
-    redirectTo: '',
-    pathMatch: 'full'
+    loadComponent: () => import('./features/landing/landing').then(m => m.Landing)
   },
   {
     path: 'login',

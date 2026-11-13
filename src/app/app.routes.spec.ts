@@ -20,17 +20,16 @@ describe('Protected workspace routes', () => {
 });
 
 describe('Root and fallback routes', () => {
-  it('serves landing component at root path', () => {
+  it('redirects root path to /landing', () => {
     const rootRoute = routes.find(r => r.path === '' && r.pathMatch === 'full');
     expect(rootRoute).toBeTruthy();
-    expect(rootRoute?.loadComponent).toBeDefined();
+    expect(rootRoute?.redirectTo).toBe('landing');
   });
 
-  it('redirects /landing to root', () => {
+  it('serves landing component at /landing path', () => {
     const landingRoute = routes.find(r => r.path === 'landing');
     expect(landingRoute).toBeTruthy();
-    expect(landingRoute?.redirectTo).toBe('');
-    expect(landingRoute?.pathMatch).toBe('full');
+    expect(landingRoute?.loadComponent).toBeDefined();
   });
 
   it('redirects index.html to login', () => {
