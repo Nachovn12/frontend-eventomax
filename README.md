@@ -1,121 +1,225 @@
-# EventoMax — Portal Web Operativo (Angular 22 + Microsoft Entra ID + AWS Cloud)
+<div align="center">
 
-**Asignatura:** Desarrollo Cloud Native (`DSY1107`)  
-**Caso de Estudio:** Caso 8 — Plataforma de Producción y Montaje de Eventos (**EventoMax**)  
-**Equipo:** Ignacio Valeria, Benjamín Flores, Benjamín Espinoza
+<a href="https://eventomax-production-portal-app.s3.us-east-1.amazonaws.com/index.html">
+  <img src="public/branding/eventomax/logos/eventomax-readme-banner.svg" alt="EventoMax — Cloud Native Production Operations Portal" width="100%" />
+</a>
+
+<br />
+
+[![Portal Web](https://img.shields.io/badge/Portal%20Web-Amazon%20S3-024ffc?style=for-the-badge&logo=amazonaws&logoColor=white)](https://eventomax-production-portal-app.s3.us-east-1.amazonaws.com/index.html)
+[![Swagger UI](https://img.shields.io/badge/Swagger%20UI-OpenAPI%203-85EA2D?style=for-the-badge&logo=swagger&logoColor=173647)](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/swagger-ui/index.html)
+[![Kafka UI](https://img.shields.io/badge/Kafka%20UI-3%20Brokers-231F20?style=for-the-badge&logo=apachekafka&logoColor=white)](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/kafka-ui/)
+[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-Management%20UI-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/rabbitmq/)
+
+<p>
+  <a href="#accesos-directos--demo-en-vivo"><strong>Accesos Demo</strong></a> •
+  <a href="#stack-tecnológico-e-infraestructura-aws"><strong>Stack Tecnológico</strong></a> •
+  <a href="#arquitectura-cloud-native"><strong>Arquitectura AWS</strong></a> •
+  <a href="#galería-del-portal-en-producción"><strong>Galería</strong></a> •
+  <a href="#control-de-acceso-rbac"><strong>Rutas y Roles</strong></a> •
+  <a href="#desarrollo-y-despliegue"><strong>Despliegue</strong></a>
+</p>
+
+</div>
 
 ---
 
-## 1. Enlaces Directos de Producción y Consolas UI (Demo en Vivo)
+**EventoMax Production Portal** es el portal web operativo de arquitectura **Cloud Native** para la gestión integral de eventos masivos, producciones técnicas, control de acreditación, reportería ejecutiva y auditoría distribuida.
 
-Todos los accesos operan vía **HTTPS (`:443`)** a través de **Amazon S3** y **AWS API Gateway → Edge Reverse Proxy (EC2)**, funcionando directamente desde cualquier navegador y red institucional sin requerir túneles SSH ni puertos locales abiertos:
-
-| Recurso / UI | Propósito en Plataforma y Demo | URL Directa (HTTPS) | Control de Acceso |
-| :--- | :--- | :--- | :--- |
-| **Portal Web EventoMax** | SPA Angular 22 en Producción (Amazon S3) | https://eventomax-production-portal-app.s3.us-east-1.amazonaws.com/index.html | Login **Microsoft Entra ID** (PKCE) |
-| **Swagger UI (OpenAPI 3)** | Documentación y pruebas REST (`GET`, `POST`, `PUT`, `DELETE`) del BFF | https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/swagger-ui/index.html | UI pública; ejecución `/api/**` vía botón **Authorize** (Bearer JWT) |
-| **Kafka UI** | Inspección en vivo del clúster Kafka, tópico `productions.events` y DLT | https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/kafka-ui/ | Autenticación `LOGIN_FORM` |
-| **RabbitMQ Management** | Clúster RabbitMQ 4.3.6 (2 nodos), exchanges, colas `q.cmd.*` y DLQ | https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/rabbitmq/ | Credenciales RabbitMQ Management |
-
-> **Nota para evaluación:** Los servicios de backend, mensajería y bases de datos corren en **AWS Academy Learner Lab**. Asegúrate de que el laboratorio y la instancia EC2 estén iniciados antes de abrir los enlaces.
+La plataforma está desplegada en **AWS (`us-east-1`)** bajo una arquitectura desacoplada: **SPA en Amazon S3**, **AWS API Gateway** como puerta de enlace HTTPS hacia **Nginx Edge Proxy**, **Backend-for-Frontend (BFF)** protegido con **Microsoft Entra ID (JWT + RBAC)**, **clúster Apache Kafka** y **clúster RabbitMQ**.
 
 ---
 
-## 2. Arquitectura General de la Plataforma
+## Accesos Directos — Demo en Vivo
+
+Todos los enlaces operan sobre **HTTPS público** (AWS API Gateway + Amazon S3), accesibles directamente desde cualquier equipo institucional sin depender de IPs locales ni túneles SSH.
+
+| Interfaz / Servicio | Descripción | Enlace Directo |
+| :--- | :--- | :--- |
+| **Portal Web EventoMax** | Aplicación Angular SPA alojada en Amazon S3 | [**Abrir Portal Web**](https://eventomax-production-portal-app.s3.us-east-1.amazonaws.com/index.html) |
+| **Swagger UI (BFF API)** | Documentación interactiva OpenAPI de todos los endpoints REST | [**Abrir Swagger UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/swagger-ui/index.html) |
+| **OpenAPI 3 Spec (JSON)** | Esquema OpenAPI descargable para Postman / Insomnia | [**Ver JSON Spec**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/v3/api-docs) |
+| **Apache Kafka UI** | Monitoreo en tiempo real del clúster `eventomax-cluster` (3 brokers, 6 tópicos, 65 particiones) | [**Abrir Kafka UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/kafka-ui/) |
+| **RabbitMQ Management** | Consola de colas, exchanges y nodos del clúster AMQP | [**Abrir RabbitMQ UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/rabbitmq/) |
+
+<details>
+<summary><strong>Notas de acceso rápido para la Demo en vivo</strong></summary>
+
+1. **Swagger UI (`/swagger-ui/index.html`)**: La documentación es de acceso público en modo lectura. Para probar endpoints `/api/**` desde **Try it out**, haz clic en **Authorize** e ingresa el `Bearer <access_token>` emitido por Microsoft Entra ID tras iniciar sesión en el Portal Web.
+2. **Kafka UI (`/kafka-ui/`)**: Protegido por formulario de inicio de sesión (`LOGIN_FORM`) con usuario administrativo **`eventomax_admin`** (solicitar credencial al equipo presentador).
+3. **RabbitMQ Management (`/rabbitmq/`)**: Enrutado bajo el prefijo `/rabbitmq/` a través de API Gateway y Nginx Edge Proxy sobre el clúster privado VPC.
+
+</details>
+
+---
+
+## Stack Tecnológico e Infraestructura AWS
+
+<table>
+  <tr>
+    <td align="center" width="160">
+      <img src="public/branding/tech/angular.svg" width="40" height="40" alt="Angular 22" /><br />
+      <strong>Angular 22</strong><br />
+      <sub>SPA • TypeScript 6 • Tailwind 4</sub>
+    </td>
+    <td align="center" width="160">
+      <img src="public/branding/tech/microsoft.svg" width="40" height="40" alt="Microsoft Entra ID" /><br />
+      <strong>Microsoft Entra ID</strong><br />
+      <sub>MSAL • OAuth 2.0 • RBAC JWT</sub>
+    </td>
+    <td align="center" width="160">
+      <img src="public/branding/tech/spring-boot.svg" width="40" height="40" alt="Spring Boot" /><br />
+      <strong>Spring Boot</strong><br />
+      <sub>BFF API • OpenAPI / Swagger</sub>
+    </td>
+    <td align="center" width="160">
+      <img src="public/branding/tech/apache-kafka.svg" width="40" height="40" alt="Apache Kafka" /><br />
+      <strong>Apache Kafka 3.8</strong><br />
+      <sub>3 Brokers • 6 Tópicos • Kafka UI</sub>
+    </td>
+    <td align="center" width="160">
+      <img src="public/branding/tech/rabbitmq.svg" width="40" height="40" alt="RabbitMQ" /><br />
+      <strong>RabbitMQ</strong><br />
+      <sub>Clúster HA 2 Nodos • AMQP</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="160">
+      <img src="public/branding/tech/postgresql.svg" width="40" height="40" alt="PostgreSQL" /><br />
+      <strong>PostgreSQL</strong><br />
+      <sub>Persistencia Relacional • RDS</sub>
+    </td>
+    <td align="center" width="160">
+      <img src="public/branding/tech/docker.svg" width="40" height="40" alt="Docker" /><br />
+      <strong>Docker Compose</strong><br />
+      <sub>Contenedores • Nginx Edge Proxy</sub>
+    </td>
+    <td align="center" width="160">
+      <img src="public/branding/tech/aws.svg" width="40" height="40" alt="AWS API Gateway" /><br />
+      <strong>AWS API Gateway</strong><br />
+      <sub>Punto Único HTTPS Público</sub>
+    </td>
+    <td align="center" width="160">
+      <img src="public/branding/tech/aws-ec2.svg" width="40" height="40" alt="Amazon EC2" /><br />
+      <strong>Amazon EC2 (×3)</strong><br />
+      <sub>Apps • Clúster Kafka • Clúster MQ</sub>
+    </td>
+    <td align="center" width="160">
+      <img src="public/branding/tech/aws-s3.svg" width="40" height="40" alt="Amazon S3" /><br />
+      <strong>Amazon S3</strong><br />
+      <sub>Hosting Estático SPA</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
+## Arquitectura Cloud Native
 
 ```mermaid
 flowchart LR
-    USER["Usuario (Cualquier PC / Navegador)<br/>Admin / Productor / Organizador / Auditor"] --> SPA["Angular 22 SPA<br/>(Amazon S3 HTTPS)"]
-    SPA <-->|"OAuth2 Code + PKCE"| ENTRA["Microsoft Entra ID<br/>Tenant: f191bdc8-..."]
-    SPA -->|"HTTPS + Bearer JWT"| APIGW["AWS API Gateway (:443)<br/>7dewsdyt7i.execute-api.us-east-1.amazonaws.com"]
-    USER -->|"HTTPS (:443) Swagger / Kafka UI / RabbitMQ"| APIGW
+    User["Navegador / PC Demo"] -->|HTTPS| S3["Amazon S3<br/>eventomax-production-portal-app"]
+    User -->|HTTPS + Bearer JWT| APIGW["AWS API Gateway<br/>7dewsdyt7i.us-east-1"]
+    User -.->|OAuth 2.0 / OIDC| Entra["Microsoft Entra ID<br/>MSAL + Roles"]
 
-    APIGW --> PROXY["Edge Reverse Proxy (Nginx :8080)<br/>eventomax-net"]
-    PROXY -->|"/api/** , /swagger-ui/** , /v3/api-docs"| BFF["ms-eventomax-bff (:8080)"]
-    PROXY -->|"/kafka-ui/"| KUI["Kafka UI (:8080)<br/>Login Form"]
-    PROXY -->|"/rabbitmq/"| RMQ["RabbitMQ Cluster (:15672)<br/>rabbitmq-1 / rabbitmq-2"]
+    subgraph VPC["AWS VPC (us-east-1)"]
+        APIGW -->|HTTP :8080| Proxy["ec2-eventomax-apps (52.20.127.84)<br/>Nginx Edge Proxy"]
 
-    BFF --> PROD["ms-eventomax-productions"]
-    BFF --> CAT["ms-eventomax-catalog"]
-    BFF --> REP["ms-eventomax-report"]
-    BFF --> AUD["ms-eventomax-audit"]
-    PROD -->|"Outbox + Eventos"| KAFKA["Apache Kafka (3 Brokers)<br/>productions.events"]
-    PROD -->|"Comandos Asíncronos"| RMQ
-    RMQ --> NOTIFY["ms-eventomax-notify<br/>Tickets & Actas PDF"]
-    KAFKA --> REP
-    KAFKA --> AUD
+        subgraph AppsEC2["ec2-eventomax-apps (172.31.22.43)"]
+            Proxy -->|/api/** y /swagger-ui/**| BFF["ms-eventomax-bff<br/>Spring Boot BFF (JWT + RBAC)"]
+            BFF --> MS["6 Microservicios de Dominio"]
+        end
+
+        Proxy -->|/kafka-ui/**| KafkaNode["ec2-eventomax-kafka (172.31.20.204)<br/>3 Kafka Brokers + Kafka UI"]
+        Proxy -->|/rabbitmq/**| MQNode["ec2-eventomax-mq (172.31.25.8)<br/>2 Nodos RabbitMQ Cluster"]
+
+        MS -->|Eventos| KafkaNode
+        MS -->|Comandos / Colas| MQNode
+        MS -->|JDBC| RDS[("Amazon RDS<br/>PostgreSQL")]
+    end
 ```
 
 ---
 
-## 3. Capacidades Principales Implementadas
+## Galería del Portal en Producción
 
-1. **Autenticación Federada OAuth2 / OIDC con PKCE (`@azure/msal-angular`):**
-   - Inicio de sesión corporativo contra Microsoft Entra ID sin secretos en cliente.
-   - Adquisición automática de Access Token para `api://a1a87bcd-fed7-4d65-83c3-338389b80093/access_as_user` con control de acceso RBAC por roles (`Admin`, `Productor`, `Organizador`, `Auditor`).
-2. **Gestión Integral de Producciones y Flujos Asíncronos (RabbitMQ + Kafka):**
-   - Ciclo de vida operativo completo (`SOLICITADO → CONFIRMADO → EN_MONTAJE → EN_EJECUCION → CERRADO`).
-   - Emisión de **Tickets de Cuadrilla Técnica** (`GET /api/productions/{id}/crew-ticket`) con orden de trabajo imprimible.
-   - Descarga binaria de **Acta de Cierre / Cotización PDF** (`GET /api/productions/{id}/quote-pdf`) generada asíncronamente por `ms-eventomax-notify` (OpenPDF).
-   - Proyección eventual en **Reportes (ECharts)** y **Auditoría Inmutable** consumiendo el tópico `productions.events` de Apache Kafka.
-3. **Catálogo de Servicios y Equipamiento Persistido en PostgreSQL RDS:**
-   - CRUD completo de servicios y equipos con gestión de inventario y reservas transaccionales.
-   - Carga manual de fotografías reales optimizadas desde UI, persistidas en columna `image_url` (`TEXT`) en RDS para visibilidad inmediata entre todas las cuentas y dispositivos.
-
----
-
-## 4. Rutas de la Aplicación y Control de Acceso
-
-| Ruta SPA | Vista | Roles Autorizados | Endpoints BFF Consumidos |
-| :--- | :--- | :--- | :--- |
-| `/portal` | `Landing` | Público | Portal informativo y acceso |
-| `/login` | `Login` | Público | Redirección MSAL a Microsoft Entra ID |
-| `/dashboard` | `Dashboard` | `Admin`, `Productor`, `Organizador`, `Auditor` | `/api/productions`, `/api/catalog/services`, `/api/report/kpis` |
-| `/productions` | `Productions` | `Admin`, `Productor`, `Organizador` | `/api/productions/**`, `/api/organizers/{id}/contact`, `/api/catalog/reservations/**`, `/crew-ticket`, `/quote-pdf` |
-| `/catalog` | `Catalog` | `Admin`, `Productor` | `/api/catalog/services/**`, `/api/catalog/equipment/**` |
-| `/reports` | `Reports` | `Admin` | `/api/report/kpis`, `/api/report/top-services` |
-| `/audit` | `Audit` | `Admin`, `Auditor` | `/api/audit/timeline` |
-| `/forbidden` | `Forbidden` | Autenticado sin rol requerido | Diagnóstico de sesión y cierre seguro |
+<table>
+  <tr>
+    <td width="50%">
+      <img src="public/branding/eventomax/demo/demo-real-1-dashboard.png" alt="Dashboard Ejecutivo" width="100%" />
+      <p align="center"><strong>Dashboard Ejecutivo</strong> — KPIs en vivo y gráficas Apache ECharts</p>
+    </td>
+    <td width="50%">
+      <img src="public/branding/eventomax/demo/demo-real-2-productions.png" alt="Gestión de Producciones" width="100%" />
+      <p align="center"><strong>Producciones</strong> — Ciclo operativo y asignación técnica</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="public/branding/eventomax/demo/demo-real-3-crewticket.png" alt="Crew y Acreditación" width="100%" />
+      <p align="center"><strong>Crew & Ticketing</strong> — Gestión de personal, zonas y entradas</p>
+    </td>
+    <td width="50%">
+      <img src="public/branding/eventomax/demo/demo-real-4-audit.png" alt="Auditoría y Trazabilidad" width="100%" />
+      <p align="center"><strong>Auditoría Distribuida</strong> — Trazabilidad de eventos del ecosistema</p>
+    </td>
+  </tr>
+</table>
 
 ---
 
-## 5. Stack Tecnológico (`package.json`)
+## Control de Acceso (RBAC)
 
-| Componente | Tecnología / Paquete | Versión |
+El enrutamiento definido en [`src/app/app.routes.ts`](src/app/app.routes.ts) protege cada vista mediante `msalGuard` y `roleGuard` según los claims emitidos por Microsoft Entra ID:
+
+| Ruta | Visibilidad / Roles Permitidos | Función |
 | :--- | :--- | :--- |
-| Framework Frontend | `@angular/core`, `@angular/router`, `@angular/forms` | `^22.2.3` |
-| Lenguaje | `TypeScript` | `~6.0.2` |
-| Autenticación Entra ID | `@azure/msal-angular` / `@azure/msal-browser` | `^6.2.0` / `^5.21.0` |
-| Visualización Analítica | `echarts` | `6.1.0` |
-| Estilos e Iconografía | `tailwindcss` / `@lucide/angular` | `^4.3.3` / `^1.47.0` |
-| Testing Unitario | `vitest` + `@angular/build` | `^4.0.8` |
-| Testing E2E | `@playwright/test` | `^1.64.1` |
+| `/portal` | Público | Landing institucional y acceso al portal |
+| `/login` | Público | Flujo de autenticación corporativa MSAL |
+| `/dashboard` | `Admin`, `Productor`, `Organizador`, `Auditor` | Tablero operativo y métricas clave |
+| `/productions` | `Admin`, `Productor`, `Organizador` | Administración de eventos y producciones |
+| `/catalog` | `Admin`, `Productor` | Catálogo de recursos, proveedores y servicios |
+| `/reports` | `Admin` | Reportería consolidada de dirección |
+| `/audit` | `Admin`, `Auditor` | Registro inmutable y trazabilidad de eventos |
+| `/forbidden` | Autenticado | Pantalla de acceso denegado por falta de rol |
 
 ---
 
-## 6. Ejecución Local, Pruebas y Despliegue en Amazon S3
+## Desarrollo y Despliegue
+
+<details>
+<summary><strong>Ejecución local, pruebas automatizadas y publicación en Amazon S3</strong></summary>
+
+### Requisitos y Scripts Locales
+
+- **Node.js 22+**, **npm** y configuración de entorno Angular en `src/environments/`.
 
 ```bash
-# 1. Instalar dependencias reproducibles
+# Instalación de dependencias
 npm ci
 
-# 2. Servidor de desarrollo local (proxy hacia BFF local)
-npm run start:local
+# Servidor de desarrollo local (http://localhost:4200)
+npm start
 
-# 3. Ejecutar suite completa de pruebas unitarias Vitest (36 archivos, 263 tests)
-npx ng test --watch=false
-
-# 4. Generar bundle productivo optimizado para Amazon S3
+# Compilación de producción
 npm run build
+
+# Pruebas unitarias (Vitest) y End-to-End (Playwright)
+npm test
+npm run e2e
 ```
 
-### Publicación del Frontend en Amazon S3 (`eventomax-production-portal-app`)
+### Publicación del Frontend en Amazon S3
 
-1. Subir el contenido compilado de `dist/frontend-eventomax/browser/` a la raíz del bucket **`eventomax-production-portal-app`** (`us-east-1`).
-2. Sincronizar los alias HTML5 en **AWS CloudShell** para soportar recarga directa en rutas virtuales sin CloudFront:
-   ```bash
-   for route in portal login dashboard productions catalog reports audit forbidden landing; do
-     aws s3 cp s3://eventomax-production-portal-app/index.html s3://eventomax-production-portal-app/$route \
-       --content-type "text/html" --cache-control "no-cache" --metadata-directive REPLACE
-   done
-   ```
+```bash
+npm run build
+aws s3 sync dist/frontend-eventomax/browser/ s3://eventomax-production-portal-app --delete
+```
+
+</details>
+
+---
+
+<div align="center">
+  <sub><strong>EventoMax Cloud Native Platform</strong> • Frontend Angular SPA • Backend BFF • Apache Kafka • RabbitMQ • AWS</sub>
+</div>
