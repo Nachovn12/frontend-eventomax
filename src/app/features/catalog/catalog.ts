@@ -261,7 +261,7 @@ export class Catalog implements OnDestroy {
   openEdit(item: CatalogService): void {
     if (!this.canManage()) return;
     this.editingService.set(item);
-    this.serviceImageDraft.set(this.imageStorage.getImage('service', item.id) || item.imageUrl || null);
+    this.serviceImageDraft.set(item.imageUrl || this.imageStorage.getImage('service', item.id) || null);
     this.imageProcessingError.set(null);
     this.serviceForm.setValue({
       name: item.name,
@@ -293,17 +293,23 @@ export class Catalog implements OnDestroy {
       this.saveError.set('Ingresa una tarifa positiva con máximo dos decimales.');
       return;
     }
+    const existing = this.editingService();
+    const draftImage = this.serviceImageDraft();
     const request: CatalogServiceUpsertRequest = {
       name: input.name.trim(),
       description: input.description.trim() || null,
       rate: input.rate,
       active: input.active,
+      ...(draftImage !== null
+        ? { imageUrl: draftImage }
+        : existing?.imageUrl
+          ? { imageUrl: '' }
+          : {}),
     };
     if (!request.name) {
       this.saveError.set('El nombre del servicio es obligatorio.');
       return;
     }
-    const existing = this.editingService();
     this.saving.set(true);
     this.saveError.set('');
     this.saveMessage.set('');
@@ -313,9 +319,10 @@ export class Catalog implements OnDestroy {
     request$.subscribe({
       next: (result) => {
         const targetId = result.id || existing?.id;
+        const resolvedImage = result.imageUrl ?? draftImage;
         if (targetId) {
-          if (this.serviceImageDraft()) {
-            this.imageStorage.setImage('service', targetId, this.serviceImageDraft()!);
+          if (resolvedImage) {
+            this.imageStorage.setImage('service', targetId, resolvedImage);
           } else {
             this.imageStorage.removeImage('service', targetId);
           }
@@ -561,7 +568,7 @@ export class Catalog implements OnDestroy {
   openEditEquipment(item: Equipment): void {
     if (!this.canManage()) return;
     this.editingEquipment.set(item);
-    this.equipmentImageDraft.set(this.imageStorage.getImage('equipment', item.id) || item.imageUrl || null);
+    this.equipmentImageDraft.set(item.imageUrl || this.imageStorage.getImage('equipment', item.id) || null);
     this.imageProcessingError.set(null);
     this.equipmentForm.reset({
       name: item.name,
@@ -624,6 +631,7 @@ export class Catalog implements OnDestroy {
     }
 
     const current = this.editingEquipment();
+    const draftImage = this.equipmentImageDraft();
     if (current) {
       let adjustedQty: number | undefined = undefined;
       if (input.stockMode === 'adjust') {
@@ -640,6 +648,11 @@ export class Catalog implements OnDestroy {
         description: descriptionTrimmed,
         active: input.active,
         ...(adjustedQty !== undefined ? { availableQty: adjustedQty } : {}),
+        ...(draftImage !== null
+          ? { imageUrl: draftImage }
+          : current.imageUrl
+            ? { imageUrl: '' }
+            : {}),
       };
 
       this.savingEquipment.set(true);
@@ -649,9 +662,10 @@ export class Catalog implements OnDestroy {
       this.dataService.updateEquipment(current.id, request).subscribe({
         next: (result) => {
           const targetId = result.id || current.id;
+          const resolvedImage = result.imageUrl ?? draftImage;
           if (targetId) {
-            if (this.equipmentImageDraft()) {
-              this.imageStorage.setImage('equipment', targetId, this.equipmentImageDraft()!);
+            if (resolvedImage) {
+              this.imageStorage.setImage('equipment', targetId, resolvedImage);
             } else {
               this.imageStorage.removeImage('equipment', targetId);
             }
@@ -681,6 +695,7 @@ export class Catalog implements OnDestroy {
         description: descriptionTrimmed,
         active: input.active,
         initialAvailableQty: Number(rawInit),
+        ...(draftImage !== null ? { imageUrl: draftImage } : {}),
       };
 
       this.savingEquipment.set(true);
@@ -689,9 +704,10 @@ export class Catalog implements OnDestroy {
 
       this.dataService.createEquipment(request).subscribe({
         next: (result) => {
+          const resolvedImage = result.imageUrl ?? draftImage;
           if (result.id) {
-            if (this.equipmentImageDraft()) {
-              this.imageStorage.setImage('equipment', result.id, this.equipmentImageDraft()!);
+            if (resolvedImage) {
+              this.imageStorage.setImage('equipment', result.id, resolvedImage);
             } else {
               this.imageStorage.removeImage('equipment', result.id);
             }

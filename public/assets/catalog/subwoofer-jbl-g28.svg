@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Dual-18 Subwoofer Enclosure -->
+  <rect x="7" y="13" width="50" height="38" rx="3" fill="#0F172A" stroke="#334155" stroke-width="1.5"/>
+  <rect x="10" y="16" width="44" height="32" rx="2" fill="#1E293B"/>
+  <!-- Left 18" Woofer Cone -->
+  <circle cx="21" cy="32" r="9" fill="#020617" stroke="#475569" stroke-width="1.2"/>
+  <circle cx="21" cy="32" r="6" fill="#0F172A" stroke="#0284C7" stroke-width="0.9"/>
+  <circle cx="21" cy="32" r="2.5" fill="#38BDF8"/>
+  <!-- Right 18" Woofer Cone -->
+  <circle cx="43" cy="32" r="9" fill="#020617" stroke="#475569" stroke-width="1.2"/>
+  <circle cx="43" cy="32" r="6" fill="#0F172A" stroke="#0284C7" stroke-width="0.9"/>
+  <circle cx="43" cy="32" r="2.5" fill="#38BDF8"/>
+  <!-- Center Bass Reflex Port & Status LED -->
+  <rect x="30.5" y="19" width="3" height="26" rx="1" fill="#020617" stroke="#334155" stroke-width="0.8"/>
+  <circle cx="32" cy="14.5" r="1" fill="#10B981"/>
+  <!-- Rubber Feet -->
+  <rect x="11" y="51" width="6" height="2.5" rx="0.5" fill="#475569"/>
+  <rect x="47" y="51" width="6" height="2.5" rx="0.5" fill="#475569"/>
+</svg>

@@ -13,4 +13,5 @@ export interface CatalogServiceUpsertRequest {
   description: string | null;
   rate: number;
   active: boolean;
+  imageUrl?: string | null;
 }

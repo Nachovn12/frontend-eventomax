@@ -17,6 +17,7 @@ export interface CreateEquipmentRequest {
   readonly description?: string | null;
   readonly active: boolean;
   readonly initialAvailableQty: number;
+  readonly imageUrl?: string | null;
 }
 
 export interface EquipmentUpdateRequest {
@@ -24,6 +25,7 @@ export interface EquipmentUpdateRequest {
   readonly description?: string | null;
   readonly active: boolean;
   readonly availableQty?: number;
+  readonly imageUrl?: string | null;
 }
 
 export interface EquipmentReservationItem {

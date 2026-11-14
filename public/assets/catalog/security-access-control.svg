@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Access Turnstile Gate Left & Right Pedestals -->
+  <rect x="8" y="24" width="12" height="30" rx="2" fill="#0F172A" stroke="#334155" stroke-width="1.2"/>
+  <rect x="44" y="24" width="12" height="30" rx="2" fill="#0F172A" stroke="#334155" stroke-width="1.2"/>
+  <!-- RFID / QR Scanner Heads -->
+  <rect x="10" y="27" width="8" height="5" rx="1" fill="#020617" stroke="#10B981" stroke-width="0.9"/>
+  <rect x="46" y="27" width="8" height="5" rx="1" fill="#020617" stroke="#10B981" stroke-width="0.9"/>
+  <circle cx="14" cy="29.5" r="1.2" fill="#10B981"/>
+  <circle cx="50" cy="29.5" r="1.2" fill="#10B981"/>
+  <!-- Turnstile Barrier Arms -->
+  <line x1="20" y1="36" x2="30" y2="36" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="34" y1="36" x2="44" y2="36" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Security Shield Crest Center -->
+  <path d="M32 9 L42 13 V21 C42 27.5 37.5 32 32 34 C26.5 32 22 27.5 22 21 V13 L32 9 Z" fill="#1E293B" stroke="#0284C7" stroke-width="1.4"/>
+  <path d="M28 21 L31 24 L36.5 18" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Floor Base Plate -->
+  <rect x="6" y="54" width="52" height="3" rx="1" fill="#475569"/>
+</svg>

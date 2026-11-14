@@ -69,11 +69,18 @@ export class CatalogImageStorageService {
           }
 
           ctx.drawImage(img, 0, 0, width, height);
+          const maxDataUrlLength = 450000;
           try {
-            const dataUrl = canvas.toDataURL('image/webp', quality);
+            let dataUrl = canvas.toDataURL('image/webp', quality);
+            if (dataUrl.length > maxDataUrlLength) {
+              dataUrl = canvas.toDataURL('image/webp', 0.65);
+            }
+            if (dataUrl.length > maxDataUrlLength) {
+              dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+            }
             resolve(dataUrl);
           } catch {
-            resolve(canvas.toDataURL('image/jpeg', quality));
+            resolve(canvas.toDataURL('image/jpeg', 0.75));
           }
         };
         img.onerror = () => reject(new Error('No se pudo decodificar la imagen seleccionada.'));

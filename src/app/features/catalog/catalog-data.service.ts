@@ -15,6 +15,7 @@ function mapEquipmentResponse(raw: BackendEquipmentResponse): Equipment {
     name: raw.name,
     description: raw.description ?? null,
     category: raw.category ?? null,
+    imageUrl: raw.imageUrl ?? null,
     active,
     availableQty: available,
     reservedQty: reserved,
@@ -52,6 +53,7 @@ export class CatalogDataService {
       description: request.description ? request.description.trim() : null,
       active: request.active ?? true,
       initialAvailableQty: request.initialAvailableQty,
+      ...(request.imageUrl !== undefined ? { imageUrl: request.imageUrl } : {}),
     };
     return this.apiClient.post<BackendEquipmentResponse>(`${environment.apiGatewayUrl}/api/catalog/equipment`, payload).pipe(
       map(mapEquipmentResponse)
@@ -64,6 +66,7 @@ export class CatalogDataService {
       description: string | null;
       active: boolean;
       availableQty?: number;
+      imageUrl?: string | null;
     } = {
       name: request.name.trim(),
       description: request.description ? request.description.trim() : null,
@@ -71,6 +74,9 @@ export class CatalogDataService {
     };
     if (request.availableQty !== undefined && request.availableQty !== null) {
       payload.availableQty = request.availableQty;
+    }
+    if (request.imageUrl !== undefined) {
+      payload.imageUrl = request.imageUrl;
     }
     return this.apiClient
       .put<BackendEquipmentResponse>(`${environment.apiGatewayUrl}/api/catalog/equipment/${id}`, payload)
