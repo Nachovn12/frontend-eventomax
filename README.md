@@ -1,131 +1,121 @@
-# frontend-eventomax — Portal Web Empresarial Angular 22 + MSAL Microsoft Entra ID (EP2)
+# EventoMax — Portal Web Operativo (Angular 22 + Microsoft Entra ID + AWS Cloud)
 
-**Asignatura:** Desarrollo Cloud Native I (`DSY1107`)
-**Caso de Estudio:** Caso 8 — Plataforma de Producción y Montaje de Eventos (**EventoMax**)
+**Asignatura:** Desarrollo Cloud Native (`DSY1107`)  
+**Caso de Estudio:** Caso 8 — Plataforma de Producción y Montaje de Eventos (**EventoMax**)  
 **Equipo:** Ignacio Valeria, Benjamín Flores, Benjamín Espinoza
 
 ---
 
-## 1. Propósito del Repositorio y Rol en EventoMax
+## 1. Enlaces Directos de Producción y Consolas UI (Demo en Vivo)
 
-`frontend-eventomax` es la aplicación de página única (**SPA en Angular 22**) que proporciona la experiencia operativa de **EventoMax EP2** para los cuatro roles del sistema (`Admin`, `Productor`, `Organizador`, `Auditor`):
+Todos los accesos operan vía **HTTPS (`:443`)** a través de **Amazon S3** y **AWS API Gateway → Edge Reverse Proxy (EC2)**, funcionando directamente desde cualquier navegador y red institucional sin requerir túneles SSH ni puertos locales abiertos:
 
-1. **Autenticación Federada OAuth2 / OIDC con PKCE (`@azure/msal-angular`):** Inicia sesión contra **Microsoft Entra ID**, adquiere tokens de acceso para el scope `api://a1a87bcd-fed7-4d65-83c3-338389b80093/access_as_user` y los adjunta automáticamente hacia **AWS API Gateway** → **`ms-eventomax-bff`**.
-2. **Gestión Integral de Producciones y Artefactos Asíncronos RabbitMQ:**
-   - Creación de producciones, registro de contacto del organizador y contratación de servicios del catálogo.
-   - Confirmación con reserva transaccional de equipamiento técnico.
-   - Visualización de **Tickets de Cuadrilla Técnica** (`GET /api/productions/{id}/crew-ticket`) generados vía RabbitMQ al pasar a `EN_EJECUCION`.
-   - Descarga directa del **Acta de Cierre y Cotización Formal en PDF** (`GET /api/productions/{id}/quote-pdf`) generada asíncronamente por `ms-eventomax-notify` (OpenPDF) al cerrar la producción (`CERRADO`).
-3. **Catálogo e Inventario, Reportes Analíticos (ECharts) y Línea de Tiempo de Auditoría:** Vistas dedicadas con estados reactivos de carga, vacío, error y control de permisos por rol.
+| Recurso / UI | Propósito en Plataforma y Demo | URL Directa (HTTPS) | Control de Acceso |
+| :--- | :--- | :--- | :--- |
+| **Portal Web EventoMax** | SPA Angular 22 en Producción (Amazon S3) | https://eventomax-production-portal-app.s3.us-east-1.amazonaws.com/index.html | Login **Microsoft Entra ID** (PKCE) |
+| **Swagger UI (OpenAPI 3)** | Documentación y pruebas REST (`GET`, `POST`, `PUT`, `DELETE`) del BFF | https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/swagger-ui/index.html | UI pública; ejecución `/api/**` vía botón **Authorize** (Bearer JWT) |
+| **Kafka UI** | Inspección en vivo del clúster Kafka, tópico `productions.events` y DLT | https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/kafka-ui/ | Autenticación `LOGIN_FORM` |
+| **RabbitMQ Management** | Clúster RabbitMQ 4.3.6 (2 nodos), exchanges, colas `q.cmd.*` y DLQ | https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/rabbitmq/ | Credenciales RabbitMQ Management |
+
+> **Nota para evaluación:** Los servicios de backend, mensajería y bases de datos corren en **AWS Academy Learner Lab**. Asegúrate de que el laboratorio y la instancia EC2 estén iniciados antes de abrir los enlaces.
 
 ---
 
-## 2. Arquitectura del Módulo y Diagrama
+## 2. Arquitectura General de la Plataforma
 
 ```mermaid
 flowchart LR
-    USER["Usuario (Navegador)\nAdmin / Productor / Organizador / Auditor"] --> SPA["Angular 22 SPA\n(Amazon S3 REST HTTPS /index.html)"]
-    SPA <-->|OAuth2 Authorization Code + PKCE| ENTRA["Microsoft Entra ID\nTenant: f191bdc8-..."]
-    SPA -->|HTTPS + Bearer Access Token| APIGW["AWS API Gateway\n(https://ntnnrohhj8.execute-api.us-east-1.amazonaws.com)"]
-    APIGW --> BFF["ms-eventomax-bff"]
+    USER["Usuario (Cualquier PC / Navegador)<br/>Admin / Productor / Organizador / Auditor"] --> SPA["Angular 22 SPA<br/>(Amazon S3 HTTPS)"]
+    SPA <-->|"OAuth2 Code + PKCE"| ENTRA["Microsoft Entra ID<br/>Tenant: f191bdc8-..."]
+    SPA -->|"HTTPS + Bearer JWT"| APIGW["AWS API Gateway (:443)<br/>7dewsdyt7i.execute-api.us-east-1.amazonaws.com"]
+    USER -->|"HTTPS (:443) Swagger / Kafka UI / RabbitMQ"| APIGW
+
+    APIGW --> PROXY["Edge Reverse Proxy (Nginx :8080)<br/>eventomax-net"]
+    PROXY -->|"/api/** , /swagger-ui/** , /v3/api-docs"| BFF["ms-eventomax-bff (:8080)"]
+    PROXY -->|"/kafka-ui/"| KUI["Kafka UI (:8080)<br/>Login Form"]
+    PROXY -->|"/rabbitmq/"| RMQ["RabbitMQ Cluster (:15672)<br/>rabbitmq-1 / rabbitmq-2"]
+
+    BFF --> PROD["ms-eventomax-productions"]
+    BFF --> CAT["ms-eventomax-catalog"]
+    BFF --> REP["ms-eventomax-report"]
+    BFF --> AUD["ms-eventomax-audit"]
+    PROD -->|"Outbox + Eventos"| KAFKA["Apache Kafka (3 Brokers)<br/>productions.events"]
+    PROD -->|"Comandos Asíncronos"| RMQ
+    RMQ --> NOTIFY["ms-eventomax-notify<br/>Tickets & Actas PDF"]
+    KAFKA --> REP
+    KAFKA --> AUD
 ```
 
 ---
 
-## 3. Stack Tecnológico y Versiones Reales (`package.json`)
+## 3. Capacidades Principales Implementadas
+
+1. **Autenticación Federada OAuth2 / OIDC con PKCE (`@azure/msal-angular`):**
+   - Inicio de sesión corporativo contra Microsoft Entra ID sin secretos en cliente.
+   - Adquisición automática de Access Token para `api://a1a87bcd-fed7-4d65-83c3-338389b80093/access_as_user` con control de acceso RBAC por roles (`Admin`, `Productor`, `Organizador`, `Auditor`).
+2. **Gestión Integral de Producciones y Flujos Asíncronos (RabbitMQ + Kafka):**
+   - Ciclo de vida operativo completo (`SOLICITADO → CONFIRMADO → EN_MONTAJE → EN_EJECUCION → CERRADO`).
+   - Emisión de **Tickets de Cuadrilla Técnica** (`GET /api/productions/{id}/crew-ticket`) con orden de trabajo imprimible.
+   - Descarga binaria de **Acta de Cierre / Cotización PDF** (`GET /api/productions/{id}/quote-pdf`) generada asíncronamente por `ms-eventomax-notify` (OpenPDF).
+   - Proyección eventual en **Reportes (ECharts)** y **Auditoría Inmutable** consumiendo el tópico `productions.events` de Apache Kafka.
+3. **Catálogo de Servicios y Equipamiento Persistido en PostgreSQL RDS:**
+   - CRUD completo de servicios y equipos con gestión de inventario y reservas transaccionales.
+   - Carga manual de fotografías reales optimizadas desde UI, persistidas en columna `image_url` (`TEXT`) en RDS para visibilidad inmediata entre todas las cuentas y dispositivos.
+
+---
+
+## 4. Rutas de la Aplicación y Control de Acceso
+
+| Ruta SPA | Vista | Roles Autorizados | Endpoints BFF Consumidos |
+| :--- | :--- | :--- | :--- |
+| `/portal` | `Landing` | Público | Portal informativo y acceso |
+| `/login` | `Login` | Público | Redirección MSAL a Microsoft Entra ID |
+| `/dashboard` | `Dashboard` | `Admin`, `Productor`, `Organizador`, `Auditor` | `/api/productions`, `/api/catalog/services`, `/api/report/kpis` |
+| `/productions` | `Productions` | `Admin`, `Productor`, `Organizador` | `/api/productions/**`, `/api/organizers/{id}/contact`, `/api/catalog/reservations/**`, `/crew-ticket`, `/quote-pdf` |
+| `/catalog` | `Catalog` | `Admin`, `Productor` | `/api/catalog/services/**`, `/api/catalog/equipment/**` |
+| `/reports` | `Reports` | `Admin` | `/api/report/kpis`, `/api/report/top-services` |
+| `/audit` | `Audit` | `Admin`, `Auditor` | `/api/audit/timeline` |
+| `/forbidden` | `Forbidden` | Autenticado sin rol requerido | Diagnóstico de sesión y cierre seguro |
+
+---
+
+## 5. Stack Tecnológico (`package.json`)
 
 | Componente | Tecnología / Paquete | Versión |
-|---|---|---|
+| :--- | :--- | :--- |
 | Framework Frontend | `@angular/core`, `@angular/router`, `@angular/forms` | `^22.2.3` |
-| Lenguaje | TypeScript | `~6.0.2` |
+| Lenguaje | `TypeScript` | `~6.0.2` |
 | Autenticación Entra ID | `@azure/msal-angular` / `@azure/msal-browser` | `^6.2.0` / `^5.21.0` |
 | Visualización Analítica | `echarts` | `6.1.0` |
 | Estilos e Iconografía | `tailwindcss` / `@lucide/angular` | `^4.3.3` / `^1.47.0` |
-| Testing Unitario | `vitest` + `@angular/build:unit-test` | `^4.0.8` |
+| Testing Unitario | `vitest` + `@angular/build` | `^4.0.8` |
 | Testing E2E | `@playwright/test` | `^1.64.1` |
 
 ---
 
-## 4. Cumplimiento de Rúbrica EP2 (Matriz Caso 8)
-
-| Criterio de Evaluación EP2 | Implementación en `frontend-eventomax` | Estado |
-|---|---|---|
-| **Integración con Flujos Asíncronos RabbitMQ** | Consulta de tickets de cuadrilla (`/crew-ticket`), gestión de contacto de organizador (`/api/organizers/{id}/contact`) y descarga binaria de Acta PDF (`/quote-pdf` con `responseType: 'blob'`). | **CUMPLIDO** |
-| **Autenticación Microsoft Entra ID (SPA Pública)** | Configuración PKCE sin secretos en cliente, validación de `iss` y `aud` en `AuthorizationService`, guards (`MsalGuard`, `roleGuard`, `featureGuard`) e interceptor HTTP. | **CUMPLIDO** |
-| **Build Productivo Listo para Amazon S3 HTTPS (Preservando Configuración EP1, Sin CloudFront)** | `environment.prod.ts` con `redirectUri` y `postLogoutRedirectUri` apuntando a `window.location.origin + '/index.html'`, redirección `{ path: 'index.html', redirectTo: 'login', pathMatch: 'full' }` en `app.routes.ts` y `apiGatewayUrl` apuntando al API Gateway de AWS (`ntnnrohhj8`). | **CUMPLIDO** |
-
----
-
-## 5. Rutas de la Aplicación y Control de Acceso
-
-| Ruta SPA | Componente | Roles Autorizados | Endpoints BFF Consumidos |
-|---|---|---|---|
-| `/login` | `LoginComponent` | Público | Redirección MSAL a Microsoft Entra ID |
-| `/dashboard` | `DashboardComponent` | `Admin`, `Productor`, `Organizador`, `Auditor` | `/api/productions`, `/api/catalog/services`, `/api/report/kpis` |
-| `/productions` | `ProductionsComponent` | `Admin`, `Productor`, `Organizador` | `/api/productions/**`, `/api/organizers/{id}/contact`, `/api/catalog/reservations/**`, `/crew-ticket`, `/quote-pdf` |
-| `/catalog` | `CatalogComponent` | `Admin`, `Productor`, `Organizador` | `/api/catalog/services/**`, `/api/catalog/equipment/**` |
-| `/reports` | `ReportsComponent` | `Admin`, `Auditor` | `/api/report/kpis`, `/api/report/top-services` |
-| `/audit` | `AuditComponent` | `Admin`, `Auditor` | `/api/audit/timeline` |
-| `/forbidden` | `ForbiddenComponent` | Autenticado sin rol requerido | Diagnóstico de sesión y cierre seguro |
-
----
-
-## 6. Configuración de Entornos (`src/environments/`)
-
-- `environment.local.ts`: Usa proxy local (`/api` → `http://localhost:8081` vía `proxy.conf.json`) y `redirectUri: 'http://localhost:4200/'`.
-- `environment.prod.ts`:
-  - `apiGatewayUrl`: `https://ntnnrohhj8.execute-api.us-east-1.amazonaws.com`
-  - `redirectUri` / `postLogoutRedirectUri`: `window.location.origin + '/index.html'`
-  - **Cero secretos:** Contiene únicamente identificadores públicos OIDC (`tenantId`, `frontendClientId`, `apiScope`).
-
----
-
-## 7. Ejecución Local y Pruebas Automatizadas
+## 6. Ejecución Local, Pruebas y Despliegue en Amazon S3
 
 ```bash
 # 1. Instalar dependencias reproducibles
 npm ci
 
-# 2. Levantar servidor de desarrollo local con proxy hacia BFF (:8081)
+# 2. Servidor de desarrollo local (proxy hacia BFF local)
 npm run start:local
 
-# 3. Ejecutar suite completa de pruebas unitarias Vitest (24 archivos, 199 tests)
+# 3. Ejecutar suite completa de pruebas unitarias Vitest (36 archivos, 263 tests)
 npx ng test --watch=false
 
-# 4. Generar build productivo optimizado para Amazon S3
+# 4. Generar bundle productivo optimizado para Amazon S3
 npm run build
 ```
 
-**Resultado certificado en EP2:** `Test Files: 24 passed (24), Tests: 199 passed (199)` y `21/21` pruebas Playwright E2E aprobadas — Bundle productivo generado en `dist/frontend-eventomax/browser`.
+### Publicación del Frontend en Amazon S3 (`eventomax-production-portal-app`)
 
----
-
-## 8. Guía de Publicación Manual en Amazon S3 (Preservando Configuración Aprobada en EP1, Sin CloudFront)
-
-> **Preservación de la arquitectura de hosting EP1:** En el Sandbox académico de AWS no está permitido utilizar Amazon CloudFront. Se preserva íntegramente el procedimiento y configuración de **Amazon S3 + Microsoft Entra ID (MSAL)** que fue certificado y aprobado en la **EP1**:
-> - **Bucket S3 existente de EP1:** `eventomax-frontend-085765167202-us-east-1` (región `us-east-1`).
-> - **URL HTTPS del frontend en S3:** `https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com/index.html` (o `/login` si se mantiene el objeto alias de EP1 en el bucket).
-> - **Redirect URI y Post-Logout Redirect URI en `environment.prod.ts`:** `window.location.origin + '/index.html'` (`https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com/index.html`), respaldado en `app.routes.ts` por `{ path: 'index.html', redirectTo: 'login', pathMatch: 'full' }`.
-
-### Funcionamiento del flujo S3 + MSAL + Angular Router (EP1/EP2):
-1. El usuario abre `https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com/index.html` (S3 entrega el objeto `index.html` por HTTPS con `200 OK`) y Angular redirige en el cliente a `/login`.
-2. Al iniciar sesión con **Microsoft Entra ID**, el flujo OAuth 2.0 Authorization Code + PKCE retorna a `https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com/index.html` (objeto físico existente en S3).
-3. `MsalRedirectComponent` procesa la respuesta de autenticación y la navegación posterior entre `/dashboard`, `/productions`, `/catalog`, `/reports`, `/audit` y `/rabbit-admin` ocurre íntegramente en el navegador mediante el router de Angular (`History API`), sin solicitar nuevos documentos HTML a S3.
-4. Al cerrar sesión (`logoutRedirect`), Microsoft Entra ID redirige nuevamente a `/index.html` y Angular lleva al usuario a `/login`.
-5. **Consideración operativa en S3 sin CloudFront:** Durante la demostración se debe ingresar siempre desde `/index.html` y navegar mediante el menú lateral de la SPA (evitando recargar con `F5` directamente sobre rutas virtuales como `/productions` o `/catalog`, salvo que en el bucket exista una copia de `index.html` con esa clave).
-
-### Pasos para Actualización Manual en AWS Management Console (Sin AWS CLI):
-1. Ingresar a **AWS Management Console → Amazon S3 → Buckets → `eventomax-frontend-085765167202-us-east-1`**.
-2. Preservar intactos los permisos públicos y la *Bucket Policy* ya configurados en EP1.
-3. Hacer clic en **Upload** y arrastrar el contenido compilado de `dist/frontend-eventomax/browser/` (disponible también en `.local-cert/ep2-aws-final-release/frontend-s3/browser/`): `index.html`, `main-*.js`, `chunk-*.js`, `styles-*.css`, `favicon.ico` y la carpeta `branding/`.
-4. Mantener sin cambios la configuración aprobada en **Microsoft Entra ID** (`App Registration: b577f07b-edd6-4c6c-8306-93aba3c6feba`, SPA Redirect URI `https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com/index.html`) y el origen **CORS** en **AWS API Gateway (`ntnnrohhj8`)** (`https://eventomax-frontend-085765167202-us-east-1.s3.us-east-1.amazonaws.com`).
-
----
-
-## 9. Estado Actual de Certificación EP2 y Trazabilidad Jira
-
-- **Pruebas Unitarias (Vitest):** `199/199` aprobadas (`24` archivos).
-- **Pruebas E2E (Playwright):** `21/21` aprobadas.
-- **Build de Producción:** Exitoso (`dist/frontend-eventomax/browser`, `590.28 kB` raw / `146.79 kB` transfer).
-- **Verificación en AWS Real:** Preparado localmente preservando la configuración S3 + MSAL aprobada en EP1; pendiente de subida manual por el usuario en consola AWS S3.
-- **Historias Jira:** `EMX-75/76` (Dashboards de Reportes y Auditoría), `EMX-Bloque-1A` (Catálogo, Equipos y Reservas), `T01` (Contratación de servicios y ranking), `EP2-FIX-01-B1` (Tickets de cuadrilla, contacto de organizador y descarga de Acta PDF).
+1. Subir el contenido compilado de `dist/frontend-eventomax/browser/` a la raíz del bucket **`eventomax-production-portal-app`** (`us-east-1`).
+2. Sincronizar los alias HTML5 en **AWS CloudShell** para soportar recarga directa en rutas virtuales sin CloudFront:
+   ```bash
+   for route in portal login dashboard productions catalog reports audit forbidden landing; do
+     aws s3 cp s3://eventomax-production-portal-app/index.html s3://eventomax-production-portal-app/$route \
+       --content-type "text/html" --cache-control "no-cache" --metadata-directive REPLACE
+   done
+   ```
