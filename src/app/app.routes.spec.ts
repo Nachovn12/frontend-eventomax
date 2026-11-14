@@ -20,6 +20,18 @@ describe('Protected workspace routes', () => {
 });
 
 describe('Root and fallback routes', () => {
+  it('redirects root path to /portal', () => {
+    const rootRoute = routes.find(r => r.path === '' && r.pathMatch === 'full');
+    expect(rootRoute).toBeTruthy();
+    expect(rootRoute?.redirectTo).toBe('portal');
+  });
+
+  it('serves landing component at /portal path', () => {
+    const portalRoute = routes.find(r => r.path === 'portal');
+    expect(portalRoute).toBeTruthy();
+    expect(portalRoute?.loadComponent).toBeDefined();
+  });
+
   it('redirects index.html to login', () => {
     const route = routes.find(r => r.path === 'index.html');
     expect(route).toBeTruthy();

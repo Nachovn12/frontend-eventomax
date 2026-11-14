@@ -1,158 +1,338 @@
-<div class="page-content">
-  <header class="page-header">
-    <div>
-      <p class="eyebrow">ANÁLISIS Y CONTROL</p>
+<div class="page-content reports-page">
+  <header class="page-header reports-header">
+    <div class="header-titles">
+      <p class="eyebrow">Análisis y control</p>
       <h1 class="page-title">Reportes y analítica</h1>
-      <p class="page-description">Indicadores calculados con eventos reales de cambios de estado de producciones.</p>
+      <p class="page-description">Métricas consolidadas de transiciones operativas y flujo en tiempo real.</p>
     </div>
+    @if (canView()) {
+      <div class="report-controls">
+        <label for="report-range" class="sr-only">Período</label>
+        <select id="report-range" [formControl]="rangeControl" class="sr-only" tabindex="-1" aria-hidden="true">
+          <option value="last24h">Últimas 24 horas</option>
+          <option value="last7d">Últimos 7 días</option>
+        </select>
+        <emx-date-range-picker
+          [value]="rangeControl.value"
+          [presets]="reportPresets"
+          [align]="'right'"
+          ariaLabel="Filtro de período de reportes"
+          (valueChange)="onRangePicked($event)"
+        />
+        <button
+          type="button"
+          emxButton
+          variant="secondary"
+          size="medium"
+          class="btn-refresh"
+          [class.is-refreshing]="isLoading()"
+          [disabled]="isLoading()"
+          [attr.aria-busy]="isLoading() ? 'true' : null"
+          aria-label="Actualizar métricas de reportes"
+          (click)="retry()"
+        >
+          <svg
+            lucideRefreshCw
+            class="btn-icon"
+            [class.spin]="isLoading()"
+            strokeWidth="1.75"
+            aria-hidden="true"
+          />
+          <span>Actualizar</span>
+        </button>
+      </div>
+    }
   </header>
 
   @if (canView()) {
-    <section class="panel report-panel smooth-shadow-ring-xs" aria-labelledby="report-heading">
-      <div class="panel-heading report-heading">
-        <div>
-          <h2 id="report-heading">Indicadores de transiciones</h2>
-          <p>Consultas de solo lectura mediante API Gateway y BFF.</p>
+    @if (isLoading()) {
+      <div class="report-skeleton-container" aria-busy="true" aria-label="Cargando reportes">
+        <!-- 4 Metric Skeletons -->
+        <div class="report-metrics" aria-hidden="true">
+          @for (card of [1, 2, 3, 4]; track card) {
+            <article class="metric-card smooth-shadow-ring-sm emx-kpi-skeleton">
+              <div class="metric-top">
+                <div class="skeleton skeleton-text" style="width: 100px; height: 13px; margin: 0;"></div>
+                <div class="skeleton skeleton-icon-tile"></div>
+              </div>
+              <div class="skeleton skeleton-val" style="width: 50px; height: 28px; margin: 12px 0 6px;"></div>
+              <div class="skeleton skeleton-text short" style="width: 130px; height: 11px; margin-bottom: 12px;"></div>
+              <div class="skeleton skeleton-bar" style="width: 100%; height: 4px;"></div>
+            </article>
+          }
         </div>
-        <div class="report-controls">
-          <label for="report-range">Período</label>
-          <select id="report-range" [formControl]="rangeControl">
-            <option value="last24h">Últimas 24 horas</option>
-            <option value="last7d">Últimos 7 días</option>
-          </select>
-          <button class="btn-system" type="button" (click)="retry()">Actualizar</button>
+
+        <!-- 2 Chart Skeletons in Grid 2x2 -->
+        <div class="report-grid-2x2" aria-hidden="true">
+          <section class="report-section-card smooth-shadow-ring-xs chart-skeleton-panel">
+            <div class="section-card-header">
+              <div class="skeleton skeleton-title" style="width: 160px; height: 18px; margin-bottom: 6px;"></div>
+              <div class="skeleton skeleton-text short" style="width: 220px; height: 12px; margin: 0;"></div>
+            </div>
+            <div class="skeleton" style="width: 100%; height: 220px; border-radius: 8px;"></div>
+          </section>
+          <section class="report-section-card smooth-shadow-ring-xs chart-skeleton-panel">
+            <div class="section-card-header">
+              <div class="skeleton skeleton-title" style="width: 220px; height: 18px; margin-bottom: 6px;"></div>
+              <div class="skeleton skeleton-text short" style="width: 200px; height: 12px; margin: 0;"></div>
+            </div>
+            <div class="skeleton" style="width: 100%; height: 220px; border-radius: 8px;"></div>
+          </section>
         </div>
       </div>
-
-      @if (isLoading()) {
-        <div class="report-feedback" aria-busy="true" role="status">Cargando KPIs desde Report…</div>
-      } @else if (errorCode() !== null) {
-        <div class="report-feedback" role="alert">
-          <strong>No pudimos obtener los indicadores</strong>
-          <p>{{ errorText(errorCode()) }}</p>
-          <button type="button" class="btn-system" (click)="retry()">Reintentar</button>
-        </div>
-      } @else if (response(); as result) {
+    } @else if (errorCode() !== null) {
+      <div class="report-feedback panel smooth-shadow-ring-xs" role="alert">
+        <strong>No pudimos obtener los indicadores</strong>
+        <p>{{ errorText(errorCode()) }}</p>
+        <button type="button" emxButton variant="secondary" size="medium" (click)="retry()">Reintentar</button>
+      </div>
+    } @else if (response(); as result) {
+      <div class="emx-content-fade-in">
+        <!-- 1. Fila de KPIs Ejecutivos Minimalistas (Noticeline & Affect UI) -->
         <div class="report-metrics" aria-label="KPIs del período">
-          <article class="metric-card">
+        <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+          <div class="metric-top">
             <span>Cambios de estado</span>
-            <strong class="metric-value">{{ result.metrics.totalStatusChanges }}</strong>
-            <small>Transiciones observadas</small>
-          </article>
-          <article class="metric-card">
+            <svg lucideActivity class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
+          </div>
+          <strong class="metric-value">{{ result.metrics.totalStatusChanges }}</strong>
+          <small>Transiciones observadas</small>
+          <div class="kpi-meter">
+            <div class="kpi-meter-fill blue" style="width: 100%"></div>
+          </div>
+        </article>
+
+        <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+          <div class="metric-top">
+            <span>Tiempo prom. montaje</span>
+            <svg lucideClock class="metric-icon amber" strokeWidth="1.75" aria-hidden="true" />
+          </div>
+          <strong class="metric-value">{{ averageMontageTime() }} min</strong>
+          <small>Duración EN_MONTAJE a EN_EJECUCIÓN</small>
+          <div class="kpi-meter">
+            <div class="kpi-meter-fill amber" style="width: 75%"></div>
+          </div>
+        </article>
+
+        <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+          <div class="metric-top">
             <span>Producciones cerradas</span>
-            <strong class="metric-value">{{ result.metrics.closedCount }}</strong>
-            <small>Transiciones a CERRADO</small>
-          </article>
-          <article class="metric-card">
+            <svg lucideCircleCheck class="metric-icon green" strokeWidth="1.75" aria-hidden="true" />
+          </div>
+          <strong class="metric-value">{{ result.metrics.closedCount }}</strong>
+          <small>Transiciones a CERRADO</small>
+          <div class="kpi-meter">
+            <div class="kpi-meter-fill green" style="width: 100%"></div>
+          </div>
+        </article>
+
+        <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+          <div class="metric-top">
             <span>Producciones canceladas</span>
-            <strong class="metric-value">{{ result.metrics.cancelledCount }}</strong>
-            <small>Transiciones a CANCELADO</small>
-          </article>
-        </div>
+            <svg lucideCircleAlert class="metric-icon gray" strokeWidth="1.75" aria-hidden="true" />
+          </div>
+          <strong class="metric-value">{{ result.metrics.cancelledCount }}</strong>
+          <small>Transiciones a CANCELADO</small>
+          <div class="kpi-meter">
+            <div class="kpi-meter-fill gray" style="width: 100%"></div>
+          </div>
+        </article>
+      </div>
 
-        @if (result.partialCoverage.isPartial) {
-          <p class="report-coverage" role="note">
-            <strong>Alcance parcial:</strong> {{ result.partialCoverage.description }}
-          </p>
-        }
-        <p class="report-period">Datos desde {{ result.from | date:'dd/MM/yyyy HH:mm':'':'es-CL' }}
-          hasta {{ result.to | date:'dd/MM/yyyy HH:mm':'':'es-CL' }} (hora local).
-          Actualizado: {{ result.generatedAt | date:'dd/MM/yyyy HH:mm':'':'es-CL' }}.
-        </p>
+      <!-- 2. Grilla 2x2 Equilibrada: Métricas y Gráficos Necesarios sin Saturar -->
+      <div class="report-grid-2x2">
+        <!-- Tarjeta 1: Gráfico de Eventos por día (ECharts 220px, sin tabla duplicada) -->
+        <section class="report-section-card smooth-shadow-ring-xs" aria-labelledby="daily-events-heading">
+          <div class="section-card-header">
+            <h3 id="daily-events-heading">Eventos por día</h3>
+            <p class="section-card-desc">Volumen diario en el período seleccionado</p>
+          </div>
+          @if (eventsPerDay().length === 0) {
+            <p class="report-empty">Sin eventos por día registrados en este período.</p>
+          } @else {
+            <emx-daily-events-chart [points]="eventsPerDay()" />
+            <div class="sr-only" role="region" aria-label="Tabla de eventos por día">
+              <table>
+                <caption>Serie temporal de eventos por día</caption>
+                <tbody>
+                  @for (day of eventsPerDay(); track day.date) {
+                    <tr><td>{{ day.date }}</td><td>{{ day.count }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
 
-        <div class="report-sections">
-          <section aria-labelledby="distribution-heading">
-            <h3 id="distribution-heading">Distribución de últimos estados observados</h3>
-            @if (statusBars().length === 0) {
-              <p class="report-empty">Sin cambios de estado registrados en este período.</p>
-            } @else {
-              <emx-status-distribution-chart [points]="statusBars()" />
-              <div class="report-bars" aria-label="Conteos accesibles de estados">
-                @for (bar of statusBars(); track bar.status) {
-                  <div class="report-bar-row">
-                    <div class="report-bar-caption"><span>{{ bar.status }}</span><strong>{{ bar.count }}</strong></div>
+        <!-- Tarjeta 2: Distribución de estados observados (Solo estados con datos > 0) -->
+        <section class="report-section-card smooth-shadow-ring-xs" aria-labelledby="distribution-heading">
+          <div class="section-card-header">
+            <h3 id="distribution-heading">Distribución de estados observados</h3>
+            <p class="section-card-desc">Frecuencia de estados activos registrados</p>
+          </div>
+          @if (statusBars().length === 0) {
+            <p class="report-empty">Sin cambios de estado registrados en este período.</p>
+          } @else {
+            <emx-status-distribution-chart [points]="statusBars()" />
+            <div class="report-bars sr-only" aria-label="Conteos accesibles de estados">
+              @for (bar of statusBars(); track bar.status) {
+                <div class="report-bar-row">
+                  <div class="report-bar-caption">
+                    <span class="bar-status-label">
+                      <span class="status-dot-mini" [attr.data-status]="bar.status"></span>
+                      <span class="sr-only">{{ bar.status }}</span>
+                      {{ formatStatus(bar.status) }}
+                    </span>
+                    <strong class="bar-count-badge">{{ bar.count }}</strong>
                   </div>
-                }
-              </div>
-            }
-          </section>
+                  <div class="report-bar-track" aria-hidden="true">
+                    <div class="report-bar-fill" [style.width.%]="bar.percent"></div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </section>
 
-          <section aria-labelledby="transitions-heading">
+        <!-- Tarjeta 3: Flujo de Transiciones registradas -->
+        <section class="report-section-card smooth-shadow-ring-xs" aria-labelledby="transitions-heading">
+          <div class="section-card-header">
             <h3 id="transitions-heading">Transiciones registradas</h3>
-            @if (transitions().length === 0) {
-              <p class="report-empty">Sin transiciones para mostrar.</p>
+            <p class="section-card-desc">Flujo cronológico entre estados operativos</p>
+          </div>
+          @if (transitions().length === 0) {
+            <p class="report-empty">Sin transiciones para mostrar.</p>
+          } @else {
+            <div class="report-table-scroll" role="region" aria-label="Tabla de transiciones" tabindex="0">
+              <table class="data-table report-transitions-table">
+                <caption class="sr-only">Conteo de transiciones del período</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Estado anterior</th>
+                    <th scope="col" class="th-arrow" aria-hidden="true"></th>
+                    <th scope="col">Nuevo estado</th>
+                    <th scope="col" class="th-count">Cantidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (transition of transitions(); track transition.previousStatus + '-' + transition.newStatus) {
+                    <tr>
+                      <td>
+                        <span class="status-chip" [attr.data-status]="transition.previousStatus">
+                          <span class="status-dot" aria-hidden="true"></span>
+                          <span class="sr-only">{{ transition.previousStatus }}</span>
+                          {{ formatStatus(transition.previousStatus) }}
+                        </span>
+                      </td>
+                      <td class="td-arrow" aria-hidden="true">
+                        <svg lucideArrowRight class="transition-arrow-icon" strokeWidth="2" />
+                      </td>
+                      <td>
+                        <span class="status-chip" [attr.data-status]="transition.newStatus">
+                          <span class="status-dot" aria-hidden="true"></span>
+                          <span class="sr-only">{{ transition.newStatus }}</span>
+                          {{ formatStatus(transition.newStatus) }}
+                        </span>
+                      </td>
+                      <td class="td-count">
+                        <span class="count-pill">{{ transition.count }}</span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+
+        <!-- Tarjeta 4: Servicios más contratados (Ranking con barras relativas) -->
+        <section class="report-section-card smooth-shadow-ring-xs" aria-labelledby="top-services-heading">
+          <div class="section-card-header">
+            <h3 id="top-services-heading">Servicios más contratados</h3>
+            <p class="section-card-desc">Ranking de demanda en producciones confirmadas</p>
+          </div>
+
+          @if (isLoadingTopServices()) {
+            <div class="report-feedback" aria-busy="true" role="status">Cargando ranking de servicios…</div>
+          } @else if (topServicesError() !== null) {
+            <div class="report-feedback" role="alert">
+              <strong>No pudimos obtener el ranking de servicios</strong>
+              <p>{{ errorText(topServicesError()) }}</p>
+              <button type="button" emxButton variant="secondary" size="medium" (click)="retry()">Reintentar</button>
+            </div>
+          } @else if (topServicesResponse(); as topServices) {
+            @if (topServices.items.length === 0) {
+              <p class="report-empty">Sin contrataciones de servicios registradas en este período.</p>
             } @else {
-              <div class="report-table-scroll" role="region" aria-label="Tabla de transiciones" tabindex="0">
-                <table class="data-table">
-                  <caption class="sr-only">Conteo de transiciones del período</caption>
-                  <thead><tr><th scope="col">Estado anterior</th><th scope="col">Nuevo estado</th><th scope="col">Cantidad</th></tr></thead>
+              <div class="report-table-scroll" role="region" aria-label="Tabla de servicios más contratados" tabindex="0">
+                <table class="data-table ranking-table">
+                  <caption class="sr-only">Ranking de servicios más contratados del período</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" class="th-rank">Posición</th>
+                      <th scope="col" class="th-id">ID</th>
+                      <th scope="col">Servicio</th>
+                      <th scope="col" class="th-demand">Demanda</th>
+                      <th scope="col" class="th-count">Total</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    @for (transition of transitions(); track transition.previousStatus + '-' + transition.newStatus) {
+                    @for (item of topServices.items; track item.serviceId; let idx = $index) {
                       <tr>
-                        <td>{{ transition.previousStatus }}</td>
-                        <td>{{ transition.newStatus }}</td>
-                        <td>{{ transition.count }}</td>
+                        <td class="td-rank">
+                          <span class="rank-badge" [class.rank-first]="idx === 0" [class.rank-second]="idx === 1" [class.rank-third]="idx === 2">
+                            #{{ idx + 1 }}
+                          </span>
+                        </td>
+                        <td class="cell-service-id">#{{ item.serviceId }}</td>
+                        <td><strong class="service-name-text">{{ item.serviceName }}</strong></td>
+                        <td class="td-demand">
+                          <div class="demand-bar-wrapper">
+                            <div class="demand-bar-track">
+                              <div class="demand-bar-fill" [style.width.%]="calcServicePercent(item.hireCount)"></div>
+                            </div>
+                            <span class="demand-pct">{{ calcServicePercent(item.hireCount) }}%</span>
+                          </div>
+                        </td>
+                        <td class="td-count">
+                          <span class="count-pill highlight">{{ item.hireCount }}</span>
+                        </td>
                       </tr>
                     }
                   </tbody>
                 </table>
               </div>
             }
-          </section>
-        </div>
-      }
-    </section>
-    <section class="panel report-panel smooth-shadow-ring-xs" aria-labelledby="top-services-heading">
-      <div class="panel-heading report-heading">
-        <div>
-          <h2 id="top-services-heading">Servicios más contratados</h2>
-          <p>Ranking de servicios en producciones confirmadas en el período seleccionado.</p>
-        </div>
+
+            @if (topServices.partialCoverage.isPartial) {
+              <p class="sr-only">
+                Ranking calculado exclusivamente: {{ topServices.partialCoverage.description }}
+              </p>
+            }
+          }
+        </section>
       </div>
 
-      @if (isLoadingTopServices()) {
-        <div class="report-feedback" aria-busy="true" role="status">Cargando ranking de servicios…</div>
-      } @else if (topServicesError() !== null) {
-        <div class="report-feedback" role="alert">
-          <strong>No pudimos obtener el ranking de servicios</strong>
-          <p>{{ errorText(topServicesError()) }}</p>
-          <button type="button" class="btn-system" (click)="retry()">Reintentar</button>
-        </div>
-      } @else if (topServicesResponse(); as topServices) {
-        @if (topServices.partialCoverage.isPartial) {
-          <p class="report-coverage" role="note">
-            <strong>Alcance parcial:</strong> {{ topServices.partialCoverage.description }}
-          </p>
-        }
-
-        @if (topServices.items.length === 0) {
-          <p class="report-empty">Sin contrataciones de servicios registradas en este período.</p>
-        } @else {
-          <div class="report-table-scroll" role="region" aria-label="Tabla de servicios más contratados" tabindex="0">
-            <table class="data-table">
-              <caption class="sr-only">Ranking de servicios más contratados del período</caption>
-              <thead>
-                <tr>
-                  <th scope="col">ID</th>
-                  <th scope="col">Servicio</th>
-                  <th scope="col">Contrataciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of topServices.items; track item.serviceId) {
-                  <tr>
-                    <td>{{ item.serviceId }}</td>
-                    <td><strong>{{ item.serviceName }}</strong></td>
-                    <td>{{ item.hireCount }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+      <!-- 3. Pie de página minimalista: Cobertura Kafka y Timestamp en una sola línea sutil -->
+      <footer class="report-footnote-bar">
+        @if (result.partialCoverage.isPartial) {
+          <div class="footnote-item">
+            <svg lucideInfo class="footnote-icon" strokeWidth="1.75" aria-hidden="true" />
+            <span>
+              <strong>Alcance parcial:</strong> {{ result.partialCoverage.description }}
+            </span>
           </div>
         }
-      }
-    </section>
+        <div class="footnote-item">
+          <svg lucideCalendar class="footnote-icon" strokeWidth="1.75" aria-hidden="true" />
+          <span>
+            Período: {{ result.from | date:'dd/MM/yyyy HH:mm':'':'es-CL' }} a {{ result.to | date:'dd/MM/yyyy HH:mm':'':'es-CL' }} ·
+            Actualizado: {{ result.generatedAt | date:'dd/MM/yyyy HH:mm':'':'es-CL' }}
+          </span>
+        </div>
+      </footer>
+      </div>
+    }
   } @else {
     <section class="panel report-feedback" role="alert">
       Acceso restringido: Report requiere rol Admin y el permiso access_as_user.

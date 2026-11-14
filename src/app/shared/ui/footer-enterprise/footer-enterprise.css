@@ -1,0 +1,318 @@
+:host {
+  display: block;
+}
+
+.fe-root {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.fe-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 56px 24px;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1024px) {
+  .fe-container {
+    padding: 80px 32px;
+  }
+}
+
+/* ── Top Tier: Brand + Quick Social/Utility Icons ── */
+.fe-top {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 640px) {
+  .fe-top {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.fe-brand-col {
+  max-width: 24rem;
+}
+
+.fe-brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 6px;
+}
+
+.fe-brand-lockup:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 4px;
+}
+
+.fe-brand-mark {
+  width: 22px;
+  height: 22px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.fe-brand-name {
+  font-size: 16px;
+  font-weight: 590;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.fe-description {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(15, 23, 42, 0.5);
+}
+
+.fe-socials {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fe-social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: rgba(15, 23, 42, 0.36);
+  text-decoration: none;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.fe-social-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+.fe-social-link:hover {
+  color: rgba(15, 23, 42, 0.85);
+  background-color: rgba(15, 23, 42, 0.04);
+}
+
+.fe-social-link:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* ── Hairline Separators ── */
+.fe-divider {
+  width: 100%;
+  height: 1px;
+  background-color: rgba(15, 23, 42, 0.06);
+}
+
+.fe-divider-mid {
+  margin: 40px 0;
+}
+
+.fe-divider-bot {
+  margin-top: 56px;
+}
+
+/* ── Middle Tier: Wide 5-Column Grid ── */
+.fe-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 32px;
+}
+
+@media (min-width: 640px) {
+  .fe-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .fe-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.fe-col-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(15, 23, 42, 0.36);
+}
+
+.fe-link-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fe-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(15, 23, 42, 0.54);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: color 150ms ease;
+}
+
+.fe-link:hover {
+  color: #0f172a;
+}
+
+.fe-link:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.fe-ext-arrow {
+  width: 12px;
+  height: 12px;
+  opacity: 0.55;
+  flex-shrink: 0;
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.fe-link:hover .fe-ext-arrow {
+  transform: translate(1px, -1px);
+  opacity: 0.9;
+}
+
+/* ── Bottom Tier: Copyright + Legal / Enterprise Links ── */
+.fe-bottom {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .fe-bottom {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.fe-copyright {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: rgba(15, 23, 42, 0.42);
+}
+
+.fe-bottom-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.fe-bottom-link {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: rgba(15, 23, 42, 0.42);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: color 150ms ease;
+}
+
+.fe-bottom-link:hover {
+  color: rgba(15, 23, 42, 0.85);
+}
+
+.fe-bottom-link:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+/* ── Dark Mode Support ── */
+:host-context([data-theme="dark"]) .fe-root,
+:host-context(.dark) .fe-root {
+  background-color: #0c0d11;
+  color: #f1f5f9;
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+:host-context([data-theme="dark"]) .fe-brand-name,
+:host-context(.dark) .fe-brand-name {
+  color: #f8fafc;
+}
+
+:host-context([data-theme="dark"]) .fe-description,
+:host-context(.dark) .fe-description {
+  color: rgba(241, 245, 249, 0.5);
+}
+
+:host-context([data-theme="dark"]) .fe-social-link,
+:host-context(.dark) .fe-social-link {
+  color: rgba(241, 245, 249, 0.36);
+}
+
+:host-context([data-theme="dark"]) .fe-social-link:hover,
+:host-context(.dark) .fe-social-link:hover {
+  color: rgba(241, 245, 249, 0.85);
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+:host-context([data-theme="dark"]) .fe-divider,
+:host-context(.dark) .fe-divider {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+:host-context([data-theme="dark"]) .fe-col-title,
+:host-context(.dark) .fe-col-title {
+  color: rgba(241, 245, 249, 0.36);
+}
+
+:host-context([data-theme="dark"]) .fe-link,
+:host-context(.dark) .fe-link {
+  color: rgba(241, 245, 249, 0.54);
+}
+
+:host-context([data-theme="dark"]) .fe-link:hover,
+:host-context(.dark) .fe-link:hover {
+  color: #ffffff;
+}
+
+:host-context([data-theme="dark"]) .fe-copyright,
+:host-context(.dark) .fe-copyright,
+:host-context([data-theme="dark"]) .fe-bottom-link,
+:host-context(.dark) .fe-bottom-link {
+  color: rgba(241, 245, 249, 0.42);
+}
+
+:host-context([data-theme="dark"]) .fe-bottom-link:hover,
+:host-context(.dark) .fe-bottom-link:hover {
+  color: rgba(241, 245, 249, 0.85);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fe-social-link,
+  .fe-link,
+  .fe-ext-arrow,
+  .fe-bottom-link {
+    transition: none !important;
+  }
+}

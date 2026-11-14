@@ -1,7 +1,7 @@
 <div class="page-content">
   <header class="page-header">
     <div>
-      <p class="eyebrow">RECURSOS PARA CADA PRODUCCIÓN</p>
+      <p class="eyebrow">Recursos para cada producción</p>
       <h1 class="page-title">Catálogo de servicios</h1>
       <p class="page-description">
         Consulta servicios contratables, tarifas y el inventario real de equipos.
@@ -41,30 +41,39 @@
       <div class="catalog-loading" aria-busy="true" aria-label="Cargando catálogo">
         <div class="metric-grid catalog-metrics" aria-hidden="true">
           @for (card of [1, 2, 3]; track card) {
-            <div class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-              <div class="skeleton skeleton-text medium"></div>
-              <div class="skeleton skeleton-title"></div>
-              <div class="skeleton skeleton-text"></div>
+            <div class="metric-card smooth-shadow-ring-sm emx-kpi-skeleton">
+              <div class="metric-top">
+                <div class="skeleton skeleton-text" style="width: 100px; height: 13px; margin: 0;"></div>
+                <div class="skeleton skeleton-icon-tile"></div>
+              </div>
+              <div class="skeleton skeleton-val" style="width: 50px; height: 28px; margin: 12px 0 6px;"></div>
+              <div class="skeleton skeleton-text short" style="width: 110px; height: 11px; margin: 0;"></div>
             </div>
           }
         </div>
-        <div class="panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel" aria-hidden="true">
+        <div class="panel smooth-shadow-ring-xs emx-elevate-panel" aria-hidden="true">
           <div class="panel-heading">
             <div class="catalog-loading-heading">
-              <div class="skeleton skeleton-title"></div>
-              <div class="skeleton skeleton-text"></div>
+              <div class="skeleton skeleton-title" style="width: 160px; height: 20px; margin-bottom: 6px;"></div>
+              <div class="skeleton skeleton-text" style="width: 220px; height: 12px; margin: 0;"></div>
             </div>
           </div>
           <div class="catalog-toolbar">
             <div class="skeleton skeleton-toolbar"></div>
           </div>
-          @for (row of [1, 2, 3]; track row) {
-            <div class="catalog-loading-row">
-              <div class="skeleton skeleton-text medium"></div>
-              <div class="skeleton skeleton-text"></div>
-              <div class="skeleton skeleton-text short"></div>
-            </div>
-          }
+          <div class="catalog-table-skeleton">
+            @for (row of [1, 2, 3, 4, 5]; track row) {
+              <div class="skeleton-table-row">
+                <div class="skeleton skeleton-icon-tile"></div>
+                <div class="skeleton-row-content">
+                  <div class="skeleton skeleton-text" style="width: 45%; height: 14px;"></div>
+                  <div class="skeleton skeleton-text short" style="width: 30%; height: 11px;"></div>
+                </div>
+                <div class="skeleton skeleton-pill" style="width: 70px; height: 22px;"></div>
+                <div class="skeleton skeleton-btn" style="width: 76px; height: 28px;"></div>
+              </div>
+            }
+          </div>
         </div>
       </div>
     } @else if (isError()) {
@@ -74,10 +83,10 @@
         </div>
         <h2>No pudimos cargar el catálogo</h2>
         <p>No fue posible obtener la información en este momento.</p>
-        <button type="button" class="btn-system" (click)="retry()">Reintentar</button>
+        <button type="button" emxButton variant="secondary" size="medium" (click)="retry()">Reintentar</button>
       </div>
     } @else {
-      <section class="metric-grid catalog-metrics" aria-label="Métricas de servicios">
+      <section class="metric-grid catalog-metrics emx-content-fade-in" aria-label="Métricas de servicios">
         <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
           <div class="metric-top">
             <span>Total de servicios</span>
@@ -109,36 +118,187 @@
           <div class="panel-heading ep2-catalog-heading">
             <div>
               <h2 id="catalog-editor-heading">Administrar servicios</h2>
-              <p>Crear y actualizar mediante API Gateway y BFF. Disponible solo para Admin.</p>
+              <p>Crear y actualizar servicios contratables y tarifas vigentes. Disponible para Administradores.</p>
             </div>
-            <button type="button" class="btn-system" (click)="openCreate()">Nuevo servicio</button>
+            <button type="button" class="btn-system" emxButton variant="primary" size="medium" (click)="openCreate()">
+              <svg class="action-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Nuevo servicio</span>
+            </button>
           </div>
           @if (saveError()) { <p class="ep2-catalog-message ep2-catalog-error" role="alert">{{ saveError() }}</p> }
           @if (saveMessage()) { <p class="ep2-catalog-message" role="status">{{ saveMessage() }}</p> }
           @if (showEditor()) {
-            <form class="ep2-catalog-form" [formGroup]="serviceForm" (ngSubmit)="submitService()" aria-label="Formulario de servicio">
-              <label>Nombre
-                <input formControlName="name" maxlength="150" required />
-              </label>
-              <label>Descripción
-                <input formControlName="description" maxlength="500" />
-              </label>
-              <label>Tarifa (CLP)
-                <input type="number" min="0.01" step="0.01" formControlName="rate" required />
-              </label>
-              <label>Estado
-                <select formControlName="active">
-                  <option [ngValue]="true">Activo</option>
-                  <option [ngValue]="false">Inactivo</option>
-                </select>
-              </label>
-              <div class="ep2-catalog-buttons">
-                <button type="submit" class="btn-system" [disabled]="saving() || serviceForm.invalid">
-                  {{ saving() ? 'Guardando…' : editingService() ? 'Guardar cambios' : 'Crear servicio' }}
+            <div class="catalog-modal-backdrop" aria-hidden="true" (click)="closeEditor()"></div>
+            <div
+              class="catalog-modal-dialog smooth-shadow-ring-md"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="service-dialog-title"
+              (keydown.escape)="closeEditor()"
+            >
+              <div class="catalog-modal-header">
+                <div>
+                  <p class="catalog-modal-eyebrow">CATÁLOGO DE SERVICIOS</p>
+                  <h2 id="service-dialog-title" class="catalog-modal-title">
+                    {{ editingService() ? 'Editar servicio' : 'Nuevo servicio' }}
+                  </h2>
+                  <p class="catalog-modal-subtitle">
+                    {{ editingService() ? 'Actualiza los datos técnicos y la tarifa vigente del servicio.' : 'Registra un nuevo servicio técnico para el catálogo corporativo.' }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="catalog-modal-close"
+                  aria-label="Cerrar modal"
+                  [disabled]="saving()"
+                  (click)="closeEditor()"
+                >
+                  <svg lucideX class="close-svg" strokeWidth="1.75" aria-hidden="true" />
                 </button>
-                <button type="button" class="btn-clear" [disabled]="saving()" (click)="closeEditor()">Cancelar</button>
               </div>
-            </form>
+
+              <form class="ep2-catalog-form catalog-modal-form" [formGroup]="serviceForm" (ngSubmit)="submitService()" aria-label="Formulario de servicio">
+                <div class="catalog-modal-body">
+                  <div class="form-field-group">
+                    <label for="service-modal-name">Nombre <span class="required-star">*</span></label>
+                    <input id="service-modal-name" formControlName="name" placeholder="Ej: Refuerzo Sonoro FOH & Monitores para Concierto" maxlength="150" required />
+                  </div>
+                  <div class="form-field-group">
+                    <label for="service-modal-desc">Descripción</label>
+                    <input id="service-modal-desc" formControlName="description" placeholder="Ej: Sistema de audio profesional para eventos masivos con microfonía inalámbrica" maxlength="500" />
+                  </div>
+                  <div class="catalog-modal-grid-2">
+                    <div class="form-field-group">
+                      <label for="service-modal-rate">Tarifa (CLP) <span class="required-star">*</span></label>
+                      <input id="service-modal-rate" type="number" min="0.01" step="0.01" formControlName="rate" placeholder="Ej: 1850000" required />
+                    </div>
+                    <div class="form-field-group">
+                      <label for="service-modal-active">Estado</label>
+                      <select id="service-modal-active" formControlName="active">
+                        <option [ngValue]="true">Activo</option>
+                        <option [ngValue]="false">Inactivo</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-field-group">
+                    <label class="form-field-label">Imagen del servicio</label>
+                    <div class="catalog-image-uploader">
+                      @if (serviceImageDraft(); as previewUrl) {
+                        <div class="catalog-image-preview-card">
+                          <div class="catalog-preview-thumb-wrap">
+                            <img [src]="previewUrl" alt="Vista previa del servicio" class="catalog-preview-thumb-img" />
+                          </div>
+                          <div class="catalog-preview-info">
+                            <div class="catalog-preview-badge-row">
+                              <span class="catalog-preview-badge">Fotografía adjunta</span>
+                              <span class="catalog-preview-chip">WebP optimizada</span>
+                            </div>
+                            <p class="catalog-preview-hint">Se guardará automáticamente al confirmar los cambios.</p>
+                          </div>
+                          <div class="catalog-preview-actions">
+                            <button
+                              type="button"
+                              emxButton
+                              variant="secondary"
+                              size="small"
+                              class="btn-preview-action btn-preview-change"
+                              title="Cambiar fotografía"
+                              (click)="serviceChangeInput.click()"
+                            >
+                              <svg lucideRefreshCw strokeWidth="1.75" />
+                              <span>Cambiar</span>
+                            </button>
+                            <input
+                              #serviceChangeInput
+                              type="file"
+                              class="catalog-hidden-file-input"
+                              accept="image/png,image/jpeg,image/webp,image/avif"
+                              (change)="onServiceImageSelected($event)"
+                            />
+                            <button
+                              type="button"
+                              emxButton
+                              variant="danger"
+                              size="small"
+                              class="btn-preview-action btn-preview-remove"
+                              title="Eliminar fotografía"
+                              (click)="removeServiceImage()"
+                            >
+                              <svg lucideTrash2 strokeWidth="1.75" />
+                              <span>Quitar</span>
+                            </button>
+                          </div>
+                        </div>
+                      } @else {
+                        <div
+                          class="catalog-dropzone"
+                          [class.is-dragover]="isServiceDragging()"
+                          role="button"
+                          tabindex="0"
+                          aria-label="Subir fotografía del servicio"
+                          (click)="serviceFileInput.click()"
+                          (keydown.enter)="serviceFileInput.click()"
+                          (keydown.space)="$event.preventDefault(); serviceFileInput.click()"
+                          (dragover)="onServiceDragOver($event)"
+                          (dragleave)="onServiceDragLeave($event)"
+                          (drop)="onServiceDrop($event)"
+                        >
+                          <input
+                            #serviceFileInput
+                            type="file"
+                            class="catalog-hidden-file-input"
+                            accept="image/png,image/jpeg,image/webp,image/avif"
+                            (change)="onServiceImageSelected($event)"
+                          />
+                          <div class="catalog-dropzone-icon-box">
+                            <svg lucideUpload strokeWidth="1.75" />
+                          </div>
+                          <div class="catalog-dropzone-content">
+                            <div class="catalog-dropzone-main-line">
+                              <span class="catalog-dropzone-action">Cargar fotografía</span>
+                              <span class="catalog-dropzone-separator">·</span>
+                              <span class="catalog-dropzone-drag-hint">arrastra y suelta aquí</span>
+                            </div>
+                            <div class="catalog-dropzone-meta">
+                              <span class="catalog-dropzone-req">Hasta 5 MB</span>
+                              <span class="catalog-dropzone-dot">·</span>
+                              <span class="catalog-dropzone-pills">
+                                <span class="catalog-format-pill">PNG</span>
+                                <span class="catalog-format-pill">JPG</span>
+                                <span class="catalog-format-pill">WEBP</span>
+                                <span class="catalog-format-pill">AVIF</span>
+                              </span>
+                            </div>
+                          </div>
+                          <div class="catalog-dropzone-cta-wrap">
+                            <span class="emx-btn emx-btn--secondary emx-btn--sm catalog-dropzone-browse-btn"><span>Examinar</span></span>
+                          </div>
+                        </div>
+                      }
+                      @if (imageProcessingError(); as err) {
+                        <div class="catalog-upload-error-row">
+                          <svg lucideCircleAlert strokeWidth="1.75" />
+                          <span>{{ err }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div class="catalog-modal-footer">
+                  <div class="ep2-catalog-buttons">
+                    <button type="button" emxButton variant="secondary" size="medium" [disabled]="saving()" (click)="closeEditor()"><span>Cancelar</span></button>
+                    <button type="submit" emxButton variant="primary" size="medium" [disabled]="saving() || serviceForm.invalid">
+                      <span>{{ saving() ? 'Guardando…' : editingService() ? 'Guardar cambios' : 'Crear servicio' }}</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
           }
         </section>
       }
@@ -178,6 +338,22 @@
                 aria-hidden="true"
               />
             </div>
+            <div class="catalog-select">
+              <label class="sr-only" for="catalog-sort">Ordenar por</label>
+              <select id="catalog-sort" [formControl]="serviceSort">
+                <option value="id-asc">Ordenar: ID (#1 - #8)</option>
+                <option value="name-asc">Ordenar: Nombre (A → Z)</option>
+                <option value="name-desc">Ordenar: Nombre (Z → A)</option>
+                <option value="rate-desc">Ordenar: Mayor tarifa ($)</option>
+                <option value="rate-asc">Ordenar: Menor tarifa ($)</option>
+              </select>
+              <svg
+                lucideChevronDown
+                class="catalog-field-icon"
+                strokeWidth="1.75"
+                aria-hidden="true"
+              />
+            </div>
             @if (hasActiveFilters()) {
               <button
                 type="button"
@@ -196,7 +372,7 @@
               </div>
               <h3>No encontramos servicios</h3>
               <p>Prueba con otro nombre, descripción o estado.</p>
-              <button type="button" class="btn-system" (click)="clearFilters(); searchInput.focus()">
+              <button type="button" emxButton variant="secondary" size="small" (click)="clearFilters(); searchInput.focus()">
                 Limpiar filtros
               </button>
             </div>
@@ -209,24 +385,49 @@
                 <col class="catalog-service-column" />
                 <col class="catalog-rate-column" />
                 <col class="catalog-status-column" />
+                @if (canManage()) {
+                  <col class="catalog-action-column" />
+                }
               </colgroup>
               <thead role="rowgroup">
                 <tr role="row">
                   <th scope="col" role="columnheader">Servicio</th>
                   <th scope="col" role="columnheader">Tarifa</th>
                   <th scope="col" role="columnheader">Estado</th>
+                  @if (canManage()) {
+                    <th scope="col" role="columnheader" class="th-action">Acción</th>
+                  }
                 </tr>
               </thead>
               <tbody role="rowgroup">
                 @for (item of rows(); track item.id) {
                   <tr role="row">
                     <td class="catalog-service-cell" role="cell">
-                      <strong class="catalog-service-name">{{ item.name }}</strong>
-                      @if (item.description) {
-                        <p class="catalog-description" [title]="item.description">
-                          {{ item.description }}
-                        </p>
-                      }
+                      <div class="catalog-item-card-cell">
+                        @if (getServiceImage(item); as imgUrl) {
+                          <div class="catalog-thumbnail-wrap">
+                            <img
+                              class="catalog-thumbnail-img"
+                              [src]="imgUrl"
+                              [alt]="item.name"
+                              loading="lazy"
+                              (error)="onImageError($event)"
+                            />
+                          </div>
+                        } @else {
+                          <div class="catalog-thumbnail-wrap catalog-thumbnail-placeholder" aria-hidden="true" title="Sin imagen asignada">
+                            <svg lucideLayers class="catalog-placeholder-icon" strokeWidth="1.6" />
+                          </div>
+                        }
+                        <div class="catalog-item-text">
+                          <strong class="catalog-service-name">{{ item.name }}</strong>
+                          @if (item.description) {
+                            <p class="catalog-description" [title]="item.description">
+                              {{ item.description }}
+                            </p>
+                          }
+                        </div>
+                      </div>
                     </td>
                     <td class="catalog-rate-cell" role="cell">
                       <span class="catalog-mobile-label" aria-hidden="true">Tarifa</span>
@@ -237,10 +438,12 @@
                       <span class="catalog-status" [class.catalog-status-active]="item.active">
                         {{ item.active ? 'Activo' : 'Inactivo' }}
                       </span>
-                      @if (canManage()) {
-                        <button class="btn-clear ep2-catalog-table-action" type="button" (click)="openEdit(item)">Editar servicio</button>
-                      }
                     </td>
+                    @if (canManage()) {
+                      <td class="catalog-action-cell" role="cell">
+                        <button emxButton variant="secondary" size="small" class="ep2-catalog-table-action" type="button" (click)="openEdit(item)"><span>Editar servicio</span></button>
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>
@@ -300,7 +503,7 @@
         </div>
         <h2>No pudimos cargar el inventario de equipos</h2>
         <p>No fue posible obtener la información en este momento.</p>
-        <button type="button" class="btn-system" (click)="retryEquipment()">Reintentar</button>
+        <button type="button" emxButton variant="secondary" size="medium" (click)="retryEquipment()">Reintentar</button>
       </div>
     } @else {
       <section class="metric-grid catalog-metrics" aria-label="Métricas de inventario">
@@ -338,59 +541,210 @@
               <p>{{ editingEquipment() ? 'Modificar datos del equipo o ajustar stock disponible.' : 'Crear equipos y dotar stock para producciones. Disponible solo para Admin.' }}</p>
             </div>
             @if (!editingEquipment()) {
-              <button type="button" class="btn-system" (click)="openCreateEquipment()">Nuevo equipo</button>
+              <button type="button" class="btn-system" emxButton variant="primary" size="medium" (click)="openCreateEquipment()">
+                <svg class="action-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Nuevo equipo</span>
+              </button>
             }
           </div>
           @if (saveEquipmentError()) { <p class="ep2-catalog-message ep2-catalog-error" role="alert">{{ saveEquipmentError() }}</p> }
           @if (saveEquipmentMessage()) { <p class="ep2-catalog-message" role="status">{{ saveEquipmentMessage() }}</p> }
           @if (showEquipmentEditor()) {
-            <form class="ep2-catalog-form" [formGroup]="equipmentForm" (ngSubmit)="submitEquipment()" aria-label="Formulario de equipo">
-              <label>Nombre del equipo
-                <input formControlName="name" placeholder="Ej: Foco LED Prueba EP2" maxlength="150" required />
-              </label>
-              <label>Descripción
-                <input formControlName="description" placeholder="Ej: Equipo de iluminación" maxlength="500" />
-              </label>
-
-              @if (editingEquipment(); as current) {
-                <label>Stock reservado (solo lectura)
-                  <input type="text" [value]="current.reservedQty + ' unidades asignadas a eventos'" readonly disabled />
-                </label>
-                <fieldset class="ep2-catalog-stock-choice">
-                  <legend>Disponibilidad de stock</legend>
-                  <label class="ep2-catalog-radio-label">
-                    <input type="radio" value="keep" formControlName="stockMode" />
-                    Conservar disponible ({{ current.availableQty }} unidades)
-                  </label>
-                  <label class="ep2-catalog-radio-label">
-                    <input type="radio" value="adjust" formControlName="stockMode" />
-                    Ajustar disponible
-                  </label>
-                </fieldset>
-                @if (equipmentForm.controls.stockMode.value === 'adjust') {
-                  <label>Nueva cantidad disponible
-                    <input type="number" min="0" step="1" formControlName="adjustedAvailableQty" placeholder="0 o mayor" required />
-                  </label>
-                }
-              } @else {
-                <label>Cantidad inicial disponible
-                  <input type="number" min="0" step="1" formControlName="initialAvailableQty" required />
-                </label>
-              }
-
-              <label>Estado
-                <select formControlName="active">
-                  <option [ngValue]="true">Activo</option>
-                  <option [ngValue]="false">Inactivo</option>
-                </select>
-              </label>
-              <div class="ep2-catalog-buttons">
-                <button type="submit" class="btn-system" [disabled]="savingEquipment() || equipmentForm.invalid">
-                  {{ savingEquipment() ? 'Guardando…' : (editingEquipment() ? 'Guardar cambios' : 'Registrar equipo') }}
+            <div class="catalog-modal-backdrop" aria-hidden="true" (click)="closeEquipmentEditor()"></div>
+            <div
+              class="catalog-modal-dialog smooth-shadow-ring-md"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="equipment-dialog-title"
+              (keydown.escape)="closeEquipmentEditor()"
+            >
+              <div class="catalog-modal-header">
+                <div>
+                  <p class="catalog-modal-eyebrow">INVENTARIO TÉCNICO</p>
+                  <h2 id="equipment-dialog-title" class="catalog-modal-title">
+                    {{ editingEquipment() ? 'Editar equipo' : 'Nuevo equipo' }}
+                  </h2>
+                  <p class="catalog-modal-subtitle">
+                    {{ editingEquipment() ? 'Modifica los datos técnicos o ajusta el stock disponible para eventos.' : 'Registra un nuevo equipo e ingresa su dotación inicial.' }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="catalog-modal-close"
+                  aria-label="Cerrar modal"
+                  [disabled]="savingEquipment()"
+                  (click)="closeEquipmentEditor()"
+                >
+                  <svg lucideX class="close-svg" strokeWidth="1.75" aria-hidden="true" />
                 </button>
-                <button type="button" class="btn-clear" [disabled]="savingEquipment()" (click)="closeEquipmentEditor()">Cancelar</button>
               </div>
-            </form>
+
+              <form class="ep2-catalog-form catalog-modal-form" [formGroup]="equipmentForm" (ngSubmit)="submitEquipment()" aria-label="Formulario de equipo">
+                <div class="catalog-modal-body">
+                  <div class="form-field-group">
+                    <label for="equip-modal-name">Nombre del equipo <span class="required-star">*</span></label>
+                    <input id="equip-modal-name" formControlName="name" placeholder="Ej: Consola Digital DiGiCo Quantum 338" maxlength="150" required />
+                  </div>
+                  <div class="form-field-group">
+                    <label for="equip-modal-desc">Descripción</label>
+                    <input id="equip-modal-desc" formControlName="description" placeholder="Ej: Superficie de mezcla digital con 128 canales de entrada y doble pantalla táctil" maxlength="500" />
+                  </div>
+
+                  @if (editingEquipment(); as current) {
+                    <div class="form-field-group">
+                      <label for="equip-modal-reserved">Stock reservado (solo lectura)</label>
+                      <input id="equip-modal-reserved" type="text" [value]="current.reservedQty + ' unidades asignadas a eventos'" readonly disabled class="modal-input-readonly" />
+                    </div>
+                    <fieldset class="ep2-catalog-stock-choice">
+                      <legend>Disponibilidad de stock</legend>
+                      <label class="ep2-catalog-radio-label">
+                        <input type="radio" value="keep" formControlName="stockMode" />
+                        <span>Conservar disponible ({{ current.availableQty }} unidades)</span>
+                      </label>
+                      <label class="ep2-catalog-radio-label">
+                        <input type="radio" value="adjust" formControlName="stockMode" />
+                        <span>Ajustar disponible</span>
+                      </label>
+                    </fieldset>
+                    @if (equipmentForm.controls.stockMode.value === 'adjust') {
+                      <div class="form-field-group">
+                        <label for="equip-modal-adjust">Nueva cantidad disponible <span class="required-star">*</span></label>
+                        <input id="equip-modal-adjust" type="number" min="0" step="1" formControlName="adjustedAvailableQty" placeholder="0 o mayor" required />
+                      </div>
+                    }
+                  } @else {
+                    <div class="form-field-group">
+                      <label for="equip-modal-init-qty">Cantidad inicial disponible <span class="required-star">*</span></label>
+                      <input id="equip-modal-init-qty" type="number" min="0" step="1" formControlName="initialAvailableQty" required />
+                    </div>
+                  }
+
+                  <div class="form-field-group">
+                    <label for="equip-modal-active">Estado</label>
+                    <select id="equip-modal-active" formControlName="active">
+                      <option [ngValue]="true">Activo</option>
+                      <option [ngValue]="false">Inactivo</option>
+                    </select>
+                  </div>
+
+                  <div class="form-field-group">
+                    <label class="form-field-label">Imagen del equipo</label>
+                    <div class="catalog-image-uploader">
+                      @if (equipmentImageDraft(); as previewUrl) {
+                        <div class="catalog-image-preview-card">
+                          <div class="catalog-preview-thumb-wrap">
+                            <img [src]="previewUrl" alt="Vista previa del equipo" class="catalog-preview-thumb-img" />
+                          </div>
+                          <div class="catalog-preview-info">
+                            <div class="catalog-preview-badge-row">
+                              <span class="catalog-preview-badge">Fotografía adjunta</span>
+                              <span class="catalog-preview-chip">WebP optimizada</span>
+                            </div>
+                            <p class="catalog-preview-hint">Se guardará automáticamente al confirmar los cambios.</p>
+                          </div>
+                          <div class="catalog-preview-actions">
+                            <button
+                              type="button"
+                              emxButton
+                              variant="secondary"
+                              size="small"
+                              class="btn-preview-action btn-preview-change"
+                              title="Cambiar fotografía"
+                              (click)="equipmentChangeInput.click()"
+                            >
+                              <svg lucideRefreshCw strokeWidth="1.75" />
+                              <span>Cambiar</span>
+                            </button>
+                            <input
+                              #equipmentChangeInput
+                              type="file"
+                              class="catalog-hidden-file-input"
+                              accept="image/png,image/jpeg,image/webp,image/avif"
+                              (change)="onEquipmentImageSelected($event)"
+                            />
+                            <button
+                              type="button"
+                              emxButton
+                              variant="danger"
+                              size="small"
+                              class="btn-preview-action btn-preview-remove"
+                              title="Eliminar fotografía"
+                              (click)="removeEquipmentImage()"
+                            >
+                              <svg lucideTrash2 strokeWidth="1.75" />
+                              <span>Quitar</span>
+                            </button>
+                          </div>
+                        </div>
+                      } @else {
+                        <div
+                          class="catalog-dropzone"
+                          [class.is-dragover]="isEquipmentDragging()"
+                          role="button"
+                          tabindex="0"
+                          aria-label="Subir fotografía del equipo"
+                          (click)="equipmentFileInput.click()"
+                          (keydown.enter)="equipmentFileInput.click()"
+                          (keydown.space)="$event.preventDefault(); equipmentFileInput.click()"
+                          (dragover)="onEquipmentDragOver($event)"
+                          (dragleave)="onEquipmentDragLeave($event)"
+                          (drop)="onEquipmentDrop($event)"
+                        >
+                          <input
+                            #equipmentFileInput
+                            type="file"
+                            class="catalog-hidden-file-input"
+                            accept="image/png,image/jpeg,image/webp,image/avif"
+                            (change)="onEquipmentImageSelected($event)"
+                          />
+                          <div class="catalog-dropzone-icon-box">
+                            <svg lucideUpload strokeWidth="1.75" />
+                          </div>
+                          <div class="catalog-dropzone-content">
+                            <div class="catalog-dropzone-main-line">
+                              <span class="catalog-dropzone-action">Cargar fotografía</span>
+                              <span class="catalog-dropzone-separator">·</span>
+                              <span class="catalog-dropzone-drag-hint">arrastra y suelta aquí</span>
+                            </div>
+                            <div class="catalog-dropzone-meta">
+                              <span class="catalog-dropzone-req">Hasta 5 MB</span>
+                              <span class="catalog-dropzone-dot">·</span>
+                              <span class="catalog-dropzone-pills">
+                                <span class="catalog-format-pill">PNG</span>
+                                <span class="catalog-format-pill">JPG</span>
+                                <span class="catalog-format-pill">WEBP</span>
+                                <span class="catalog-format-pill">AVIF</span>
+                              </span>
+                            </div>
+                          </div>
+                          <div class="catalog-dropzone-cta-wrap">
+                            <span class="emx-btn emx-btn--secondary emx-btn--sm catalog-dropzone-browse-btn"><span>Examinar</span></span>
+                          </div>
+                        </div>
+                      }
+                      @if (imageProcessingError(); as err) {
+                        <div class="catalog-upload-error-row">
+                          <svg lucideCircleAlert strokeWidth="1.75" />
+                          <span>{{ err }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div class="catalog-modal-footer">
+                  <div class="ep2-catalog-buttons">
+                    <button type="button" emxButton variant="secondary" size="medium" [disabled]="savingEquipment()" (click)="closeEquipmentEditor()"><span>Cancelar</span></button>
+                    <button type="submit" emxButton variant="primary" size="medium" [disabled]="savingEquipment() || equipmentForm.invalid">
+                      <span>{{ savingEquipment() ? 'Guardando…' : (editingEquipment() ? 'Guardar cambios' : 'Registrar equipo') }}</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
           }
         </section>
       }
@@ -430,6 +784,22 @@
                 aria-hidden="true"
               />
             </div>
+            <div class="catalog-select">
+              <label class="sr-only" for="equipment-sort">Ordenar por</label>
+              <select id="equipment-sort" [formControl]="equipmentSort">
+                <option value="id-asc">Ordenar: ID (#1 - #8)</option>
+                <option value="name-asc">Ordenar: Nombre (A → Z)</option>
+                <option value="name-desc">Ordenar: Nombre (Z → A)</option>
+                <option value="avail-desc">Ordenar: Mayor disponibilidad</option>
+                <option value="avail-asc">Ordenar: Menor disponibilidad</option>
+              </select>
+              <svg
+                lucideChevronDown
+                class="catalog-field-icon"
+                strokeWidth="1.75"
+                aria-hidden="true"
+              />
+            </div>
             @if (hasActiveEquipmentFilters()) {
               <button
                 type="button"
@@ -448,7 +818,7 @@
               </div>
               <h3>No encontramos equipos</h3>
               <p>Prueba con otro nombre o descripción.</p>
-              <button type="button" class="btn-system" (click)="clearEquipmentFilters(); equipmentSearchInput.focus()">
+              <button type="button" class="btn-system" emxButton variant="secondary" size="small" (click)="clearEquipmentFilters(); equipmentSearchInput.focus()">
                 Limpiar filtros
               </button>
             </div>
@@ -458,11 +828,14 @@
                 Equipos de producción, disponibilidad y stock.
               </caption>
               <colgroup>
+                <col style="width: 6%;" />
+                <col style="width: 34%;" />
+                <col style="width: 26%;" />
+                <col style="width: 14%;" />
                 <col style="width: 10%;" />
-                <col style="width: 35%;" />
-                <col style="width: 25%;" />
-                <col style="width: 15%;" />
-                <col style="width: 15%;" />
+                @if (canManage()) {
+                  <col style="width: 10%;" />
+                }
               </colgroup>
               <thead role="rowgroup">
                 <tr role="row">
@@ -471,14 +844,36 @@
                   <th scope="col" role="columnheader">Descripción</th>
                   <th scope="col" role="columnheader">Disponibilidad</th>
                   <th scope="col" role="columnheader">Estado</th>
+                  @if (canManage()) {
+                    <th scope="col" role="columnheader" class="th-action">Acción</th>
+                  }
                 </tr>
               </thead>
               <tbody role="rowgroup">
                 @for (item of equipmentRows(); track item.id) {
                   <tr role="row">
-                    <td role="cell">#{{ item.id }}</td>
+                    <td role="cell" class="cell-equipment-id">#{{ item.id }}</td>
                     <td class="catalog-service-cell" role="cell">
-                      <strong class="catalog-service-name">{{ item.name }}</strong>
+                      <div class="catalog-item-card-cell">
+                        @if (getEquipmentImage(item); as imgUrl) {
+                          <div class="catalog-thumbnail-wrap">
+                            <img
+                              class="catalog-thumbnail-img"
+                              [src]="imgUrl"
+                              [alt]="item.name"
+                              loading="lazy"
+                              (error)="onImageError($event)"
+                            />
+                          </div>
+                        } @else {
+                          <div class="catalog-thumbnail-wrap catalog-thumbnail-placeholder" aria-hidden="true" title="Sin imagen asignada">
+                            <svg lucidePackage class="catalog-placeholder-icon" strokeWidth="1.6" />
+                          </div>
+                        }
+                        <div class="catalog-item-text">
+                          <strong class="catalog-service-name">{{ item.name }}</strong>
+                        </div>
+                      </div>
                     </td>
                     <td role="cell">
                       <span class="catalog-description" [title]="item.description || ''">
@@ -486,20 +881,24 @@
                       </span>
                     </td>
                     <td class="catalog-rate-cell" role="cell">
-                      <strong>{{ item.availableQty }} disp. / {{ item.reservedQty }} res.</strong>
+                      <strong class="equipment-stock-available">{{ item.availableQty }} disp.</strong>
+                      <span class="cell-meta">{{ item.reservedQty }} res.</span>
                     </td>
                     <td class="catalog-status-cell" role="cell">
                       <span
                         class="catalog-status"
                         [class.catalog-status-active]="item.active && item.availableQty > 0"
                         [class.badge-depleted]="item.active && item.availableQty === 0"
+                        [class.badge-inactive]="!item.active"
                       >
                         {{ !item.active ? 'INACTIVO' : (item.availableQty > 0 ? 'DISPONIBLE' : 'AGOTADO') }}
                       </span>
-                      @if (canManage()) {
-                        <button class="btn-clear ep2-catalog-table-action" type="button" (click)="openEditEquipment(item)">Editar equipo</button>
-                      }
                     </td>
+                    @if (canManage()) {
+                      <td class="catalog-action-cell" role="cell">
+                        <button emxButton variant="secondary" size="small" class="ep2-catalog-table-action" type="button" (click)="openEditEquipment(item)"><span>Editar equipo</span></button>
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>

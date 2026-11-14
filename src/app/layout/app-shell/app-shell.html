@@ -3,7 +3,9 @@
 
   <header class="mobile-header">
     <a class="brand" routerLink="/dashboard" aria-label="EventoMax, inicio">
-      <img class="brand-mark" src="/branding/eventomax/symbols/eventomax-symbol-dark.svg" alt="" aria-hidden="true" />
+      <div class="brand-squircle">
+        <img class="brand-mark" src="/branding/eventomax/symbols/eventomax-symbol-dark.svg" alt="" aria-hidden="true" />
+      </div>
       <span>
         <span class="brand-text">Evento<span>Max</span></span>
         <span class="brand-caption">OPERACIONES DE EVENTOS</span>
@@ -14,105 +16,179 @@
     </button>
   </header>
 
-  @if (menuOpen()) {
-    <div class="mobile-backdrop" aria-hidden="true" (click)="closeMenu()"></div>
-  }
+  <div class="mobile-backdrop" [class.is-open]="menuOpen()" aria-hidden="true" (click)="closeMenu(mobileOpenBtn)"></div>
 
-  <aside class="shell-sidebar" [class.is-collapsed]="sidebarCompact()" [class.is-open]="menuOpen()" (keydown.escape)="closeMenu(mobileOpenBtn)">
+  <aside
+    #sidebarEl
+    class="shell-sidebar"
+    [class.is-collapsed]="sidebarCompact()"
+    [class.is-open]="menuOpen()"
+    [class.no-transition]="!sidebarReady()"
+    [class.is-animating]="sidebarAnimating()"
+    [class.is-tooltip-warm]="tooltipWarm()"
+    (transitionend)="onSidebarTransitionEnd($event)"
+    (pointerdown)="onSidebarPointerDown($event, sidebarEl)"
+    (pointermove)="onSidebarPointerMove($event, sidebarEl)"
+    (pointerup)="onSidebarPointerUp($event, sidebarEl, mobileOpenBtn)"
+    (pointercancel)="onSidebarPointerUp($event, sidebarEl, mobileOpenBtn)"
+    (keydown.escape)="closeMenu(mobileOpenBtn)"
+  >
     <div class="sidebar-header">
       <div class="header-content">
         <a class="brand" routerLink="/dashboard" aria-label="EventoMax, inicio">
-          <img class="brand-mark" src="/branding/eventomax/symbols/eventomax-symbol-dark.svg" alt="" aria-hidden="true" />
+          <div class="brand-squircle">
+            <img class="brand-mark" src="/branding/eventomax/symbols/eventomax-symbol-dark.svg" alt="" aria-hidden="true" />
+          </div>
           <span class="brand-copy">
             <span class="brand-text">Evento<span>Max</span></span>
             <span class="brand-caption">OPERACIONES DE EVENTOS</span>
           </span>
         </a>
-        <button type="button" class="collapse-toggle desktop-toggle" aria-controls="sidebar-content" [attr.aria-expanded]="!sidebarCompact()" (click)="toggleSidebar()" [attr.aria-label]="sidebarCompact() ? 'Expandir menú' : 'Colapsar menú'" [attr.title]="sidebarCompact() ? 'Expandir menú' : 'Colapsar menú'">
-          @if (sidebarCompact()) {
-            <svg lucidePanelLeftOpen class="nav-icon" />
-          } @else {
-            <svg lucidePanelLeftClose class="nav-icon" />
-          }
-        </button>
+
+        <emx-sidebar-toggle
+          [collapsed]="sidebarCompact()"
+          controls="sidebar-content"
+          (toggle)="toggleSidebar()"
+        />
       </div>
       <button #menuToggle type="button" class="mobile-toggle" aria-controls="sidebar-content" [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(false)" aria-label="Cerrar menú">
         <svg lucideX class="nav-icon" />
       </button>
     </div>
+
     <div id="sidebar-content" class="sidebar-content" [class.is-open]="menuOpen()">
-      <nav class="sidebar-nav" aria-label="Navegación principal">
-        <p class="nav-section brand-copy">{{ operationSectionTitle() }}</p>
-        <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCompact() ? navLabels.dashboard : null" (click)="closeMenu(menuToggle)">
-          <svg lucideLayoutDashboard class="nav-icon" />
-          <span class="nav-label brand-copy">Dashboard</span>
-        </a>
-        @if (canViewProductions()) {
-          <a routerLink="/productions" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCompact() ? navLabels.productions : null" (click)="closeMenu(menuToggle)">
-            <svg lucideCalendarDays class="nav-icon" />
-            <span class="nav-label brand-copy">Producciones</span>
-          </a>
-        }
-        @if (canViewCatalog()) {
-          <a routerLink="/catalog" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCompact() ? navLabels.catalog : null" (click)="closeMenu(menuToggle)">
-            <svg lucidePackage class="nav-icon" />
-            <span class="nav-label brand-copy">Catálogo</span>
-          </a>
-        }
-        @if (canViewReports() || canViewAudit()) {
-          <p class="nav-section secondary brand-copy">ANÁLISIS Y CONTROL</p>
-          <div class="nav-divider" aria-hidden="true" [style.display]="sidebarCompact() ? 'block' : 'none'"></div>
-        }
-        @if (canViewReports()) {
-          <a routerLink="/reports" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCompact() ? navLabels.reports : null" (click)="closeMenu(menuToggle)">
-            <svg lucideChartNoAxesColumn class="nav-icon" />
-            <span class="nav-label brand-copy">Reportes</span>
-          </a>
-        }
-        @if (canViewAudit()) {
-          <a routerLink="/audit" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link" [attr.title]="sidebarCompact() ? navLabels.audit : null" (click)="closeMenu(menuToggle)">
-            <svg lucideShield class="nav-icon" />
-            <span class="nav-label brand-copy">Auditoría</span>
-          </a>
+      <nav
+        class="sidebar-nav"
+        aria-label="Navegación principal"
+        (pointerleave)="onNavPointerLeave()"
+      >
+        <emx-sidebar-section
+          [title]="operationSectionTitle()"
+          [items]="primaryNavItems()"
+          [collapsed]="sidebarCompact()"
+          [staggerOffset]="0"
+          (itemHover)="onNavItemHover()"
+          (itemClick)="closeMenu(menuToggle)"
+        />
+
+        @if (secondaryNavItems().length > 0) {
+          <emx-sidebar-section
+            [title]="analyticsSectionTitle"
+            [items]="secondaryNavItems()"
+            [collapsed]="sidebarCompact()"
+            [isSecondary]="true"
+            [staggerOffset]="primaryNavItems().length"
+            (itemHover)="onNavItemHover()"
+            (itemClick)="closeMenu(menuToggle)"
+          />
         }
       </nav>
-      <div class="sidebar-footer">
-        <div class="workspace-label" [attr.title]="sidebarCompact() ? 'Espacio de trabajo · Gestión de producciones' : null">
-          <span class="workspace-avatar">EM</span>
-          <div class="workspace-info brand-copy">
-            <strong>Espacio de trabajo</strong>
-            <span>Gestión de producciones</span>
-          </div>
-        </div>
-      </div>
     </div>
   </aside>
+
   <div class="shell-workspace">
     <header class="topbar">
       <div class="topbar-inner">
         <div class="topbar-context">
-          <span class="breadcrumb">
-            EventoMax
+          <nav class="breadcrumb" aria-label="Ruta de navegación">
+            <a routerLink="/dashboard" class="breadcrumb-root">EventoMax</a>
             <svg lucideChevronRight class="breadcrumb-icon" />
-            <strong>{{ currentSection() }}</strong>
-          </span>
+            <strong class="breadcrumb-current">{{ currentSection() }}</strong>
+          </nav>
         </div>
         <div class="topbar-meta" (focusout)="onAccountFocusOut($event)">
-          <button type="button" class="account-trigger" [attr.aria-label]="'Cuenta de ' + userName" [attr.aria-controls]="accountMenuOpen() ? 'account-menu' : null" (click)="toggleAccountMenu()" [attr.aria-expanded]="accountMenuOpen()">
+          <emx-status-pill class="topbar-status-pill" tone="positive" size="sm" glyph="dot" aria-label="Estado de la plataforma: En línea">
+            En línea
+          </emx-status-pill>
+          <button
+            type="button"
+            class="topbar-theme-toggle"
+            (click)="toggleTheme()"
+            [attr.aria-label]="isDark() ? 'Cambiar a Modo Día' : 'Cambiar a Modo Escenario (FOH)'"
+            [attr.title]="isDark() ? 'Modo Día (Oficina)' : 'Modo Escenario (FOH)'"
+          >
+            @if (isDark()) {
+              <svg lucideSun class="theme-toggle-icon sun-icon" />
+            } @else {
+              <svg lucideMoon class="theme-toggle-icon moon-icon" />
+            }
+          </button>
+          <button type="button" class="account-trigger" [class.is-expanded]="accountMenuOpen()" [attr.aria-label]="'Cuenta de ' + userName" [attr.aria-controls]="accountMenuOpen() ? 'account-menu' : null" (click)="toggleAccountMenu()" [attr.aria-expanded]="accountMenuOpen()">
             <span class="user-avatar" aria-hidden="true">{{ initials }}</span>
             <span class="user-name-role">{{ userName | titlecase }}</span>
-            <svg lucideChevronDown class="trigger-icon" />
+            <svg lucideChevronDown class="trigger-icon" [class.is-rotated]="accountMenuOpen()" />
           </button>
           @if (accountMenuOpen()) {
-            <div id="account-menu" class="account-menu smooth-shadow-ring-md">
+            <div id="account-menu" class="account-menu" role="dialog" aria-label="Cuenta de usuario">
               <div class="account-menu-header">
-                <strong>{{ userName | titlecase }}</strong>
-                <span>{{ displayRole() }}</span>
+                <div class="account-profile-row">
+                  <div class="account-avatar-container">
+                    <span class="account-avatar-badge" aria-hidden="true">{{ initials }}</span>
+                  </div>
+                  <div class="account-profile-info">
+                    <strong class="account-user-name">{{ userName | titlecase }}</strong>
+                    @if (userEmail()) {
+                      <span class="account-user-email">{{ userEmail() }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="account-sso-meta">
+                  <svg class="sso-shield-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="m9 12 2 2 4-4"/>
+                  </svg>
+                  <span>Microsoft Entra ID · SSO activo</span>
+                </div>
+                <span class="sr-only">{{ displayRole() }}</span>
               </div>
-              <div class="account-menu-divider"></div>
-              <button type="button" class="account-menu-item" (click)="onLogout()">
-                <svg lucideLogOut class="menu-icon" />
-                Cerrar sesión
+
+              <div class="account-menu-divider" role="separator"></div>
+
+              <div class="account-workspace-section">
+                <div class="account-workspace-card">
+                  <div class="account-workspace-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect width="16" height="20" x="4" y="2" rx="2" ry="2"/>
+                      <path d="M9 22v-4h6v4"/>
+                      <path d="M8 6h.01"/>
+                      <path d="M16 6h.01"/>
+                      <path d="M8 10h.01"/>
+                      <path d="M16 10h.01"/>
+                      <path d="M8 14h.01"/>
+                      <path d="M16 14h.01"/>
+                    </svg>
+                  </div>
+                  <div class="account-workspace-info">
+                    <span class="account-section-eyebrow">Espacio de trabajo</span>
+                    <span class="account-workspace-name">EventoMax SpA</span>
+                    <span class="account-workspace-sub">Región del Biobío · Operaciones</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="account-menu-divider" role="separator"></div>
+
+              <div class="account-menu-section">
+                <span class="account-section-eyebrow">Roles en plataforma</span>
+                <div class="account-roles-list">
+                  @for (role of assignedRoles(); track role.label) {
+                    <span class="role-pill">
+                      {{ role.label }}
+                    </span>
+                  }
+                  @if (assignedRoles().length === 0) {
+                    <span class="role-pill role-pill-empty">
+                      Sin rol asignado
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <div class="account-menu-divider" role="separator"></div>
+
+              <button type="button" class="account-menu-item account-logout-btn" (click)="onLogout()">
+                <svg lucideLogOut class="menu-icon logout-icon" />
+                <span>Cerrar sesión</span>
               </button>
             </div>
           }

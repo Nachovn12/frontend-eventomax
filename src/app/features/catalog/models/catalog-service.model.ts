@@ -2,6 +2,8 @@ export interface CatalogService {
   readonly id: number;
   readonly name: string;
   readonly description: string | null;
+  readonly category?: string | null;
+  readonly imageUrl?: string | null;
   readonly rate: number;
   readonly active: boolean;
 }
@@ -11,4 +13,5 @@ export interface CatalogServiceUpsertRequest {
   description: string | null;
   rate: number;
   active: boolean;
+  imageUrl?: string | null;
 }

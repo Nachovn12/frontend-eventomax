@@ -1,141 +1,239 @@
-﻿app-login {
+app-login {
   display: block;
   width: 100%;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+  color: #1d1d1f;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-*, ::after, ::before { box-sizing: border-box; }
 
+*, ::after, ::before {
+  box-sizing: border-box;
+}
+
+/* Screen-reader accessible helper */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+}
+
+/* ==========================================================================
+   Full-Bleed Minimalist Split Layout (Apple & Conduit Standard)
+   ========================================================================== */
 .l-lyt {
-  width: 100%;
+  width: 100vw;
   min-height: 100vh;
   min-height: 100dvh;
-  background: #f4f6f8;
-  display: grid;
-  place-items: center;
-  padding: 24px;
+  background: #ffffff;
+  padding: 0;
+  margin: 0;
+  display: block;
+  overflow-x: hidden;
 }
 
 .outer-shell {
-  width: min(1360px, calc(100vw - 48px));
-  height: min(720px, calc(100dvh - 48px));
-  background: #fff;
-  border-radius: 24px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02);
+  width: 100vw;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #ffffff;
   display: grid;
-  grid-template-columns: minmax(0, 43fr) minmax(0, 57fr);
+  grid-template-columns: minmax(420px, 44%) 1fr;
+  padding: 0;
+  gap: 0;
   overflow: hidden;
-  gap: 16px;
-  padding: 16px;
 }
 
+/* ==========================================================================
+   Left Column: Pure Minimalist Auth Area
+   ========================================================================== */
 .p-auth {
+  background: #ffffff;
+  padding: 40px clamp(36px, 5vw, 72px) 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+}
+
+.auth-inner {
+  width: 100%;
+  max-width: 360px;
+  height: 100%;
+  min-height: calc(100vh - 68px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Top Brand Header (Conduit 3-Part Vertical Rhythm) */
+.a-hd {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(24px, 4vw, 48px);
+  padding-top: 32px;
 }
-.auth-inner {
-  width: 100%;
-  max-width: 420px;
-  display: flex;
-  flex-direction: column;
+
+.a-brand-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: opacity 140ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .a-brand-link:hover {
+    opacity: 0.85;
+  }
 }
 
 .a-logo {
+  height: 32px;
+  width: auto;
+  max-width: 180px;
   display: block;
-  width: 228px;
-  margin: 0 auto 32px;
-}
-.a-hd h1 {
-  font-size: 2rem;
-  font-weight: 600;
-  line-height: 1.15;
-  margin: 0 0 8px;
-  letter-spacing: -0.03em;
-}
-.a-sub {
-  font-size: 15px;
-  line-height: 1.5;
-  color: #64748b;
-  margin: 0 0 32px;
-}
-.a-inst {
-  font-size: 15px;
-  line-height: 1.5;
-  color: #334155;
-  margin: 0 0 24px;
 }
 
-.err {
-  padding: 16px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 12px;
-  color: #991b1b;
+/* Centered Form Wrapper */
+.a-center-form {
+  width: 100%;
+  max-width: 340px;
+  margin: auto 0;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: loginSubtleEnter 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.a-title-block {
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.a-title-block h1 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  color: #1d1d1f;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.a-sub {
   font-size: 14px;
-  margin-bottom: 20px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #86868b;
+  margin: 0;
+  text-align: center;
+}
+
+.a-bd {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Error feedback */
+.err {
+  width: 100%;
+  padding: 12px 14px;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 10px;
+  color: #991b1b;
+  font-size: 13px;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  text-align: left;
 }
+
 .err svg {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   color: #ef4444;
   flex-shrink: 0;
 }
 
+/* ==========================================================================
+   Apple Design System Primary Button
+   ========================================================================== */
 .login-microsoft-button {
   position: relative;
-  isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 52px;
+  height: 44px;
   padding: 0 18px;
-  border: 0;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #172235 0%, #101827 100%);
-  color: #fff;
-  font: inherit;
+  border-radius: 10px;
+  border: 1px solid #1d1d1f;
+  background: #1d1d1f;
+  color: #ffffff;
+  font-family: inherit;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.01em;
   cursor: pointer;
-  transform: translateY(0) scale(1);
-  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), background-color 160ms, filter 160ms;
-  margin-bottom: 16px;
+  user-select: none;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.14),
+    0 4px 10px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transition:
+    background-color 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.login-microsoft-button::before {
-  content: "";
-  position: absolute;
-  inset: 1px 1px auto;
-  height: 45%;
-  border-radius: 11px 11px 8px 8px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), transparent);
-  pointer-events: none;
+
+@media (hover: hover) and (pointer: fine) {
+  .login-microsoft-button:hover:not(:disabled) {
+    background: #2c2c2e;
+    border-color: #2c2c2e;
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.18),
+      0 6px 16px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
 }
-.login-microsoft-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.03);
-}
+
 .login-microsoft-button:active:not(:disabled) {
-  transform: translateY(1px) scale(0.985);
-  filter: brightness(0.97);
-  transition-duration: 100ms;
+  transform: scale(0.985);
+  background: #1d1d1f;
 }
+
 .login-microsoft-button:focus-visible {
-  outline: 3px solid rgba(0, 113, 227, 0.25);
-  outline-offset: 3px;
+  outline: none;
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 4px #0071e3;
 }
+
 .login-microsoft-button:disabled {
-  cursor: default;
-  opacity: 0.6;
-  transform: none;
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none !important;
+  transform: none !important;
+  pointer-events: none;
 }
 
 .btn-c, .btn-ld {
@@ -144,201 +242,278 @@
   justify-content: center;
   gap: 10px;
 }
-.btn-c { transition: opacity 0.2s; }
-.btn-c.inv { opacity: 0; }
+
+.btn-c {
+  transition: opacity 140ms ease;
+}
+
+.btn-c.inv {
+  opacity: 0;
+}
+
 .microsoft-mark {
   width: 16px;
   height: 16px;
   flex: 0 0 16px;
   object-fit: contain;
 }
-.btn-ld { position: absolute; color: #fff; }
+
+.btn-ld {
+  position: absolute;
+  color: #ffffff;
+}
+
 .spin {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255,255,255,0.2);
-  border-top-color: #fff;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-@keyframes spin { to { transform: rotate(1turn); } }
 
-.a-trust {
+@keyframes spin {
+  to { transform: rotate(1turn); }
+}
+
+/* Subtle Hairline Divider (Conduit Style) */
+.a-divider {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #64748b;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin: 16px 0;
+  color: #a1a1aa;
+  font-size: 12px;
+  font-weight: 400;
 }
-.ic-shield { width: 18px; height: 18px; flex-shrink: 0; }
-.a-trust span { font-size: 13px; line-height: 1.4; }
 
-.a-help p, .a-ft p { margin: 0; }
-.a-help p { font-size: 13.5px; color: #64748b; }
-.a-ft { margin-top: 40px; text-align: center; }
-.a-ft p { font-size: 13px; color: #94a3b8; }
+.a-divider::before,
+.a-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.07);
+}
 
+/* Conduit-Style Secondary Outlined Button (Volver a la página de inicio) */
+.a-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
+  color: #1d1d1f;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition:
+    background-color 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
+  margin-bottom: 22px;
+}
+
+.a-btn-secondary:active {
+  transform: scale(0.985);
+}
+
+.a-btn-secondary svg {
+  width: 15px;
+  height: 15px;
+  color: #71717a;
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), color 140ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .a-btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #d4d4d8;
+    color: #09090b;
+  }
+  .a-btn-secondary:hover svg {
+    transform: translateX(-2px);
+    color: #18181b;
+  }
+}
+
+.a-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.ic-lock-quiet {
+  width: 13px;
+  height: 13px;
+  color: #86868b;
+  flex-shrink: 0;
+}
+
+.a-help p {
+  font-size: 12.5px;
+  color: #86868b;
+  margin: 0;
+}
+
+.a-help span {
+  color: #1d1d1f;
+  font-weight: 500;
+}
+
+/* Quiet Bottom Footer */
+.a-ft {
+  width: 100%;
+  padding: 8px 0 0;
+  text-align: left;
+}
+
+.a-ft p {
+  font-size: 12px;
+  color: #86868b;
+  margin: 0;
+}
+
+/* ==========================================================================
+   Right Column: Conduit Atmospheric Horizon & Bleed-Right App Interface
+   ========================================================================== */
 .p-brand {
-  background: #0a1122;
-  border-radius: 20px;
-  overflow: hidden;
+  margin: 12px 12px 12px 0;
+  border-radius: 24px;
+  background:
+    radial-gradient(90% 75% at 15% 15%, #60a5fa 0%, #93c5fd 42%, transparent 80%),
+    radial-gradient(85% 65% at 88% 18%, #bfdbfe 0%, #e0f2fe 50%, transparent 85%),
+    radial-gradient(70% 60% at 8% 58%, #fef08a 0%, rgba(254, 240, 138, 0.4) 45%, transparent 75%),
+    radial-gradient(80% 70% at 12% 95%, #3f6212 0%, #65a30d 38%, transparent 78%),
+    linear-gradient(165deg, #7dd3fc 0%, #dbeafe 48%, #ecfccb 78%, #365314 100%);
   position: relative;
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
 }
-.b-crsl { flex: 1; position: relative; }
-.b-slide {
+
+.p-brand::before {
+  content: "";
   position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: clamp(32px, 4vw, 48px);
-  padding-bottom: clamp(48px, 5vw, 64px);
-  opacity: 0;
+  inset: -40px;
+  background:
+    radial-gradient(circle at 14% 82%, rgba(63, 98, 18, 0.55) 0%, rgba(132, 204, 22, 0.3) 35%, transparent 68%),
+    radial-gradient(circle at 20% 48%, rgba(253, 224, 71, 0.35) 0%, transparent 55%);
+  filter: blur(50px);
   pointer-events: none;
-  z-index: 1;
+  z-index: 0;
 }
-.b-slide.active {
-  opacity: 1;
-  pointer-events: auto;
-  z-index: 2;
-}
-.b-img {
+
+.b-crsl {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
   z-index: 1;
-  transform: scale(1.012);
-  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms cubic-bezier(0.22, 1, 0.36, 1);
-  opacity: 0;
 }
-.b-slide.active .b-img {
-  transform: scale(1);
-  opacity: 1;
-}
-.b-over {
+
+.b-slide {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top right, rgba(10,17,34,0.95), rgba(10,17,34,0.4) 40%, transparent 80%);
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  pointer-events: auto;
   z-index: 2;
 }
-.b-copy { color: #fff; position: relative; z-index: 3; }
-.eyebrow {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: #38bdf8;
-  margin-bottom: 12px;
-}
-.b-copy h2 {
-  font-size: clamp(2rem, 3vw, 2.5rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-  margin: 0 0 12px;
-  white-space: pre-line;
-}
-.b-copy p {
-  font-size: clamp(15px, 1.2vw, 17px);
-  line-height: 1.5;
-  color: #cbd5e1;
-  margin: 0;
-  white-space: pre-line;
-}
 
-.b-dots {
+/* ==========================================================================
+   Conduit Style Elevated Dashboard Interface Window
+   ========================================================================== */
+.conduit-window-frame {
   position: absolute;
-  bottom: clamp(24px, 3vh, 32px);
-  inset-inline: 0;
-  z-index: 3;
+  left: clamp(56px, 6.5vw, 88px);
+  top: clamp(96px, 12.5vh, 124px);
+  right: 0;
+  bottom: 0;
+  border-radius: 16px 0 0 0;
+  overflow: hidden;
+  box-shadow:
+    -16px 24px 64px -12px rgba(15, 23, 42, 0.22),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
+  background: #f8fafc;
   display: flex;
-  justify-content: center;
-  gap: 10px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  animation: loginSubtleEnter 320ms 40ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.b-dot {
-  background: transparent;
-  border: none;
-  padding: 8px 4px;
-  cursor: pointer;
-  opacity: 0.5;
-  transition: opacity 0.28s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.b-dot:hover { opacity: 0.8; }
-.b-dot.active { opacity: 1; }
-.dot-v {
+
+.conduit-window-frame .b-img {
+  width: 145%;
+  min-height: 100%;
+  height: auto;
+  max-width: none;
+  object-fit: cover;
+  object-position: top left;
   display: block;
-  width: 7px;
-  height: 7px;
-  border-radius: 99px;
-  background: #cbd5e1;
-  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.3s;
-}
-.b-dot.active .dot-v {
-  width: 28px;
-  background: #fff;
+  flex-shrink: 0;
 }
 
+@keyframes loginSubtleEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   Accessibility & Responsive
+   ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
-  .login-microsoft-button:hover:not(:disabled), .login-microsoft-button:active:not(:disabled) {
+  .login-microsoft-button,
+  .a-btn-secondary,
+  .a-center-form,
+  .conduit-window-frame,
+  .b-slide {
+    animation: none !important;
+    transition: none !important;
     transform: none !important;
   }
-  .b-img {
-    transition: opacity 700ms linear !important;
-    transform: none !important;
-  }
-  .b-slide.active .b-img { transform: none !important; }
-  .dot-v { transition: none !important; }
 }
 
-@media (max-width: 1023px) {
-  .l-lyt { padding: 16px; }
+@media (max-width: 1024px) {
   .outer-shell {
     grid-template-columns: 1fr;
-    height: auto;
-    max-height: none;
-    gap: 0;
+    min-height: 100vh;
   }
+
   .p-auth {
-    grid-column: 1;
-    grid-row: 1;
-    padding: 48px 24px;
+    padding: 40px 28px 24px;
+    min-height: 100vh;
   }
+
   .p-brand {
-    grid-column: 1;
-    grid-row: 2;
-    min-height: 500px;
-    border-radius: 0 0 20px 20px;
+    display: none;
   }
 }
 
-@media (max-width: 767px) {
-  .l-lyt { padding: 0; background: #fff; }
-  .outer-shell {
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-    height: 100dvh;
-  }
+@media (max-width: 640px) {
   .p-auth {
-    align-items: flex-start;
-    padding: 12vh 28px 32px;
-    justify-content: flex-start;
+    padding: 32px 20px 20px;
   }
-  .p-brand { display: none; }
-  .auth-inner { text-align: center; align-items: center; }
-  .a-logo { width: 200px; margin-bottom: 28px; }
-  .a-hd h1 { font-size: 28px; }
-  .a-sub { margin-bottom: 28px; font-size: 14.5px; }
-  .a-inst { font-size: 14.5px; margin-bottom: 18px; }
-  .a-trust { justify-content: center; }
-  .a-help { text-align: center; }
-  .a-ft { margin-top: 36px; margin-bottom: 20px; }
+
+  .auth-inner {
+    max-width: 100%;
+  }
+
+  .a-title-block h1 {
+    font-size: 22px;
+  }
 }

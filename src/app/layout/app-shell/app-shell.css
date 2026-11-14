@@ -1,387 +1,832 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Apple Human Interface Guidelines (macOS / visionOS) — Sidebar Design Tokens
+   Centralized Single Source of Truth (Visual + Motion Choreography)
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root,
+.emx-workspace {
+  /* Dimensions & Geometry (Calibrated so Icon Center X = 32.0px in all states) */
+  --sb-width-expanded: 260px;
+  --sb-width-collapsed: 64px;
+  --sb-pad-x: 12px;
+  --sb-item-height: 36px;
+  --sb-item-pad-x: 11px; /* 12px + 11px + (18px / 2) = 32.0px exact center */
+  --sb-item-gap: 10px;
+  --sb-item-radius: 8px;
+  --sb-item-active-radius: 10px;
+  --sb-items-space: 2px;
+  --sb-sections-space: 20px;
+  --sb-section-pad-left: 11px;
+  --sb-section-margin-bottom: 6px;
+
+  /* Typography */
+  --sb-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --sb-item-font-size: 14px;
+  --sb-item-font-weight: 500;
+  --sb-item-active-weight: 600;
+  --sb-item-tracking: -0.01em;
+  --sb-section-font-size: 11px;
+  --sb-section-font-weight: 600;
+  --sb-section-tracking: 0.06em;
+  --sb-caption-font-size: 10px;
+  --sb-caption-font-weight: 500;
+  --sb-badge-font-size: 11px;
+  --sb-badge-font-weight: 500;
+
+  /* Icons (SF Symbols Optical Weight) */
+  --sb-icon-size: 18px;
+  --sb-icon-stroke: 1.5;
+
+  /* Motion Choreography Tokens (Single Source of Truth — Total < 300ms) */
+  --sb-ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+  --sb-dur-width: 280ms;
+  --sb-dur-label-out: 90ms;
+  --sb-dur-label-in: 150ms;
+  --sb-label-in-delay: 60ms;
+  --sb-stagger-step: 20ms; /* 60ms + (4 * 20ms) + 150ms = 290ms (< 300ms budget) */
+  --sb-dur-tooltip-in: 120ms;
+  --sb-dur-press: 110ms;
+  --sb-dur-item-hover: 150ms;
+  --sb-dur-drawer-open: 300ms;
+  --sb-dur-drawer-close: 200ms;
+
+  /* Light Mode Palette (macOS Sequoia Sidebar Material) */
+  --sb-bg-solid: #F5F5F7;
+  --sb-bg: rgba(245, 245, 247, 0.82);
+  --sb-backdrop-filter: blur(20px) saturate(180%);
+  --sb-border: rgba(0, 0, 0, 0.06);
+  --sb-text-primary: #1D1D1F;
+  --sb-text-secondary: #6E6E73;
+  --sb-section-label: #86868B;
+  --sb-accent: #007AFF;
+  --sb-accent-focus: rgba(10, 132, 255, 0.5);
+  --sb-item-hover-bg: rgba(0, 0, 0, 0.04);
+  --sb-toggle-hover-bg: rgba(0, 0, 0, 0.05);
+  --sb-item-active-bg: #FFFFFF;
+  --sb-item-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  --sb-badge-bg: rgba(0, 0, 0, 0.06);
+  --sb-badge-text: #6E6E73;
+  --sb-status-green: #30D158;
+  --sb-squircle-bg: #FFFFFF;
+  --sb-squircle-border: rgba(0, 0, 0, 0.06);
+  --sb-squircle-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --sb-tooltip-bg: rgba(29, 29, 31, 0.92);
+  --sb-tooltip-text: #F5F5F7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sb-bg-solid: #1C1C1E;
+    --sb-bg: rgba(28, 28, 30, 0.84);
+    --sb-border: rgba(255, 255, 255, 0.08);
+    --sb-text-primary: #F5F5F7;
+    --sb-text-secondary: #98989D;
+    --sb-section-label: #86868B;
+    --sb-accent: #0A84FF;
+    --sb-item-hover-bg: rgba(255, 255, 255, 0.06);
+    --sb-toggle-hover-bg: rgba(255, 255, 255, 0.06);
+    --sb-item-active-bg: rgba(255, 255, 255, 0.10);
+    --sb-item-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.24), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+    --sb-badge-bg: rgba(255, 255, 255, 0.08);
+    --sb-badge-text: #98989D;
+    --sb-status-green: #30D158;
+    --sb-squircle-bg: rgba(255, 255, 255, 0.08);
+    --sb-squircle-border: rgba(255, 255, 255, 0.08);
+    --sb-squircle-shadow: none;
+    --sb-tooltip-bg: rgba(44, 44, 46, 0.95);
+    --sb-tooltip-text: #F5F5F7;
+  }
+}
+
+:root[data-theme="dark"],
+[data-theme="dark"] .emx-workspace,
+.dark-theme .emx-workspace,
+.dark .emx-workspace {
+  --sb-bg-solid: #1C1C1E;
+  --sb-bg: rgba(28, 28, 30, 0.84);
+  --sb-border: rgba(255, 255, 255, 0.08);
+  --sb-text-primary: #F5F5F7;
+  --sb-text-secondary: #98989D;
+  --sb-section-label: #86868B;
+  --sb-accent: #0A84FF;
+  --sb-item-hover-bg: rgba(255, 255, 255, 0.06);
+  --sb-toggle-hover-bg: rgba(255, 255, 255, 0.06);
+  --sb-item-active-bg: rgba(255, 255, 255, 0.10);
+  --sb-item-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.24), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  --sb-badge-bg: rgba(255, 255, 255, 0.08);
+  --sb-badge-text: #98989D;
+  --sb-status-green: #30D158;
+  --sb-squircle-bg: rgba(255, 255, 255, 0.08);
+  --sb-squircle-border: rgba(255, 255, 255, 0.08);
+  --sb-squircle-shadow: none;
+  --sb-tooltip-bg: rgba(44, 44, 46, 0.95);
+  --sb-tooltip-text: #F5F5F7;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Shell Layout & Sidebar Surface (Isolated Layout & Paint Containment)
+   ═══════════════════════════════════════════════════════════════════════════ */
 .shell-layout {
-    display: flex;
-    min-height: 100dvh;
-    background: #F8F9FA;
+  display: flex;
+  min-height: 100dvh;
+  background: var(--bg-root, #F4F5F8);
+}
+
+.shell-sidebar {
+  width: var(--sb-width-expanded);
+  flex-shrink: 0;
+  background-color: var(--sb-bg-solid);
+  background: var(--sb-bg);
+  backdrop-filter: var(--sb-backdrop-filter);
+  -webkit-backdrop-filter: var(--sb-backdrop-filter);
+  color: var(--sb-text-primary);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  border-right: none;
+  box-shadow: inset -1px 0 0 var(--sb-border);
+  contain: layout style;
+  transition: width var(--sb-dur-width) var(--sb-ease-out);
+  font-family: var(--sb-font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+  z-index: 60;
+  user-select: none;
+}
+
+/* Suppress initial load transition until after first painted frame */
+.shell-sidebar.no-transition,
+.shell-sidebar.no-transition *,
+.shell-sidebar.no-transition *::after {
+  transition: none !important;
+}
+
+/* Dynamic will-change & paint containment ONLY while animating */
+.shell-sidebar.is-animating {
+  will-change: width;
+  contain: layout paint style;
+  overflow: hidden;
+}
+
+.shell-sidebar.is-animating .desktop-toggle {
+  will-change: transform, opacity;
+}
+
+.shell-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-root);
+  min-width: 0;
+}
+
+.shell-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sidebar Header (Fixed 64px Height + FLIP Transform Toggle at Y=32px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.sidebar-header {
+  height: 64px;
+  min-height: 64px;
+  padding: 14px var(--sb-pad-x);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.header-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 36px;
+  min-height: 36px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  min-width: 0;
+  height: 36px;
+  border-radius: var(--sb-item-radius);
+  padding: 0 5px; /* 12px + 5px + (30px / 2) = 32.0px center X for squircle */
+  transition: background-color var(--sb-dur-item-hover) var(--sb-ease-out);
+  box-sizing: border-box;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .brand:hover {
+    background: var(--sb-item-hover-bg);
   }
-
-  .shell-sidebar {
-    width: 256px;
-    flex-shrink: 0;
-    background: #F8F9FA;
-    color: var(--text-main);
-    display: flex;
-    flex-direction: column;
-    position: sticky;
-    top: 0;
-    height: 100dvh;
-    overflow-y: auto;
-    border-right: 1px solid rgba(0, 0, 0, 0.06);
-    transition: width var(--emx-motion-slow) var(--emx-ease-out);
-  }
-
-  .shell-workspace {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-root);
-    min-width: 0;
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  .sidebar-header {
-    padding: 24px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .header-content {
-    display: flex;
-    align-items: flex-start;
-    width: 100%;
-    position: relative;
-    min-height: 28px;
-    transition: min-height 280ms cubic-bezier(.2,.8,.2,1);
-  }
-
-
-
-
-
-
-
-
-
-
-
-  .sidebar-content {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-
-  .sidebar-nav {
-    padding: 0 14px;
-    display: grid;
-    gap: 2px;
-  }
-
-  .nav-section {
-    font-size: 10px;
-    color: var(--text-light);
-    letter-spacing: 0.06em;
-    padding: 24px 12px 10px;
-    font-weight: 600;
-    margin-bottom: 0;
-    text-transform: uppercase;
-  }
-
-  .nav-link {
-    height: 40px;
-    padding: 0 11px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.55);
-    outline: none;
-    position: relative;
-    border: 1px solid transparent;
-  }
-
-  .nav-icon {
-    width: 18px;
-    height: 18px;
-    stroke-width: 1.75px;
-    flex-shrink: 0;
-  }
-
-  .nav-link:hover, .nav-link:focus-visible,
-  .btn-logout:hover, .btn-logout:focus-visible {
-    background: rgba(0, 0, 0, 0.04);
-    color: var(--text-main);
-  }
-
-  .nav-link.active {
-    background: #FFFFFF;
-    color: var(--brand-primary);
-    font-weight: 600;
-    border-color: rgba(0, 0, 0, 0.04);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  }
-
-  .nav-link .nav-icon, .btn-logout .nav-icon {
-    transition: color .15s;
-  }
-
-  .nav-link:hover .nav-icon, .nav-link:focus-visible .nav-icon,
-  .btn-logout:hover .nav-icon, .btn-logout:focus-visible .nav-icon {
-    color: var(--text-main);
-  }
-
-  .nav-link.active .nav-icon {
-    color: var(--brand-primary);
-  }
-
-  .sidebar-footer {
-    margin-top: auto;
-    padding: 20px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .workspace-label {
-    height: 40px;
-    padding: 4px 11px;
-    cursor: default;
-    background: transparent;
-    margin-bottom: 8px;
-    position: relative;
-    border-radius: 10px;
-  }
-
-  .workspace-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex: 1;
-  }
-
-  .workspace-info strong {
-    font-size: 14px;
-    color: var(--text-main);
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-  }
-
-  .workspace-info span {
-    font-size: 12px;
-    color: var(--text-light);
-    line-height: 1.2;
-  }
-
-  .workspace-avatar {
-    width: 32px;
-    height: 32px;
-    background: #FFFFFF;
-    color: rgba(0, 0, 0, 0.7);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
-    display: grid;
-    place-items: center;
-    font-size: 11px;
-    font-weight: 600;
-    flex-shrink: 0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-  }
-
-
-
-  .btn-logout {
-    background: transparent;
-    border: none;
-    color: rgba(0, 0, 0, 0.55);
-    font-size: 14px;
-    font-weight: 500;
-    height: 40px;
-    width: 100%;
-    text-align: left;
-    padding: 0 12px;
-    border-radius: 10px;
-    cursor: pointer;
-  }
-
-
-
-
-  .brand-copy, .nav-label, .workspace-info {
-    opacity: 1;
-    transform: translateX(0);
-    transition:
-      opacity var(--emx-motion-fast) var(--emx-ease-standard),
-      transform var(--emx-motion-base) var(--emx-ease-out);
-    white-space: nowrap;
-    overflow: hidden;
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-  @media (prefers-reduced-motion: reduce) {
-    .shell-sidebar, .nav-label, .brand-copy, .workspace-info, .nav-link, .btn-logout, .workspace-label {
-      transition: none !important;
-    }
-  }
-
-  .nav-link, .btn-logout, .workspace-label {
-    transition: width var(--emx-motion-slow) var(--emx-ease-out), padding var(--emx-motion-slow) var(--emx-ease-out), background-color var(--emx-motion-fast) ease, color var(--emx-motion-fast) ease, transform var(--emx-motion-fast) var(--emx-ease-out);
-  }
-
-  .nav-link, .btn-logout, .workspace-label, .brand {
-    display: flex;
-    width: 100%;
-
-    align-items: center;
-    gap: 12px;
-  }
-
-  .shell-sidebar.is-collapsed .header-content {
-    min-height: 68px;
-  }
-
-  .shell-sidebar.is-collapsed .sidebar-header {
-    padding: 24px 14px 24px;
-  }
-  .shell-sidebar.is-collapsed .sidebar-nav {
-    padding: 0 14px;
-  }
-  .shell-sidebar.is-collapsed .sidebar-footer {
-    padding: 16px 14px;
-  }
-
-
-
-
-
-
-
-
-  .account-menu-header strong {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-main);
-    line-height: 1.2;
-  }
-  .account-menu-header span {
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-
-
-
-
-  .account-menu-item:hover, .account-menu-item:focus-visible {
-    background: rgba(0, 0, 0, 0.04);
-  }
-
-
-  .user-avatar {
-    width: 30px;
-    height: 30px;
-    font-size: 11px;
-    display: grid;
-    place-items: center;
-    border-radius: 99px;
-    background: #eef2ff;
-    color: #4338ca;
-    font-weight: 600;
-    flex-shrink: 0;
-  }
-  .user-name-role {
-    color: var(--text-main);
-    font-size: 13px;
-    font-weight: 500;
-  }
-  .trigger-icon {
-    width: 14px;
-    height: 14px;
-    color: var(--text-light);
-    margin-left: 2px;
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .brand-mark {
-    width: 26px;
-    height: 26px;
-    flex-shrink: 0;
-    margin-left: 7px;
-  }
-  .brand-text {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-main);
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-    display: block;
-  }
-  .brand-text span {
-    font-weight: 400;
-    color: var(--text-muted);
-  }
-  .brand-caption {
-    color: var(--text-muted);
-    display: block;
-    font-size: 9px;
-    letter-spacing: 0.06em;
-    opacity: 0.7;
-    margin-top: 2px;
-    font-weight: 500;
-    text-transform: uppercase;
-  }
-  .brand { width: auto; }
-  .desktop-toggle {
-    outline: none;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: transparent;
-    border: none;
-    color: rgba(0, 0, 0, 0.4);
-    cursor: pointer;
-    position: absolute;
-    right: 0;
-    top: -1px;
-    transition: background-color var(--emx-motion-fast) ease, color var(--emx-motion-fast) ease, transform var(--emx-motion-slow) var(--emx-ease-out);
-  }
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--sb-accent-focus);
+  outline-offset: 1px;
+}
+
+.brand-squircle {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--sb-squircle-bg);
+  border: 1px solid var(--sb-squircle-border);
+  box-shadow: var(--sb-squircle-shadow);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  transition:
+    opacity var(--sb-dur-tooltip-in) var(--sb-ease-out),
+    transform var(--sb-dur-tooltip-in) var(--sb-ease-out);
+}
+
+.brand-squircle .brand-mark {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.brand-copy {
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.brand-text {
+  font-family: var(--sb-font-family);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sb-text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  display: block;
+}
+
+.brand-text span {
+  font-weight: 700;
+  color: var(--sb-accent);
+}
+
+.brand-caption {
+  font-family: var(--sb-font-family);
+  color: var(--sb-section-label);
+  display: block;
+  font-size: var(--sb-caption-font-size);
+  font-weight: var(--sb-caption-font-weight);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Sidebar Toggle Button (PanelLeft 18px — Compositor FLIP Transform) */
+emx-sidebar-toggle {
+  position: absolute;
+  left: 204px; /* 12px + 204px + 16px = 232.0px center X when expanded */
+  top: 2px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  z-index: 2;
+}
+
+.desktop-toggle {
+  outline: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--sb-item-radius);
+  background: transparent;
+  border: none;
+  color: var(--sb-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  transform: translate3d(0, 0, 0);
+  transition:
+    transform var(--sb-dur-width) var(--sb-ease-out),
+    opacity var(--sb-dur-tooltip-in) var(--sb-ease-out),
+    background-color var(--sb-dur-item-hover) var(--sb-ease-out),
+    color var(--sb-dur-item-hover) var(--sb-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
   .desktop-toggle:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--sb-toggle-hover-bg);
+    color: var(--sb-text-primary);
   }
-  .desktop-toggle:active {
-    transform: scale(0.98);
-    transition-duration: 100ms;
+}
+
+.desktop-toggle:active {
+  transform: translate3d(0, 0, 0) scale(0.96);
+  transition-duration: var(--sb-dur-press);
+}
+
+.desktop-toggle:focus-visible {
+  outline: 2px solid var(--sb-accent-focus);
+  outline-offset: 1px;
+}
+
+.desktop-toggle .nav-icon {
+  width: var(--sb-icon-size);
+  height: var(--sb-icon-size);
+  stroke-width: var(--sb-icon-stroke);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: currentColor;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Scrollable Navigation Area & Sections (Constant Vertical Coordinates)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-content:hover {
+    scrollbar-color: rgba(134, 134, 139, 0.35) transparent;
   }
-  .desktop-toggle .nav-icon {
-    width: 16px;
-    height: 16px;
-    stroke-width: 2px;
+  .sidebar-content:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(134, 134, 139, 0.35);
   }
-  .shell-sidebar.is-collapsed .desktop-toggle {
-    transform: translate(-6px, 41px);
+}
+
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 999px;
+}
+
+.sidebar-nav {
+  padding: 6px var(--sb-pad-x) 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sb-sections-space);
+  flex: 1;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+emx-sidebar-section,
+emx-sidebar-item {
+  display: block;
+  width: 100%;
+}
+
+.sidebar-section-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Fixed 20px height slot prevents any vertical shift of icons on collapse/expand */
+.nav-section-slot {
+  position: relative;
+  height: 14px;
+  margin-bottom: var(--sb-section-margin-bottom);
+  display: flex;
+  align-items: center;
+  width: 236px;
+  flex-shrink: 0;
+}
+
+.nav-section {
+  font-family: var(--sb-font-family);
+  font-size: var(--sb-section-font-size);
+  font-weight: var(--sb-section-font-weight);
+  line-height: 14px;
+  color: var(--sb-section-label);
+  letter-spacing: var(--sb-section-tracking);
+  padding: 0 0 0 var(--sb-section-pad-left);
+  margin: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nav-divider {
+  position: absolute;
+  left: 8px; /* 12px + 8px = 20px left -> 20px + 12px = 32.0px center X */
+  top: 6.5px;
+  width: 24px;
+  height: 1px;
+  background: var(--sb-border);
+  opacity: 0;
+  transform: scaleX(0.6);
+  pointer-events: none;
+  transition:
+    opacity 75ms var(--sb-ease-out) 0ms,
+    transform 75ms var(--sb-ease-out) 0ms;
+}
+
+.nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-items-space);
+  width: 100%;
+}
+
+.nav-list-item {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Navigation Items (Exact 32.0px Icon Center + Zero Text Reflow)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.nav-link {
+  height: var(--sb-item-height);
+  min-height: var(--sb-item-height);
+  width: 100%;
+  min-width: 40px;
+  padding: 0 var(--sb-item-pad-x);
+  border-radius: var(--sb-item-radius);
+  font-family: var(--sb-font-family);
+  font-size: var(--sb-item-font-size);
+  line-height: 1;
+  font-weight: var(--sb-item-font-weight);
+  letter-spacing: var(--sb-item-tracking);
+  color: var(--sb-text-secondary);
+  background: transparent;
+  border: none;
+  outline: none;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--sb-item-gap);
+  box-sizing: border-box;
+  text-decoration: none;
+  transition:
+    background-color var(--sb-dur-item-hover) var(--sb-ease-out),
+    color var(--sb-dur-item-hover) var(--sb-ease-out),
+    box-shadow var(--sb-dur-item-hover) var(--sb-ease-out),
+    border-radius var(--sb-dur-item-hover) var(--sb-ease-out),
+    transform var(--sb-dur-press) var(--sb-ease-out);
+}
+
+.nav-icon-wrap {
+  position: relative;
+  width: var(--sb-icon-size);
+  height: var(--sb-icon-size);
+  flex: 0 0 var(--sb-icon-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-link .nav-icon {
+  width: var(--sb-icon-size);
+  height: var(--sb-icon-size);
+  stroke-width: var(--sb-icon-stroke);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+  color: currentColor;
+  transition: color var(--sb-dur-item-hover) var(--sb-ease-out);
+}
+
+/* Fixed width label prevents text reflow while sidebar width animates */
+.nav-label {
+  width: 140px;
+  flex: 0 0 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+
+/* Hover State (Gated for Fine Pointer Devices) */
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover {
+    background: var(--sb-item-hover-bg);
+    color: var(--sb-text-primary);
   }
-  .shell-sidebar.is-collapsed .desktop-toggle:active {
-    transform: translate(-6px, 41px) scale(0.98);
+}
+
+/* Pressed State */
+.nav-link:active {
+  transform: scale(0.98);
+}
+
+/* Focus-Visible Ring (Apple HIG Accessibility) */
+.nav-link:focus-visible {
+  outline: 2px solid var(--sb-accent-focus);
+  outline-offset: 1px;
+}
+
+/* Active Route State */
+.nav-link.active {
+  background: var(--sb-item-active-bg);
+  color: var(--sb-text-primary);
+  font-weight: var(--sb-item-active-weight);
+  border-radius: var(--sb-item-active-radius);
+  box-shadow: var(--sb-item-active-shadow);
+}
+
+.nav-link.active .nav-icon {
+  color: var(--sb-accent);
+}
+
+/* Item Badges & Status Indicator (Fixed Right Offset in 236px Row) */
+.nav-count-badge {
+  position: absolute;
+  left: 204px;
+  font-family: var(--sb-font-family);
+  font-size: var(--sb-badge-font-size);
+  font-weight: var(--sb-badge-font-weight);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sb-badge-bg);
+  color: var(--sb-badge-text);
+  box-sizing: border-box;
+}
+
+.nav-link.active .nav-count-badge {
+  color: var(--sb-text-primary);
+}
+
+.nav-live-dot {
+  position: absolute;
+  left: 215px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sb-status-green);
+  flex-shrink: 0;
+}
+
+/* Support Role: Collapsed Indicator Dots (Exit in 75ms on Expand; Enter at 110ms on Collapse) */
+.nav-collapsed-dot,
+.nav-collapsed-status-dot {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px var(--sb-bg-solid);
+  opacity: 0;
+  transform: scale(0.6);
+  pointer-events: none;
+  transition:
+    opacity 75ms var(--sb-ease-out) 0ms,
+    transform 75ms var(--sb-ease-out) 0ms;
+}
+
+.nav-collapsed-dot {
+  background: var(--sb-accent);
+}
+
+.nav-collapsed-status-dot {
+  background: var(--sb-status-green);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Detail Role Choreography: Labels, Section Titles, Badges (Expand vs Collapse)
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* Expanding State (64px → 260px): Delay 90ms + Stagger 20ms/item, Duration 160ms */
+.brand-copy {
+  opacity: 1;
+  visibility: visible;
+  transform: translate3d(0, 0, 0);
+  transition:
+    opacity var(--sb-dur-label-in) var(--sb-ease-out) calc(var(--sb-label-in-delay) + var(--item-index, 0) * var(--sb-stagger-step)),
+    transform var(--sb-dur-label-in) var(--sb-ease-out) calc(var(--sb-label-in-delay) + var(--item-index, 0) * var(--sb-stagger-step)),
+    visibility 0ms linear 0ms;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Collapsed Mode (260px → 64px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.shell-sidebar.is-collapsed {
+  width: var(--sb-width-collapsed);
+}
+
+.shell-sidebar.is-collapsed:not(.is-animating) {
+  overflow: visible;
+}
+
+.shell-sidebar.is-collapsed:not(.is-animating) .sidebar-content {
+  overflow: visible;
+}
+
+/* 1. Detail Role on Collapse: 90ms exit, 0ms delay, -4px translateX */
+.shell-sidebar.is-collapsed .brand-copy {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate3d(-4px, 0, 0);
+  transition:
+    opacity var(--sb-dur-label-out) var(--sb-ease-out) 0ms,
+    transform var(--sb-dur-label-out) var(--sb-ease-out) 0ms,
+    visibility 0ms linear var(--sb-dur-label-out);
+}
+
+/* 2. Lead Role: Toggle button FLIP translates -200px to Center X = 32.0px while docking into isotipo */
+.shell-sidebar.is-collapsed .desktop-toggle {
+  transform: translate3d(-200px, 0, 0);
+  opacity: 0;
+  transition:
+    transform var(--sb-dur-width) var(--sb-ease-out),
+    opacity 140ms var(--sb-ease-out);
+}
+
+.shell-sidebar.is-collapsed .desktop-toggle:active {
+  transform: translate3d(-200px, 0, 0) scale(0.96);
+  transition-duration: var(--sb-dur-press);
+}
+
+/* On keyboard focus-visible or header hover in collapsed mode, toggle replaces isotipo cleanly (Linear/Arc pattern) */
+.shell-sidebar.is-collapsed .desktop-toggle:focus-visible {
+  opacity: 1;
+}
+
+.shell-sidebar.is-collapsed .header-content:has(.desktop-toggle:focus-visible) .brand-squircle {
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shell-sidebar.is-collapsed:not(.is-animating) .sidebar-header:hover .desktop-toggle {
+    opacity: 1;
   }
+  .shell-sidebar.is-collapsed:not(.is-animating) .sidebar-header:hover .brand-squircle {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+/* 3. Support Role on Collapse: Badge dot & divider enter at ~70% width progress (110ms delay) */
+.shell-sidebar.is-collapsed .nav-collapsed-dot,
+.shell-sidebar.is-collapsed .nav-collapsed-status-dot {
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 140ms var(--sb-ease-out) 110ms,
+    transform 140ms var(--sb-ease-out) 110ms;
+}
+
+.shell-sidebar.is-collapsed .nav-divider {
+  opacity: 1;
+  transform: scaleX(1);
+  transition:
+    opacity 140ms var(--sb-ease-out) 110ms,
+    transform 140ms var(--sb-ease-out) 110ms;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Collapsed Mode Tooltips (300ms Initial Delay, 0ms Warm Handoff, Hidden While Animating)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.shell-sidebar.is-collapsed .nav-link::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform-origin: left center;
+  transform: translate3d(-4px, -50%, 0) scale(0.96);
+  background: var(--sb-tooltip-bg);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  color: var(--sb-tooltip-text);
+  font-family: var(--sb-font-family);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  padding: 6px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  z-index: 400;
+  transition:
+    opacity 90ms var(--sb-ease-out) 0ms,
+    transform 90ms var(--sb-ease-out) 0ms,
+    visibility 0ms linear 90ms;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shell-sidebar.is-collapsed:not(.is-animating) .nav-link:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translate3d(0, -50%, 0) scale(1);
+    transition:
+      opacity var(--sb-dur-tooltip-in) var(--sb-ease-out) 300ms,
+      transform var(--sb-dur-tooltip-in) var(--sb-ease-out) 300ms,
+      visibility 0ms linear 300ms;
+  }
+
+  /* Warm Handoff: Moving from one item to another shows tooltip with 0ms delay */
+  .shell-sidebar.is-collapsed.is-tooltip-warm:not(.is-animating) .nav-link:hover::after {
+    transition:
+      opacity 0ms linear 0ms,
+      transform 0ms linear 0ms,
+      visibility 0ms linear 0ms;
+  }
+}
+
+.shell-sidebar.is-collapsed:not(.is-animating) .nav-link:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translate3d(0, -50%, 0) scale(1);
+  transition:
+    opacity var(--sb-dur-tooltip-in) var(--sb-ease-out) 0ms,
+    transform var(--sb-dur-tooltip-in) var(--sb-ease-out) 0ms,
+    visibility 0ms linear 0ms;
+}
+
+/* Never show tooltips while sidebar is transitioning */
+.shell-sidebar.is-animating .nav-link::after {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Topbar Avatar & Reduced Motion (Accessibility)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #0F172A;
+  color: #F8FAFC;
+  border: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+  flex-shrink: 0;
+}
+
+.user-name-role {
+  color: #0F172A;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-sidebar {
+    transition: width 0ms linear !important;
+  }
+  .desktop-toggle,
+  .nav-link,
+  .nav-link::after,
+  .brand-squircle,
+  .nav-collapsed-dot,
+  .nav-collapsed-status-dot,
+  .nav-divider {
+    transition: opacity 100ms ease !important;
+  }
+  .brand-copy,
+  .shell-sidebar.is-collapsed .brand-copy {
+    transform: none !important;
+    transition: opacity 100ms ease 0ms, visibility 0ms linear 100ms !important;
+  }
+}

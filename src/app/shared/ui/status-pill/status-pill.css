@@ -1,0 +1,290 @@
+/* TuffUI-inspired Status Pill & Mono Tag Component Styles */
+
+.emx-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  white-space: nowrap;
+  border-radius: 9999px;
+  line-height: 1;
+  box-sizing: border-box;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+  user-select: none;
+}
+
+/* Sizes */
+.emx-status-pill.size-sm {
+  height: 20px;
+  padding: 0 7.5px;
+  font-size: 11px;
+  gap: 4px;
+  letter-spacing: 0.01em;
+}
+
+.emx-status-pill.size-md {
+  height: 24px;
+  padding: 0 10px;
+  font-size: 12px;
+  gap: 5.5px;
+  letter-spacing: 0.01em;
+}
+
+/* Glyphs with cutout mask */
+.pill-glyph {
+  flex-shrink: 0;
+  display: block;
+}
+
+.emx-status-pill.size-sm .pill-glyph {
+  width: 12px;
+  height: 12px;
+}
+
+.emx-status-pill.size-md .pill-glyph {
+  width: 13.5px;
+  height: 13.5px;
+}
+
+/* Dots */
+.pill-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.pill-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  animation: pillPulse 2s var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)) infinite;
+}
+
+@keyframes pillPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-pulse-dot,
+  .emx-tag .tag-indicator-dot.pulse {
+    animation: none;
+  }
+}
+
+.pill-label {
+  display: inline-block;
+  line-height: 1;
+}
+
+/* Tones (Light Mode) */
+.emx-status-pill.tone-neutral {
+  background: rgba(15, 23, 42, 0.065);
+  color: #475569;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.emx-status-pill.tone-brand {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563EB;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.emx-status-pill.tone-positive {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.emx-status-pill.tone-negative {
+  background: rgba(239, 68, 68, 0.12);
+  color: #DC2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.emx-status-pill.tone-warning {
+  background: rgba(245, 158, 11, 0.14);
+  color: #D97706;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+/* Tones (Dark Theme Support) */
+[data-theme="dark"] .emx-status-pill.tone-neutral,
+.dark .emx-status-pill.tone-neutral {
+  background: rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .emx-status-pill.tone-brand,
+.dark .emx-status-pill.tone-brand {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60A5FA;
+  border: 1px solid rgba(96, 165, 250, 0.25);
+}
+
+[data-theme="dark"] .emx-status-pill.tone-positive,
+.dark .emx-status-pill.tone-positive {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34D399;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+}
+
+[data-theme="dark"] .emx-status-pill.tone-negative,
+.dark .emx-status-pill.tone-negative {
+  background: rgba(239, 68, 68, 0.18);
+  color: #F87171;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+[data-theme="dark"] .emx-status-pill.tone-warning,
+.dark .emx-status-pill.tone-warning {
+  background: rgba(245, 158, 11, 0.18);
+  color: #FBBF24;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+/* Mono Tag Component (TuffUI Tag Specification & Emil Kowalski Precision) */
+emx-tag {
+  display: inline-flex;
+  vertical-align: middle;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.emx-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  background: rgba(15, 23, 42, 0.045);
+  color: #475569;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
+  user-select: none;
+  transition: background-color var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
+              color var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
+              border-color var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)),
+              transform var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+.emx-tag.tone-positive {
+  background: rgba(16, 185, 129, 0.08);
+  color: #047857;
+  border-color: rgba(16, 185, 129, 0.22);
+}
+
+.emx-tag.tone-brand {
+  background: rgba(37, 99, 235, 0.08);
+  color: #1D4ED8;
+  border-color: rgba(37, 99, 235, 0.22);
+}
+
+.emx-tag.tone-warning {
+  background: rgba(217, 119, 6, 0.08);
+  color: #B45309;
+  border-color: rgba(217, 119, 6, 0.22);
+}
+
+.emx-tag.tone-negative {
+  background: rgba(220, 38, 38, 0.08);
+  color: #B91C1C;
+  border-color: rgba(220, 38, 38, 0.22);
+}
+
+[data-theme="dark"] .emx-tag,
+.dark .emx-tag {
+  background: rgba(255, 255, 255, 0.06);
+  color: #94A3B8;
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+[data-theme="dark"] .emx-tag.tone-positive,
+.dark .emx-tag.tone-positive {
+  background: rgba(16, 185, 129, 0.14);
+  color: #34D399;
+  border-color: rgba(52, 211, 153, 0.28);
+}
+
+[data-theme="dark"] .emx-tag.tone-brand,
+.dark .emx-tag.tone-brand {
+  background: rgba(37, 99, 235, 0.14);
+  color: #60A5FA;
+  border-color: rgba(96, 165, 250, 0.28);
+}
+
+[data-theme="dark"] .emx-tag.tone-warning,
+.dark .emx-tag.tone-warning {
+  background: rgba(217, 119, 6, 0.14);
+  color: #FBBF24;
+  border-color: rgba(251, 191, 36, 0.28);
+}
+
+[data-theme="dark"] .emx-tag.tone-negative,
+.dark .emx-tag.tone-negative {
+  background: rgba(220, 38, 38, 0.14);
+  color: #F87171;
+  border-color: rgba(248, 113, 113, 0.28);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .emx-tag.is-interactive:hover {
+    background: rgba(15, 23, 42, 0.08);
+    color: #0F172A;
+    border-color: rgba(15, 23, 42, 0.14);
+    cursor: pointer;
+    transform: translateY(-0.5px);
+  }
+  [data-theme="dark"] .emx-tag.is-interactive:hover,
+  .dark .emx-tag.is-interactive:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #F8FAFC;
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+}
+
+.emx-tag.is-interactive:active {
+  transform: scale(0.97);
+}
+
+.emx-tag .tag-indicator-dot {
+  display: inline-block;
+  width: 5.5px;
+  height: 5.5px;
+  border-radius: 50%;
+  margin-right: 5px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.emx-tag .tag-indicator-dot.pulse {
+  animation: tag-pulse 2.2s var(--ease-tactile, cubic-bezier(0.23, 1, 0.32, 1)) infinite;
+}
+
+@keyframes tag-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}

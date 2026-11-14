@@ -1,0 +1,87 @@
+/* Word Roll: ported from DesignBookmark Motion Studies (word-roll/roll.css).
+   Lead and slot share line-height 1.25 so vertical centering aligns baseline cleanly. */
+.emx-roll {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.24em;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  border-radius: 8px;
+  font-family: var(--font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.emx-roll-lead {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.emx-roll-slot {
+  position: relative;
+  display: inline-block;
+  height: 1.25em;
+  min-width: 1ch;
+  color: #090d16;
+  font-weight: 750;
+  text-align: left;
+  clip-path: inset(0 -0.5em);
+}
+
+.emx-roll-word {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.emx-roll-ch {
+  display: inline-block;
+  white-space: pre;
+  will-change: transform, opacity;
+}
+
+.emx-roll:focus-visible {
+  box-shadow: 0 0 0 2px #2563eb;
+}
+
+.emx-roll-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+[data-theme='dark'] .emx-roll-lead,
+.dark .emx-roll-lead {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .emx-roll-slot,
+.dark .emx-roll-slot {
+  color: #f8fafc;
+}
+
+@media (max-width: 560px) {
+  .emx-roll {
+    flex-wrap: wrap;
+    row-gap: 0.05em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emx-roll-ch {
+    will-change: auto;
+  }
+}

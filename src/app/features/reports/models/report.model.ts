@@ -12,12 +12,19 @@ export interface ReportTransition {
   readonly count: number;
 }
 
+export interface DailyEventCount {
+  readonly date: string;
+  readonly count: number;
+}
+
 export interface ReportMetrics {
   readonly totalStatusChanges: number;
   readonly currentStatusDistribution: Partial<Record<ProductionStatus, number>>;
   readonly transitions: readonly ReportTransition[];
   readonly cancelledCount: number;
   readonly closedCount: number;
+  readonly averageMontageTimeMinutes?: number;
+  readonly eventsPerDay?: readonly DailyEventCount[];
 }
 
 export interface ReportKpisResponse {

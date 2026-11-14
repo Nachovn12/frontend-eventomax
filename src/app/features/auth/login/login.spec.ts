@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Login } from './login';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MsalBroadcastService } from '@azure/msal-angular';
-import { InteractionStatus, EventMessage, EventType } from '@azure/msal-browser';
+import { InteractionStatus, EventMessage } from '@azure/msal-browser';
 import { BehaviorSubject, Subject } from 'rxjs';
 
 describe('Login Component', () => {
@@ -49,31 +49,17 @@ describe('Login Component', () => {
     fixture.detectChanges();
   });
 
-  it('should render all slides and keep exactly one active slide and dot synchronized', () => {
+  it('renders the Dashboard showcase slide with high-resolution platform content', () => {
     const activeSlides = fixture.nativeElement.querySelectorAll('.b-slide.active');
-    const activeDots = fixture.nativeElement.querySelectorAll('.b-dot.active');
     const allSlides = fixture.nativeElement.querySelectorAll('.b-slide');
 
-    expect(allSlides.length).toBe(3);
+    expect(allSlides.length).toBe(1);
     expect(activeSlides.length).toBe(1);
-    expect(activeDots.length).toBe(1);
-  });
-
-  it('should update the active slide correctly when changing activeSlide', () => {
-    const dots = fixture.nativeElement.querySelectorAll('.b-dot');
-
-    // Click the second dot
-    dots[1].click();
-    fixture.detectChanges();
-
-    const allSlides = fixture.nativeElement.querySelectorAll('.b-slide');
-    const activeSlides = fixture.nativeElement.querySelectorAll('.b-slide.active');
-    const activeDots = fixture.nativeElement.querySelectorAll('.b-dot.active');
-
-    expect(activeSlides.length).toBe(1);
-    expect(activeDots.length).toBe(1);
-    expect(allSlides[1].classList.contains('active')).toBe(true);
-    expect(dots[1].classList.contains('active')).toBe(true);
+    expect(component.slides.length).toBe(1);
+    expect(fixture.nativeElement.querySelector('.b-slide.active .b-img').getAttribute('src')).toBe('/branding/eventomax/login/eventomax-login-produccion.jpg');
+    expect(fixture.nativeElement.querySelector('.b-slide.active .eyebrow').textContent).toBe('PRODUCCIÓN');
+    expect(fixture.nativeElement.querySelector('.b-slide.active .b-copy h2').textContent).toBe(component.slides[0].title);
+    expect(fixture.nativeElement.querySelector('.b-slide.active .b-copy p').textContent).toBe(component.slides[0].description);
   });
 
   it('renders the corporate heading', () => {
@@ -165,75 +151,9 @@ describe('Login Component', () => {
     expect(routerMock.navigate).toHaveBeenCalledWith(['/dashboard']);
   });
 
-
-  it('uses one current image and three indicators backed by the slide data', () => {
-    expect(component.slides.length).toBe(3);
-    expect(fixture.nativeElement.querySelectorAll('.b-slide').length).toBe(3);
-    expect(fixture.nativeElement.querySelectorAll('.b-dot').length).toBe(3);
-    expect(fixture.nativeElement.querySelector('.b-slide.active .b-img').getAttribute('src')).toBe(component.currentSlide().image);
+  it('binds currentSlide to the dashboard preview presentation', () => {
+    expect(component.currentSlide().image).toBe('/branding/eventomax/login/eventomax-login-produccion.jpg');
     expect(component.activeSlide()).toBe(0);
-  });
-
-  describe('Manual carousel', () => {
-    beforeEach(() => {
-      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
-    });
-
-    afterEach(() => {
-      fixture.destroy();
-      vi.useRealTimers();
-    });
-
-    const assets = [
-      '/branding/eventomax/login/eventomax-login-produccion.jpg',
-      '/branding/eventomax/login/eventomax-login-recursos.jpg',
-      '/branding/eventomax/login/eventomax-login-trazabilidad.jpg',
-    ];
-    const labels = ['PRODUCCIÓN', 'RECURSOS', 'TRAZABILIDAD'];
-
-    function expectSlide(index: number): void {
-      fixture.detectChanges();
-      expect(component.activeSlide()).toBe(index);
-      expect(component.currentSlide().image).toBe(assets[index]);
-      // Check the rendered source, copy and aria-current, not just the signal.
-      expect(fixture.nativeElement.querySelectorAll('.b-slide.active .b-img').length).toBe(1);
-      expect(fixture.nativeElement.querySelector('.b-slide.active .b-img').getAttribute('src')).toBe(assets[index]);
-      expect(fixture.nativeElement.querySelector('.b-slide.active .eyebrow').textContent).toBe(labels[index]);
-      expect(fixture.nativeElement.querySelector('.b-slide.active .b-copy h2').textContent).toBe(component.currentSlide().title);
-      expect(fixture.nativeElement.querySelector('.b-slide.active .b-copy p').textContent).toBe(component.currentSlide().description);
-      expect(fixture.nativeElement.querySelectorAll('.b-dot[aria-current="true"]').length).toBe(1);
-      expect(fixture.nativeElement.querySelectorAll('.b-dot')[index].getAttribute('aria-current')).toBe('true');
-    }
-
-
-    it('keeps the initial slide after time passes', () => {
-      vi.advanceTimersByTime(12000);
-      expectSlide(0);
-    });
-
-    it('changes image, copy and current indicator only on explicit selection', () => {
-      for (const index of [1, 2, 0]) {
-        fixture.nativeElement.querySelectorAll('.b-dot')[index].click();
-        expectSlide(index);
-        vi.advanceTimersByTime(12000);
-        expectSlide(index);
-      }
-    });
-
-    it('does not change selection after pointer, focus or visibility events', () => {
-      const dot: HTMLButtonElement = fixture.nativeElement.querySelectorAll('.b-dot')[2];
-      dot.focus();
-      // Native button activation by keyboard produces a click with detail 0.
-      dot.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }));
-      const carousel = fixture.nativeElement.querySelector('.p-brand');
-      for (const type of ['pointerenter', 'pointerleave', 'focusin', 'focusout']) {
-        carousel.dispatchEvent(new Event(type));
-      }
-      document.dispatchEvent(new Event('visibilitychange'));
-      vi.advanceTimersByTime(12000);
-      expectSlide(2);
-      expect(dot.getAttribute('type')).toBe('button');
-      expect(dot.getAttribute('aria-label')).toBe('Ir a TRAZABILIDAD');
-    });
+    expect(fixture.nativeElement.querySelectorAll('.b-slide .b-img').length).toBe(1);
   });
 });

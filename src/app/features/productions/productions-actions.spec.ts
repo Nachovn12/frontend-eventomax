@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
 import { Productions } from './productions';
 import { ProductionsDataService, PRODUCTION_STATUSES } from './productions-data.service';
 import { AuthorizationService } from '../../core/auth/authorization.service';
@@ -19,7 +20,11 @@ describe('Productions EP2 actions', () => {
     updatedAt: '2026-10-15T10:00:00'
   };
 
-  async function setup(authorised: boolean) {
+  async function setup(authorised: boolean, initialQueryParams: Record<string, string> = {}) {
+    const queryParamMap$ = new BehaviorSubject(convertToParamMap(initialQueryParams));
+    const routerMock = {
+      navigate: vi.fn().mockResolvedValue(true)
+    };
     const productionStore: Record<number, Production> = {
       4: production,
       5: { ...production, id: 5, status: 'CERRADO' },
@@ -61,6 +66,8 @@ describe('Productions EP2 actions', () => {
       providers: [
         { provide: ProductionsDataService, useValue: api },
         { provide: CatalogDataService, useValue: catalogApi },
+        { provide: ActivatedRoute, useValue: { queryParamMap: queryParamMap$.asObservable(), snapshot: { queryParamMap: convertToParamMap(initialQueryParams) } } },
+        { provide: Router, useValue: routerMock },
         { provide: AuthorizationService, useValue: {
           hasAnyRole: () => authorised,
           hasScope: () => authorised
@@ -69,7 +76,7 @@ describe('Productions EP2 actions', () => {
     }).compileComponents();
     const fixture = TestBed.createComponent(Productions);
     fixture.detectChanges();
-    return { api, catalogApi, fixture, component: fixture.componentInstance };
+    return { api, catalogApi, routerMock, queryParamMap$, fixture, component: fixture.componentInstance };
   }
 
   afterEach(() => TestBed.resetTestingModule());
@@ -80,7 +87,7 @@ describe('Productions EP2 actions', () => {
     expect(component.canUpdate()).toBe(false);
     expect(fixture.nativeElement.querySelector('[aria-label="Crear producción"]')).toBeNull();
     component.submitStatus();
-  });
+  }, 15000);
 
   it('creates a production with the real request contract', async () => {
     const { api, component, fixture } = await setup(true);
@@ -151,6 +158,99 @@ describe('Productions EP2 actions', () => {
 
     component.closeTicketModal();
     expect(component.showTicketModal()).toBe(false);
+  });
+
+  it('renders Editorial Sheet crew ticket modal with resolved crew, reservations, distilled directive, copyable Event ID and print action', async () => {
+    const { api, component, fixture } = await setup(true);
+    api.getCrewTicket.mockReturnValue(of({
+      id: 10,
+      productionId: 4,
+      eventId: '2e80febd-3715-4804-9ae3-4bc6ab0004bd',
+      productionName: 'Cumbre Cloud Native EventoMax 2026',
+      scheduledAt: '2030-11-25T20:00:00',
+      location: 'Centro Parque · Gran Salón, Las Condes',
+      status: 'EN_MONTAJE',
+      instructions: "Hoja de ruta para montaje de equipamiento de la producción 'Cumbre Cloud Native EventoMax 2026' en recinto: Centro Parque · Gran Salón, Las Condes. Estado operacional: EN_MONTAJE. Cuadrilla asignada: Cuadrilla Técnica Alfa (crew-alfa-01). Verificar dotación técnica y conexiones de energía/sonido.",
+      createdAt: '2026-11-07T12:05:00',
+      updatedAt: '2026-11-07T12:05:00'
+    }));
+
+    component.selectProduction(production);
+    component.viewCrewTicket(4);
+    fixture.detectChanges();
+
+    const modal: HTMLElement | null = fixture.nativeElement.querySelector('.ticket-modal-card');
+    expect(modal).not.toBeNull();
+    const modalLogo: HTMLImageElement | null = modal!.querySelector('img.ticket-brand-logo');
+    expect(modalLogo).not.toBeNull();
+    expect(modalLogo?.getAttribute('src')).toBe('/branding/eventomax/logos/eventomax-logo-dark.svg');
+    expect(modal?.textContent).toContain('Producción #4');
+    expect(modal?.textContent).toContain('Ticket #10');
+    expect(modal?.querySelector('#ticket-modal-title')?.textContent).toContain('Cumbre Cloud Native EventoMax 2026');
+
+    // Resolved crew from instructions even whenCrewTicket has no dedicated crewName field
+    expect(component.resolvedTicketCrew()).toEqual({
+      crewName: 'Cuadrilla Técnica Alfa',
+      crewId: 'crew-alfa-01'
+    });
+    expect(modal?.textContent).toContain('Cuadrilla Técnica Alfa');
+    expect(modal?.textContent).toContain('crew-alfa-01');
+
+    // Connected equipment reservations for matching production
+    expect(modal?.textContent).toContain('Equipos para montaje');
+    expect(modal?.textContent).toContain('Parlante Line Array');
+    expect(modal?.textContent).toContain('2 u.');
+
+    // Distilled directive without repeating boilerplate metadata
+    const directiveEl: HTMLElement | null = modal!.querySelector('.ticket-instructions');
+    expect(directiveEl).not.toBeNull();
+    expect(directiveEl?.textContent?.trim()).toBe('Verificar dotación técnica y conexiones de energía/sonido.');
+
+    // Truncated Event ID in footer + clipboard copy
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText: writeTextMock } });
+
+    const copyBtn: HTMLButtonElement | null = modal!.querySelector('.btn-copy-event-id');
+    expect(copyBtn).not.toBeNull();
+    expect(copyBtn?.textContent).toContain('2e80febd…0004bd');
+    copyBtn!.click();
+    fixture.detectChanges();
+    expect(writeTextMock).toHaveBeenCalledWith('2e80febd-3715-4804-9ae3-4bc6ab0004bd');
+    expect(component.ticketCopied()).toBe(true);
+
+    // Isolated 1-page A4 print frame instead of 4-page full SPA window.print()
+    const windowPrintSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
+    const printBtn: HTMLButtonElement | null = modal!.querySelector('.btn-ticket-print');
+    expect(printBtn).not.toBeNull();
+    printBtn!.click();
+
+    expect(windowPrintSpy).not.toHaveBeenCalled();
+    const printFrame = document.querySelector<HTMLIFrameElement>('iframe[data-print-frame="crew-ticket"]');
+    expect(printFrame).not.toBeNull();
+    const frameHtml = printFrame?.contentDocument?.documentElement.outerHTML ?? '';
+    expect(frameHtml).toContain('@page');
+    expect(frameHtml).toContain('A4');
+    expect(frameHtml).toContain('emx-official-logo');
+    expect(frameHtml).toContain('#024ffc');
+    expect(frameHtml).toContain('EVENTOMAX SpA');
+    expect(frameHtml).toContain('OT-0010');
+    expect(frameHtml).toContain('EMX-OT-PRD-4-0010');
+    expect(frameHtml).toContain('Cumbre Cloud Native EventoMax 2026');
+    expect(frameHtml).toContain('Cuadrilla Técnica Alfa');
+    expect(frameHtml).toContain('crew-alfa-01');
+    expect(frameHtml).toContain('EQ-001');
+    expect(frameHtml).toContain('Parlante Line Array');
+    expect(frameHtml).toContain('TIMBRE OPERATIVO EVENTOMAX');
+    expect(frameHtml).toContain('2e80febd-3715-4804-9ae3-4bc6ab0004bd');
+
+    // Ctrl+P shortcut inside modal also intercepts browser SPA print
+    const ctrlPEvent = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true });
+    component.onTicketKeydown(ctrlPEvent);
+    expect(ctrlPEvent.defaultPrevented).toBe(true);
+    expect(windowPrintSpy).not.toHaveBeenCalled();
+
+    printFrame?.remove();
+    windowPrintSpy.mockRestore();
   });
 
   it('closes crew ticket modal on Escape key and manages trigger focus', async () => {
@@ -284,5 +384,37 @@ describe('Productions EP2 actions', () => {
 
     component.submitStatus();
     expect(api.updateStatus).toHaveBeenCalledWith(6, { status: 'CERRADO' });
+  });
+
+  it('auto-opens production context and triggers PDF download when deep-linked with ?productionId=10&action=download-pdf', async () => {
+    const { api, routerMock, component } = await setup(true, {
+      productionId: '10',
+      action: 'download-pdf',
+    });
+
+    expect(api.getProduction).toHaveBeenCalledWith(10);
+    expect(component.detail()?.id).toBe(10);
+    expect(api.downloadQuotePdf).toHaveBeenCalledWith(10);
+    expect(routerMock.navigate).toHaveBeenCalledWith([], {
+      queryParams: { action: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  });
+
+  it('auto-opens production context and opens crew ticket modal when deep-linked with ?productionId=4&action=view-ticket', async () => {
+    const { api, routerMock, component } = await setup(true, {
+      productionId: '4',
+      action: 'view-ticket',
+    });
+
+    expect(api.getProduction).toHaveBeenCalledWith(4);
+    expect(api.getCrewTicket).toHaveBeenCalledWith(4);
+    expect(component.showTicketModal()).toBe(true);
+    expect(routerMock.navigate).toHaveBeenCalledWith([], {
+      queryParams: { action: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   });
 });

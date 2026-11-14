@@ -5,6 +5,7 @@ import { AppShell } from './app-shell';
 import { AuthService } from '../../core/auth/auth.service';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
+import { ActiveProductionsStore } from '../../core/state/active-productions.store';
 
 describe('AppShell', () => {
   let fixture: ComponentFixture<AppShell>;
@@ -57,15 +58,15 @@ describe('AppShell', () => {
     expect(fixture.nativeElement.querySelector('.shell-sidebar.is-collapsed')).not.toBeNull();
   });
 
-  it('restores the saved sidebar preference after remounting', () => {
+  it('restores the saved sidebar preference synchronously on mount without native title duplication', () => {
     fixture.componentInstance.toggleSidebar();
     fixture.destroy();
     fixture = TestBed.createComponent(AppShell);
     fixture.detectChanges();
-    fixture.detectChanges();
     expect(fixture.componentInstance.sidebarCollapsed()).toBe(true);
     expect(fixture.nativeElement.querySelector('.desktop-toggle').getAttribute('aria-expanded')).toBe('false');
-    expect(fixture.nativeElement.querySelector('.nav-link').getAttribute('title')).toBe('Dashboard');
+    expect(fixture.nativeElement.querySelector('.nav-link').getAttribute('aria-label')).toBe('Dashboard');
+    expect(fixture.nativeElement.querySelector('.nav-link').getAttribute('title')).toBeNull();
   });
 
   it('respects a preference chosen after startup when returning to tablet width', () => {
@@ -175,5 +176,69 @@ describe('AppShell', () => {
     fixture.detectChanges();
     fixture.nativeElement.querySelector('.account-menu-item').click();
     expect(logout).toHaveBeenCalledOnce();
+  });
+
+  it('toggles the sidebar with Ctrl+B / Cmd+B keyboard shortcut and renders semantic ul/li lists', () => {
+    roles.set([AppRole.Admin]);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.sidebarCollapsed()).toBe(false);
+
+    const lists = fixture.nativeElement.querySelectorAll('nav[aria-label="Navegación principal"] ul[role="list"]');
+    expect(lists.length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('nav[aria-label="Navegación principal"] li.nav-list-item').length).toBe(5);
+
+    const ctrlB = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true });
+    document.dispatchEvent(ctrlB);
+    fixture.detectChanges();
+    expect(ctrlB.defaultPrevented).toBe(true);
+    expect(fixture.componentInstance.sidebarCollapsed()).toBe(true);
+
+    const cmdB = new KeyboardEvent('keydown', { key: 'B', metaKey: true, bubbles: true, cancelable: true });
+    document.dispatchEvent(cmdB);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.sidebarCollapsed()).toBe(false);
+  });
+
+  it('responds immediately on pointerdown without double-firing on click and clears is-animating on transitionend', () => {
+    fixture.componentInstance.sidebarReady.set(true);
+    fixture.detectChanges();
+    const toggleBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.desktop-toggle');
+
+    toggleBtn.dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.sidebarCollapsed()).toBe(true);
+    expect(fixture.componentInstance.sidebarAnimating()).toBe(true);
+
+    toggleBtn.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.sidebarCollapsed()).toBe(true);
+
+    const sidebar: HTMLElement = fixture.nativeElement.querySelector('.shell-sidebar');
+    const transitionEnd = new Event('transitionend') as TransitionEvent;
+    Object.defineProperty(transitionEnd, 'propertyName', { value: 'width' });
+    sidebar.dispatchEvent(transitionEnd);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.sidebarAnimating()).toBe(false);
+  });
+
+  it('displays dynamic active count badge when active productions exist and hides badge when count is zero', () => {
+    roles.set([AppRole.Admin]);
+    const store = TestBed.inject(ActiveProductionsStore);
+
+    // Set 4 active productions
+    store.setActiveCount(4);
+    fixture.detectChanges();
+
+    const prodLink = fixture.nativeElement.querySelector('a[href="/productions"]');
+    const badge = prodLink?.querySelector('.nav-count-badge');
+    expect(badge).not.toBeNull();
+    expect(badge?.textContent?.trim()).toBe('4');
+
+    // Set 0 active productions (Apple silent UI rule)
+    store.setActiveCount(0);
+    fixture.detectChanges();
+
+    const emptyBadge = prodLink?.querySelector('.nav-count-badge');
+    expect(emptyBadge).toBeNull();
   });
 });

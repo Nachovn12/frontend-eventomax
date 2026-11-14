@@ -3,11 +3,12 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { AuthorizationService } from '../../../core/auth/authorization.service';
 import { Icon } from '../../../shared/ui/icon';
+import { ButtonDirective } from '../../../shared/ui/button.component';
 
 @Component({
   selector: 'app-forbidden',
   standalone: true,
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, ButtonDirective],
   templateUrl: './forbidden.html',
   styleUrl: './forbidden.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

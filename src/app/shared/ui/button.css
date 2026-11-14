@@ -1,0 +1,528 @@
+/* ═════════════════════════════════════════════════════════════════════════════
+   Apple Design System Buttons - 3D Subtle Skeuomorphic Elevation
+   Variants: Primary | Secondary | Ghost | Danger
+   Sizes:    Medium (36px, r=10px) | Small (32px, r=8px) | Xs (24px, r=6px)
+   Layers:   Vertical Gradient + Inset Bevel + Inset Shadow + Dark Border + Contact Shadow + Elevation Shadow
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Centralized 3D Elevation Tokens (Light Mode) ── */
+:root {
+  /* Primary (Blue 3D) */
+  --btn-primary-bg: linear-gradient(180deg, #4d94ff 0%, #2563eb 100%);
+  --btn-primary-border: #1d4ed8;
+  --btn-primary-color: #ffffff;
+  --btn-primary-text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+  --btn-primary-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 1px 2px rgba(16, 24, 40, 0.25),
+    0 4px 8px -2px rgba(37, 99, 235, 0.35);
+  --btn-primary-active-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.25),
+    0 1px 1px rgba(16, 24, 40, 0.15);
+
+  /* Secondary (White 3D) */
+  --btn-secondary-bg: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
+  --btn-secondary-bg-hover: linear-gradient(180deg, #ffffff 0%, #eceef2 100%);
+  --btn-secondary-border: #d0d5dd;
+  --btn-secondary-color: #1e293b;
+  --btn-secondary-shadow:
+    inset 0 1px 0 #ffffff,
+    0 1px 2px rgba(16, 24, 40, 0.08),
+    0 2px 4px rgba(16, 24, 40, 0.06);
+  --btn-secondary-active-shadow:
+    inset 0 1px 2px rgba(16, 24, 40, 0.12);
+
+  /* Danger (Red 3D) */
+  --btn-danger-bg: linear-gradient(180deg, #ff6b6b 0%, #dc2626 100%);
+  --btn-danger-border: #b91c1c;
+  --btn-danger-color: #ffffff;
+  --btn-danger-text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+  --btn-danger-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 1px 2px rgba(16, 24, 40, 0.25),
+    0 4px 8px -2px rgba(220, 38, 38, 0.35);
+  --btn-danger-active-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.25),
+    0 1px 1px rgba(16, 24, 40, 0.15);
+}
+
+/* ── Centralized 3D Elevation Tokens (Dark Mode) ── */
+:root[data-theme="dark"],
+[data-theme="dark"],
+.dark {
+  --btn-primary-bg: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  --btn-primary-border: #1e40af;
+  --btn-primary-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 4px 8px -2px rgba(37, 99, 235, 0.22);
+  --btn-primary-active-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+    0 1px 1px rgba(0, 0, 0, 0.25);
+
+  --btn-secondary-bg: linear-gradient(180deg, #262936 0%, #171821 100%);
+  --btn-secondary-bg-hover: linear-gradient(180deg, #2d3040 0%, #1e202b 100%);
+  --btn-secondary-border: rgba(255, 255, 255, 0.12);
+  --btn-secondary-color: #f1f5f9;
+  --btn-secondary-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.25);
+  --btn-secondary-active-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.45);
+
+  --btn-danger-bg: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+  --btn-danger-border: #991b1b;
+  --btn-danger-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 4px 8px -2px rgba(220, 38, 38, 0.22);
+  --btn-danger-active-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+    0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+/* ── Base Button ── */
+.emx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.01em;
+  user-select: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  text-decoration: none;
+  outline: none;
+  transition:
+    filter var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.16, 1, 0.3, 1)),
+    background var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.16, 1, 0.3, 1)),
+    border-color var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.16, 1, 0.3, 1)),
+    box-shadow var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.16, 1, 0.3, 1)),
+    transform var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.16, 1, 0.3, 1)),
+    color var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+/* Accessible Focus Ring (preserves 3D elevation intact) */
+.emx-btn:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+:root[data-theme="dark"] .emx-btn:focus-visible,
+[data-theme="dark"] .emx-btn:focus-visible,
+.dark .emx-btn:focus-visible {
+  outline-color: #60A5FA;
+}
+
+/* Disabled: Flat and muted without gradient, text-shadow or box-shadow */
+.emx-btn:disabled,
+.emx-btn[aria-disabled="true"],
+.emx-btn.emx-btn--primary:disabled,
+.emx-btn.emx-btn--primary[aria-disabled="true"],
+.emx-btn.emx-btn--secondary:disabled,
+.emx-btn.emx-btn--secondary[aria-disabled="true"],
+.emx-btn.emx-btn--danger:disabled,
+.emx-btn.emx-btn--danger[aria-disabled="true"],
+.emx-btn.emx-btn--ghost:disabled,
+.emx-btn.emx-btn--ghost[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none !important;
+  transform: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emx-btn {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* ── Sizing Matrix (1:1 with Board UI / Apple Design System) ── */
+
+/* Medium: h=36px, p=8px, r=10px, Body 1/Medium (13.5px), gap=2px */
+.emx-btn.emx-btn--md {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 20px;
+  gap: 2px;
+}
+.emx-btn.emx-btn--md .emx-btn__icon,
+.emx-btn.emx-btn--md svg,
+.emx-btn.emx-btn--md emx-icon,
+.emx-btn.emx-btn--md .action-btn-icon,
+.emx-btn.emx-btn--md .btn-icon,
+.emx-btn.emx-btn--md .icon-inline,
+.emx-btn.emx-btn--md .ticket-btn-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.emx-btn.emx-btn--md.emx-btn--icon-only {
+  width: 36px;
+  min-width: 36px;
+  padding: 0;
+}
+
+/* Small: h=32px, px=8px, r=8px, Body 1/Medium (13px), gap=2px */
+.emx-btn.emx-btn--sm {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  gap: 2px;
+}
+.emx-btn.emx-btn--sm .emx-btn__icon,
+.emx-btn.emx-btn--sm svg,
+.emx-btn.emx-btn--sm emx-icon,
+.emx-btn.emx-btn--sm .btn-icon,
+.emx-btn.emx-btn--sm .action-btn-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.emx-btn.emx-btn--sm.emx-btn--icon-only {
+  width: 32px;
+  min-width: 32px;
+  padding: 0;
+}
+
+/* Xs: h=24px, px=8px, r=4px, Caption 1/Semibold (11.5px), gap=1px */
+.emx-btn.emx-btn--xs {
+  height: 24px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 16px;
+  gap: 1px;
+}
+.emx-btn.emx-btn--xs .emx-btn__icon,
+.emx-btn.emx-btn--xs svg,
+.emx-btn.emx-btn--xs emx-icon,
+.emx-btn.emx-btn--xs .copy-icon,
+.emx-btn.emx-btn--xs .ticket-copy-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.emx-btn.emx-btn--xs.emx-btn--icon-only {
+  width: 24px;
+  min-width: 24px;
+  padding: 0;
+}
+
+/* ── Variants ── */
+
+/* 1. Primary: 3D Royal Blue */
+.emx-btn--primary,
+a.emx-btn--primary,
+.emx-workspace a.emx-btn--primary {
+  background: var(--btn-primary-bg);
+  border: 1px solid var(--btn-primary-border);
+  color: var(--btn-primary-color) !important;
+  text-shadow: var(--btn-primary-text-shadow);
+  box-shadow: var(--btn-primary-shadow);
+}
+.emx-btn--primary svg,
+a.emx-btn--primary svg,
+.emx-workspace a.emx-btn--primary svg {
+  stroke: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+.emx-btn--primary:hover:not(:disabled):not([aria-disabled="true"]):not(:active),
+a.emx-btn--primary:hover:not(:disabled):not([aria-disabled="true"]):not(:active) {
+  filter: brightness(1.06);
+}
+.emx-btn--primary:active:not(:disabled):not([aria-disabled="true"]),
+a.emx-btn--primary:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(1px);
+  filter: brightness(0.96);
+  box-shadow: var(--btn-primary-active-shadow);
+}
+.emx-btn--primary:disabled,
+.emx-btn--primary[aria-disabled="true"] {
+  background: #60A5FA !important;
+  border: 1px solid #60A5FA !important;
+  color: #FFFFFF !important;
+  opacity: 0.65;
+}
+:root[data-theme="dark"] .emx-btn--primary:disabled,
+[data-theme="dark"] .emx-btn--primary:disabled,
+.dark .emx-btn--primary:disabled {
+  background: #1E3A8A !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #93C5FD !important;
+  opacity: 0.68;
+}
+
+/* 2. Secondary: 3D White Surface / Dark Surface */
+.emx-btn--secondary,
+a.emx-btn--secondary,
+.emx-workspace a.emx-btn--secondary {
+  background: var(--btn-secondary-bg);
+  border: 1px solid var(--btn-secondary-border);
+  color: var(--btn-secondary-color) !important;
+  text-shadow: none;
+  box-shadow: var(--btn-secondary-shadow);
+}
+.emx-btn--secondary svg,
+a.emx-btn--secondary svg,
+.emx-workspace a.emx-btn--secondary svg {
+  stroke: currentColor;
+  color: inherit;
+}
+.emx-btn--secondary:hover:not(:disabled):not([aria-disabled="true"]):not(:active),
+a.emx-btn--secondary:hover:not(:disabled):not([aria-disabled="true"]):not(:active) {
+  background: var(--btn-secondary-bg-hover);
+}
+.emx-btn--secondary:active:not(:disabled):not([aria-disabled="true"]),
+a.emx-btn--secondary:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(1px);
+  box-shadow: var(--btn-secondary-active-shadow);
+}
+.emx-btn--secondary:disabled,
+.emx-btn--secondary[aria-disabled="true"] {
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  color: #94A3B8 !important;
+}
+:root[data-theme="dark"] .emx-btn--secondary:disabled,
+[data-theme="dark"] .emx-btn--secondary:disabled,
+.dark .emx-btn--secondary:disabled {
+  background: #1E202B !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #64748B !important;
+}
+
+:root[data-theme="dark"] .emx-btn--secondary svg,
+[data-theme="dark"] .emx-btn--secondary svg,
+.dark .emx-btn--secondary svg {
+  stroke: currentColor;
+  color: inherit;
+}
+
+/* 3. Ghost: Minimalist Flat with Press */
+.emx-btn--ghost {
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: #334155;
+  box-shadow: none;
+  text-shadow: none;
+}
+.emx-btn--ghost:hover:not(:disabled):not([aria-disabled="true"]):not(:active) {
+  background-color: #F1F5F9;
+  color: #0F172A;
+}
+.emx-btn--ghost:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(1px);
+  background-color: #E2E8F0;
+  color: #0F172A;
+}
+.emx-btn--ghost:disabled,
+.emx-btn--ghost[aria-disabled="true"] {
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  color: #94A3B8 !important;
+}
+
+/* Ghost in Dark Mode (Restored) */
+:root[data-theme="dark"] .emx-btn--ghost,
+[data-theme="dark"] .emx-btn--ghost,
+.dark .emx-btn--ghost {
+  color: #94A3B8;
+}
+:root[data-theme="dark"] .emx-btn--ghost:hover:not(:disabled):not([aria-disabled="true"]):not(:active),
+[data-theme="dark"] .emx-btn--ghost:hover:not(:disabled):not([aria-disabled="true"]):not(:active),
+.dark .emx-btn--ghost:hover:not(:disabled):not([aria-disabled="true"]):not(:active) {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #F1F5F9;
+}
+:root[data-theme="dark"] .emx-btn--ghost:active:not(:disabled):not([aria-disabled="true"]),
+[data-theme="dark"] .emx-btn--ghost:active:not(:disabled):not([aria-disabled="true"]),
+.dark .emx-btn--ghost:active:not(:disabled):not([aria-disabled="true"]) {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+:root[data-theme="dark"] .emx-btn--ghost:disabled,
+[data-theme="dark"] .emx-btn--ghost:disabled,
+.dark .emx-btn--ghost:disabled {
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  color: #475569 !important;
+}
+
+/* 4. Danger: 3D Destructive Red */
+.emx-btn--danger {
+  background: var(--btn-danger-bg);
+  border: 1px solid var(--btn-danger-border);
+  color: var(--btn-danger-color) !important;
+  text-shadow: var(--btn-danger-text-shadow);
+  box-shadow: var(--btn-danger-shadow);
+}
+.emx-btn--danger svg {
+  stroke: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+.emx-btn--danger:hover:not(:disabled):not([aria-disabled="true"]):not(:active) {
+  filter: brightness(1.06);
+}
+.emx-btn--danger:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(1px);
+  filter: brightness(0.96);
+  box-shadow: var(--btn-danger-active-shadow);
+}
+.emx-btn--danger:disabled,
+.emx-btn--danger[aria-disabled="true"] {
+  background: #FCA5A5 !important;
+  border: 1px solid #FCA5A5 !important;
+  color: #FEF2F2 !important;
+}
+:root[data-theme="dark"] .emx-btn--danger:disabled,
+[data-theme="dark"] .emx-btn--danger:disabled,
+.dark .emx-btn--danger:disabled {
+  background: #7F1D1D !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #FCA5A5 !important;
+}
+
+/* Label wrapper for proper optical alignment (BoardUI px-1 on md, px-0.5 on sm/xs) */
+.emx-btn__label,
+.emx-btn > span:not([class*="icon"]):not(.badge):not(.count):not(.btn-ticket-print-icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.emx-btn--md .emx-btn__label,
+.emx-btn--md > span:not([class*="icon"]):not(.badge):not(.count):not(.btn-ticket-print-icon) {
+  padding: 0 4px;
+}
+.emx-btn--sm .emx-btn__label,
+.emx-btn--sm > span:not([class*="icon"]):not(.badge):not(.count):not(.btn-ticket-print-icon),
+.emx-btn--xs .emx-btn__label,
+.emx-btn--xs > span:not([class*="icon"]):not(.badge):not(.count):not(.btn-ticket-print-icon) {
+  padding: 0 2px;
+}
+/* Direct text optical padding when no child span is present */
+.emx-btn.emx-btn--md:not(.emx-btn--icon-only):not(:has(span)) {
+  padding: 0 12px;
+}
+.emx-btn.emx-btn--sm:not(.emx-btn--icon-only):not(:has(span)) {
+  padding: 0 10px;
+}
+.emx-btn.emx-btn--xs:not(.emx-btn--icon-only):not(:has(span)) {
+  padding: 0 8px;
+}
+.emx-btn--icon-only .emx-btn__label {
+  display: contents;
+  padding: 0;
+}
+
+/* ── Universal Modal Close Buttons (Board UI Ghost Icon-Only) ── */
+.btn-icon-close,
+.catalog-modal-close,
+.ticket-header-close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid transparent !important;
+  background-color: transparent !important;
+  color: #64748B !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition:
+    background-color var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.16, 1, 0.3, 1)),
+    color var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.16, 1, 0.3, 1)),
+    transform var(--dur-tactile, 150ms) var(--ease-tactile, cubic-bezier(0.16, 1, 0.3, 1)) !important;
+}
+.btn-icon-close:hover:not(:disabled),
+.catalog-modal-close:hover:not(:disabled),
+.ticket-header-close:hover:not(:disabled) {
+  background-color: rgba(15, 23, 42, 0.06) !important;
+  color: #0F172A !important;
+}
+.btn-icon-close:active:not(:disabled),
+.catalog-modal-close:active:not(:disabled),
+.ticket-header-close:active:not(:disabled) {
+  transform: translateY(1px) !important;
+  background-color: rgba(15, 23, 42, 0.1) !important;
+}
+.btn-icon-close:focus-visible,
+.catalog-modal-close:focus-visible,
+.ticket-header-close:focus-visible {
+  outline: 2px solid #2563EB !important;
+  outline-offset: 2px !important;
+}
+.btn-icon-close svg,
+.catalog-modal-close svg,
+.catalog-modal-close .close-svg,
+.ticket-header-close svg {
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Modal Close Buttons in Dark Mode */
+:root[data-theme="dark"] .btn-icon-close,
+[data-theme="dark"] .btn-icon-close,
+.dark .btn-icon-close,
+:root[data-theme="dark"] .catalog-modal-close,
+[data-theme="dark"] .catalog-modal-close,
+.dark .catalog-modal-close,
+:root[data-theme="dark"] .ticket-header-close,
+[data-theme="dark"] .ticket-header-close,
+.dark .ticket-header-close {
+  color: #94A3B8 !important;
+  background-color: transparent !important;
+}
+:root[data-theme="dark"] .btn-icon-close:hover:not(:disabled),
+[data-theme="dark"] .btn-icon-close:hover:not(:disabled),
+.dark .btn-icon-close:hover:not(:disabled),
+:root[data-theme="dark"] .catalog-modal-close:hover:not(:disabled),
+[data-theme="dark"] .catalog-modal-close:hover:not(:disabled),
+.dark .catalog-modal-close:hover:not(:disabled),
+:root[data-theme="dark"] .ticket-header-close:hover:not(:disabled),
+[data-theme="dark"] .ticket-header-close:hover:not(:disabled),
+.dark .ticket-header-close:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #F1F5F9 !important;
+}
+:root[data-theme="dark"] .btn-icon-close:active:not(:disabled),
+[data-theme="dark"] .btn-icon-close:active:not(:disabled),
+.dark .btn-icon-close:active:not(:disabled),
+:root[data-theme="dark"] .catalog-modal-close:active:not(:disabled),
+[data-theme="dark"] .catalog-modal-close:active:not(:disabled),
+.dark .catalog-modal-close:active:not(:disabled),
+:root[data-theme="dark"] .ticket-header-close:active:not(:disabled),
+[data-theme="dark"] .ticket-header-close:active:not(:disabled),
+.dark .ticket-header-close:active:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+}

@@ -123,48 +123,8 @@
 }
 
 .fb-btn-primary, .fb-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
-  min-height: 48px;
-  padding: 0 20px;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 10px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.fb-btn-primary {
-  background: #0f172a;
-  color: #ffffff;
-  border: none;
-}
-
-.fb-btn-primary:hover {
-  background: #1e293b;
-}
-
-.fb-btn-secondary {
-  background: transparent;
-  color: #334155;
-  border: 1px solid #cbd5e1;
-}
-
-.fb-btn-secondary:hover {
-  background: #f8fafc;
-  color: #0f172a;
-}
-
-.fb-btn-primary:active, .fb-btn-secondary:active {
-  transform: translateY(1px);
-}
-
-.fb-btn-primary:focus-visible, .fb-btn-secondary:focus-visible {
-  outline: 2px solid #004ee6;
-  outline-offset: 2px;
+  flex: 1;
 }
 
 @media (min-width: 480px) {

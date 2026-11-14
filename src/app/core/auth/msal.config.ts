@@ -22,7 +22,7 @@ export function createMsalInstance(): IPublicClientApplication {
       redirectUri: environment.redirectUri,
     },
     cache: {
-      cacheLocation: BrowserCacheLocation.SessionStorage,
+      cacheLocation: BrowserCacheLocation.LocalStorage,
     },
   });
 }
