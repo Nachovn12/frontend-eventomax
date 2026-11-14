@@ -8,7 +8,9 @@
 
 **EventoMax** centraliza la operación diaria de productoras de eventos masivos y empresas de montaje técnico sobre una arquitectura distribuida en **AWS (`us-east-1`)**.
 
-El portal coordina el ciclo completo de cada producción (`SOLICITADO → CONFIRMADO → EN_MONTAJE → EN_EJECUCION → CERRADO`) junto con las reservas de equipamiento y servicios alojadas en **Amazon RDS PostgreSQL**. Los procesos pesados y documentos operativos (órdenes de cuadrilla **Crew Ticket** y **Actas de Cierre en PDF**) se procesan de forma asíncrona mediante **RabbitMQ**, mientras que los cambios de estado viajan por **Apache Kafka** (`productions.events`) para alimentar el tablero de KPIs y el registro histórico de auditoría. Todo el tráfico hacia los microservicios pasa por `ms-eventomax-bff`, que valida los tokens JWT emitidos por **Microsoft Entra ID** y verifica la propiedad de los recursos antes de entregar archivos o datos sensibles.
+El portal coordina el ciclo completo de cada producción (`SOLICITADO → CONFIRMADO → EN_MONTAJE → EN_EJECUCION → CERRADO`) junto con las reservas de equipamiento y servicios alojadas en **Amazon RDS PostgreSQL**.
+
+Los procesos pesados y documentos operativos (órdenes de cuadrilla **Crew Ticket** y **Actas de Cierre en PDF**) se procesan de forma asíncrona mediante **RabbitMQ**, mientras que los cambios de estado viajan por **Apache Kafka** (`productions.events`) para alimentar el tablero de KPIs y el registro histórico de auditoría. Todo el tráfico hacia los microservicios pasa por `ms-eventomax-bff`, que valida los tokens JWT emitidos por **Microsoft Entra ID** y verifica la propiedad de los recursos antes de entregar archivos o datos sensibles.
 
 ## Accesos Directos (Demo en Vivo)
 
@@ -53,7 +55,10 @@ Las rutas `/portal` y `/login` son públicas. Si un usuario autenticado intenta 
       <strong>Spring Boot BFF</strong>
     </td>
     <td align="center" width="20%">
-      <img src="public/branding/tech/apache-kafka.svg" width="36" height="36" alt="Apache Kafka" /><br />
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="public/branding/tech/apache-kafka-dark.svg" />
+        <img src="public/branding/tech/apache-kafka.svg" width="36" height="36" alt="Apache Kafka" />
+      </picture><br />
       <strong>Apache Kafka 3.8</strong>
     </td>
     <td align="center" width="20%">
@@ -98,16 +103,12 @@ flowchart TB
     subgraph VPC["AWS VPC (us-east-1)"]
         direction TB
 
-        subgraph AppsEC2["ec2-eventomax-apps · 52.20.127.84 (VPC 172.31.22.43)"]
+        subgraph AppsEC2["ec2-eventomax-apps · 52.20.127.84"]
             direction TB
             Proxy["Nginx Edge Proxy (:8080)"]
             BFF["ms-eventomax-bff (:8081)<br/>JWT · RBAC · Swagger UI"]
-
-            subgraph Services["Microservicios (eventomax-net)"]
-                direction LR
-                MS["Dominio<br/>productions · catalog · notify<br/>report · audit"]
-                ADM["Admin Brokers<br/>kafka-admin · rabbit-admin"]
-            end
+            MS["Servicios de Dominio<br/>productions · catalog · notify · report · audit"]
+            ADM["Admin Brokers<br/>kafka-admin · rabbit-admin"]
 
             Proxy -->|"/api/** · /swagger-ui/**"| BFF
             BFF --> MS
@@ -116,12 +117,9 @@ flowchart TB
 
         APIGW -->|HTTP :8080| Proxy
 
-        subgraph DataPlane["Mensajería y Base de Datos"]
-            direction LR
-            KafkaEC2["ec2-eventomax-kafka (172.31.20.204)<br/>3 Brokers Kafka · Kafka UI"]
-            MQEC2["ec2-eventomax-mq (172.31.25.8)<br/>RabbitMQ HA (2 nodos)"]
-            RDS[("Amazon RDS<br/>PostgreSQL")]
-        end
+        KafkaEC2["ec2-eventomax-kafka (172.31.20.204)<br/>3 Brokers Kafka · Kafka UI"]
+        MQEC2["ec2-eventomax-mq (172.31.25.8)<br/>RabbitMQ HA (2 nodos)"]
+        RDS[("Amazon RDS<br/>PostgreSQL")]
 
         Proxy -->|"/kafka-ui/**"| KafkaEC2
         Proxy -->|"/rabbitmq/**"| MQEC2
