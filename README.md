@@ -12,28 +12,63 @@
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-Management%20UI-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/rabbitmq/)
 
 <p>
+  <a href="#contexto-del-caso--eventomax"><strong>Contexto</strong></a> •
   <a href="#accesos-directos--demo-en-vivo"><strong>Accesos Demo</strong></a> •
+  <a href="#roles-y-gobierno-de-acceso-rbac"><strong>Roles RBAC</strong></a> •
   <a href="#stack-tecnológico-e-infraestructura-aws"><strong>Stack y AWS</strong></a> •
   <a href="#arquitectura-cloud-native"><strong>Arquitectura</strong></a> •
   <a href="#galería-del-portal"><strong>Galería</strong></a>
 </p>
 
+<sub>
+  <strong>Caso 8:</strong> Plataforma de Producción y Montaje de Eventos &nbsp;|&nbsp;
+  <strong>Asignatura:</strong> Desarrollo Cloud Native (<code>DSY1107</code>) &nbsp;|&nbsp;
+  <strong>Equipo:</strong> Ignacio Valeria · Benjamín Flores · Benjamín Espinoza
+</sub>
+
 </div>
 
-**EventoMax Production Portal** es la plataforma web **Cloud Native** para la gestión operativa de eventos masivos, producciones técnicas, acreditación, reportería ejecutiva y auditoría distribuida, desplegada en **AWS (`us-east-1`)** y accesible vía **HTTPS** desde cualquier navegador.
+---
+
+## Contexto del Caso — EventoMax
+
+**EventoMax** es una plataforma **SaaS B2B** diseñada para productoras de eventos masivos y empresas de montaje técnico que requieren coordinar operaciones críticas en tiempo real, trazabilidad documental y control de acceso corporativo sobre infraestructura **Cloud Native en AWS (`us-east-1`)**.
+
+- **Ciclo Operativo End-to-End:** Administra producciones técnicas desde su solicitud hasta el cierre (`SOLICITADO → CONFIRMADO → EN_MONTAJE → EN_EJECUCION → CERRADO`), integrando catálogo de equipamiento y reservas en **Amazon RDS PostgreSQL**.
+- **Mensajería Híbrida Desacoplada:**
+  - **RabbitMQ Cluster HA (Comandos y DLQ):** Orquesta tareas asíncronas de notificación, emisión de **Tickets de Cuadrilla** (`/crew-ticket`), generación de **Actas de Cierre PDF** (`/quote-pdf`) y administración programática con `AmqpAdmin`.
+  - **Apache Kafka (Event-Driven + DLT):** Transmite eventos de dominio (`productions.events`) hacia proyecciones analíticas de **KPIs ejecutivos** y un registro de **Auditoría distribuida inmutable**.
+- **Seguridad Defense-in-Depth:** Autenticación federada con **Microsoft Entra ID (OAuth 2.0 + PKCE)** en el frontend Angular 22 y validación criptográfica de JWT, scopes y verificación de propiedad (**anti-IDOR**) en el **Backend-for-Frontend (`ms-eventomax-bff`)**.
 
 ---
 
 ## Accesos Directos — Demo en Vivo
 
-Todos los servicios operan sobre **HTTPS público** (Amazon S3 + AWS API Gateway + Nginx Edge Proxy), listos para usar desde cualquier PC institucional:
+Todos los endpoints y consolas operan sobre **HTTPS público** (Amazon S3 + AWS API Gateway → Nginx Edge Proxy), listos para abrir desde cualquier PC institucional sin túneles ni configuraciones locales:
 
 | Interfaz UI | Acceso HTTPS | Credenciales / Autenticación |
 | :--- | :--- | :--- |
-| **Portal Web EventoMax**<br /><sub>SPA Angular • Flujo operativo, producciones y RBAC</sub> | [**Abrir Portal Web**](https://eventomax-production-portal-app.s3.us-east-1.amazonaws.com/index.html) | **SSO Microsoft Entra ID**<br /><sub>Login corporativo OAuth 2.0 / MSAL</sub> |
-| **Swagger UI (API BFF)**<br /><sub>Endpoints REST • [Spec OpenAPI JSON](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/v3/api-docs)</sub> | [**Abrir Swagger UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/swagger-ui/index.html) | **Lectura pública**<br /><sub>Probar `/api/**`: **Authorize** → `Bearer <JWT>`</sub> |
+| **Portal Web EventoMax**<br /><sub>SPA Angular • Flujo operativo, producciones, catálogo y auditoría</sub> | [**Abrir Portal Web**](https://eventomax-production-portal-app.s3.us-east-1.amazonaws.com/index.html) | **SSO Microsoft Entra ID**<br /><sub>OAuth 2.0 + PKCE (cuentas asignadas por rol)</sub> |
+| **Swagger UI (API BFF)**<br /><sub>Endpoints REST `GET`/`POST`/`PUT`/`DELETE` • [Spec OpenAPI JSON](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/v3/api-docs)</sub> | [**Abrir Swagger UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/swagger-ui/index.html) | **Lectura pública**<br /><sub>Probar `/api/**`: botón **Authorize** → `Bearer <JWT>`</sub> |
 | **Apache Kafka UI**<br /><sub>`eventomax-cluster` • 3 brokers, 6 tópicos, 65 particiones</sub> | [**Abrir Kafka UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/kafka-ui/) | Usuario: `eventomax_admin`<br />Clave: `EventoMax2026!` |
-| **RabbitMQ Management**<br /><sub>Clúster HA 2 nodos • Colas `q.cmd.*` y DLQs</sub> | [**Abrir RabbitMQ UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/rabbitmq/) | Usuario: `eventomax`<br />Clave: `eventomax` |
+| **RabbitMQ Management**<br /><sub>Clúster HA 2 nodos • Exchanges, colas `q.cmd.*` y DLQs</sub> | [**Abrir RabbitMQ UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/rabbitmq/) | Usuario: `eventomax`<br />Clave: `eventomax` |
+
+> **Requisito para evaluación:** La capa backend, brokers y base de datos corren sobre **AWS Academy Learner Lab** (`ec2-eventomax-apps`, `ec2-eventomax-kafka`, `ec2-eventomax-mq`); verificar que el laboratorio y las 3 instancias EC2 estén en estado `running` antes de la demo.
+
+---
+
+## Roles y Gobierno de Acceso (RBAC)
+
+La plataforma aplica autorización granular por **App Roles** emitidos en el JWT de **Microsoft Entra ID** (`EntraJwtAuthoritiesConverter` + guards Angular en [`src/app/app.routes.ts`](src/app/app.routes.ts)):
+
+| Rol Corporativo | Responsabilidad en el Negocio | Vistas SPA Habilitadas | Capacidades Clave en API / Plataforma |
+| :--- | :--- | :--- | :--- |
+| **`Admin`** | Dirección general, gobierno de plataforma y operación de infraestructura | `/dashboard`, `/productions`, `/catalog`, `/reports`, `/audit` | Control total de producciones, CRUD completo del catálogo (`POST`/`PUT`), reportería de KPIs (`/api/report/**`), auditoría y administración programática de colas (`/api/rabbit-admin/**`) |
+| **`Productor`** | Jefe técnico y operativo del montaje y coordinación en terreno | `/dashboard`, `/productions`, `/catalog` | Gestión de ciclo de vida y estados (`PUT /status`), republicación de comandos RabbitMQ, emisión de **Crew Tickets**, Actas PDF y consulta de catálogo |
+| **`Organizador`** | Gestor comercial / cliente responsable del evento y su alcance | `/dashboard`, `/productions` | Creación de nuevas producciones (`POST /productions`), actualización de contacto, seguimiento de estado, reservas asociadas y descarga de **Acta PDF** |
+| **`Auditor`** | Fiscalización, cumplimiento normativo y trazabilidad operativa | `/dashboard`, `/audit` | Visibilidad ejecutiva de solo lectura en tablero operativo y consulta del timeline inmutable de eventos consumidos desde Kafka (`/api/audit/timeline`) |
+
+> Las rutas `/portal` y `/login` son públicas para ingreso federado; cualquier acceso autenticado sin el rol requerido es redirigido determinísticamente a `/forbidden` y rechazado por el BFF con `403 Forbidden`.
 
 ---
 
@@ -166,48 +201,21 @@ flowchart TB
   <tr>
     <td width="50%">
       <img src="public/branding/eventomax/demo/demo-real-1-dashboard.png" alt="Dashboard Ejecutivo" width="100%" />
-      <p align="center"><strong>Dashboard Ejecutivo</strong> — KPIs y gráficas Apache ECharts</p>
+      <p align="center"><strong>Dashboard Ejecutivo</strong> — KPIs operativos y gráficas Apache ECharts</p>
     </td>
     <td width="50%">
       <img src="public/branding/eventomax/demo/demo-real-2-productions.png" alt="Gestión de Producciones" width="100%" />
-      <p align="center"><strong>Producciones</strong> — Ciclo operativo y asignación técnica</p>
+      <p align="center"><strong>Producciones</strong> — Ciclo operativo, reservas y asignación técnica</p>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img src="public/branding/eventomax/demo/demo-real-3-crewticket.png" alt="Crew y Acreditación" width="100%" />
-      <p align="center"><strong>Crew & Ticketing</strong> — Gestión de personal, zonas y entradas</p>
+      <img src="public/branding/eventomax/demo/demo-real-3-crewticket.png" alt="Crew Ticket y Actas PDF" width="100%" />
+      <p align="center"><strong>Crew Ticket & Actas PDF</strong> — Órdenes de cuadrilla y documentos asíncronos</p>
     </td>
     <td width="50%">
-      <img src="public/branding/eventomax/demo/demo-real-4-audit.png" alt="Auditoría y Trazabilidad" width="100%" />
-      <p align="center"><strong>Auditoría Distribuida</strong> — Trazabilidad de eventos</p>
+      <img src="public/branding/eventomax/demo/demo-real-4-audit.png" alt="Auditoría Distribuida" width="100%" />
+      <p align="center"><strong>Auditoría Distribuida</strong> — Trazabilidad inmutable de eventos Kafka</p>
     </td>
   </tr>
 </table>
-
----
-
-<details>
-<summary><strong>Referencia técnica: Rutas RBAC y comandos de desarrollo / despliegue S3</strong></summary>
-
-### Rutas y Roles ([`src/app/app.routes.ts`](src/app/app.routes.ts))
-
-| Ruta | Roles Permitidos | Descripción |
-| :--- | :--- | :--- |
-| `/portal`, `/login` | Público | Landing y login corporativo MSAL |
-| `/dashboard` | `Admin`, `Productor`, `Organizador`, `Auditor` | Tablero operativo |
-| `/productions` | `Admin`, `Productor`, `Organizador` | Administración de producciones |
-| `/catalog` | `Admin`, `Productor` | Catálogo de recursos y proveedores |
-| `/reports` | `Admin` | Reportería consolidada |
-| `/audit` | `Admin`, `Auditor` | Auditoría y trazabilidad |
-| `/forbidden` | Autenticado | Acceso denegado |
-
-### Comandos Locales y S3
-
-```bash
-npm ci && npm start          # Desarrollo local (http://localhost:4200)
-npm test && npm run e2e      # Vitest + Playwright
-npm run build && aws s3 sync dist/frontend-eventomax/browser/ s3://eventomax-production-portal-app --delete
-```
-
-</details>
