@@ -28,12 +28,12 @@
 
 Todos los servicios operan sobre **HTTPS público** (Amazon S3 + AWS API Gateway + Nginx Edge Proxy), listos para usar desde cualquier PC institucional:
 
-| Interfaz UI | Enlace Directo | Usuario | Contraseña / Acceso | Uso en la Demo |
-| :--- | :--- | :--- | :--- | :--- |
-| **Portal Web EventoMax** | [**Abrir Portal Web**](https://eventomax-production-portal-app.s3.us-east-1.amazonaws.com/index.html) | Cuenta Microsoft Entra ID | Login SSO (OAuth 2.0 / MSAL) | Flujo completo SPA, RBAC, producciones y auditoría |
-| **Swagger UI (API BFF)** | [**Abrir Swagger UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/swagger-ui/index.html) | Acceso público (lectura) | Endpoints `/api/**`: botón **Authorize** → `Bearer <JWT>` | Explorar endpoints `GET`/`POST`/`PUT`/`DELETE` ([Spec JSON](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/v3/api-docs)) |
-| **Apache Kafka UI** | [**Abrir Kafka UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/kafka-ui/) | `eventomax_admin` | `EventoMax2026!` | Monitorear `eventomax-cluster` (3 brokers, 6 tópicos, 65 particiones) |
-| **RabbitMQ Management** | [**Abrir RabbitMQ UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/rabbitmq/) | `eventomax` | `eventomax` | Inspeccionar colas `q.cmd.*`, exchanges, DLQs y clúster HA (2 nodos) |
+| Interfaz UI | Acceso HTTPS | Credenciales / Autenticación |
+| :--- | :--- | :--- |
+| **Portal Web EventoMax**<br /><sub>SPA Angular • Flujo operativo, producciones y RBAC</sub> | [**Abrir Portal Web**](https://eventomax-production-portal-app.s3.us-east-1.amazonaws.com/index.html) | **SSO Microsoft Entra ID**<br /><sub>Login corporativo OAuth 2.0 / MSAL</sub> |
+| **Swagger UI (API BFF)**<br /><sub>Endpoints REST • [Spec OpenAPI JSON](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/v3/api-docs)</sub> | [**Abrir Swagger UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/swagger-ui/index.html) | **Lectura pública**<br /><sub>Probar `/api/**`: **Authorize** → `Bearer <JWT>`</sub> |
+| **Apache Kafka UI**<br /><sub>`eventomax-cluster` • 3 brokers, 6 tópicos, 65 particiones</sub> | [**Abrir Kafka UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/kafka-ui/) | Usuario: `eventomax_admin`<br />Clave: `EventoMax2026!` |
+| **RabbitMQ Management**<br /><sub>Clúster HA 2 nodos • Colas `q.cmd.*` y DLQs</sub> | [**Abrir RabbitMQ UI**](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/rabbitmq/) | Usuario: `eventomax`<br />Clave: `eventomax` |
 
 ---
 
@@ -41,54 +41,54 @@ Todos los servicios operan sobre **HTTPS público** (Amazon S3 + AWS API Gateway
 
 <table>
   <tr>
-    <td align="center" width="160">
+    <td align="center" width="20%">
       <img src="public/branding/tech/angular.svg" width="40" height="40" alt="Angular 22" /><br />
       <strong>Angular 22</strong><br />
       <sub>SPA • TypeScript 6 • Tailwind 4</sub>
     </td>
-    <td align="center" width="160">
+    <td align="center" width="20%">
       <img src="public/branding/tech/microsoft.svg" width="40" height="40" alt="Microsoft Entra ID" /><br />
       <strong>Microsoft Entra ID</strong><br />
       <sub>MSAL • OAuth 2.0 • RBAC JWT</sub>
     </td>
-    <td align="center" width="160">
+    <td align="center" width="20%">
       <img src="public/branding/tech/spring-boot.svg" width="40" height="40" alt="Spring Boot" /><br />
       <strong>Spring Boot</strong><br />
       <sub>BFF API • OpenAPI / Swagger</sub>
     </td>
-    <td align="center" width="160">
+    <td align="center" width="20%">
       <img src="public/branding/tech/apache-kafka.svg" width="40" height="40" alt="Apache Kafka" /><br />
       <strong>Apache Kafka 3.8</strong><br />
       <sub>3 Brokers • 6 Tópicos • Kafka UI</sub>
     </td>
-    <td align="center" width="160">
+    <td align="center" width="20%">
       <img src="public/branding/tech/rabbitmq.svg" width="40" height="40" alt="RabbitMQ" /><br />
       <strong>RabbitMQ</strong><br />
       <sub>Clúster HA 2 Nodos • AMQP</sub>
     </td>
   </tr>
   <tr>
-    <td align="center" width="160">
+    <td align="center" width="20%">
       <img src="public/branding/tech/postgresql.svg" width="40" height="40" alt="PostgreSQL" /><br />
       <strong>PostgreSQL</strong><br />
       <sub>Persistencia Relacional • RDS</sub>
     </td>
-    <td align="center" width="160">
+    <td align="center" width="20%">
       <img src="public/branding/tech/docker.svg" width="40" height="40" alt="Docker" /><br />
       <strong>Docker Compose</strong><br />
       <sub>Contenedores • Nginx Edge Proxy</sub>
     </td>
-    <td align="center" width="160">
+    <td align="center" width="20%">
       <img src="public/branding/tech/aws.svg" width="40" height="40" alt="AWS API Gateway" /><br />
       <strong>AWS API Gateway</strong><br />
       <sub>Punto Único HTTPS Público</sub>
     </td>
-    <td align="center" width="160">
+    <td align="center" width="20%">
       <img src="public/branding/tech/aws-ec2.svg" width="40" height="40" alt="Amazon EC2" /><br />
       <strong>Amazon EC2 (×3)</strong><br />
       <sub>Apps • Clúster Kafka • Clúster MQ</sub>
     </td>
-    <td align="center" width="160">
+    <td align="center" width="20%">
       <img src="public/branding/tech/aws-s3.svg" width="40" height="40" alt="Amazon S3" /><br />
       <strong>Amazon S3</strong><br />
       <sub>Hosting Estático SPA</sub>
