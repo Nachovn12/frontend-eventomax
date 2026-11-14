@@ -101,26 +101,61 @@ Todos los servicios operan sobre **HTTPS público** (Amazon S3 + AWS API Gateway
 ## Arquitectura Cloud Native
 
 ```mermaid
-flowchart LR
-    User["Navegador / PC Demo"] -->|HTTPS| S3["Amazon S3<br/>eventomax-production-portal-app"]
-    User -->|HTTPS + Bearer JWT| APIGW["AWS API Gateway<br/>7dewsdyt7i.us-east-1"]
-    User -.->|OAuth 2.0 / OIDC| Entra["Microsoft Entra ID<br/>MSAL + Roles"]
+flowchart TB
+    User(["Navegador / PC Demo"])
 
-    subgraph VPC["AWS VPC (us-east-1)"]
-        APIGW -->|HTTP :8080| Proxy["ec2-eventomax-apps (52.20.127.84)<br/>Nginx Edge Proxy"]
+    User -->|"HTTPS Estático"| S3["Amazon S3<br/>Portal Web Angular 22 SPA"]
+    User -.->|"OAuth 2.0 / OIDC"| Entra["Microsoft Entra ID<br/>Identidad y Roles JWT"]
+    User -->|"HTTPS + Bearer JWT"| APIGW["AWS API Gateway<br/>7dewsdyt7i · us-east-1"]
 
-        subgraph AppsEC2["ec2-eventomax-apps (172.31.22.43)"]
-            Proxy -->|/api/** y /swagger-ui/**| BFF["ms-eventomax-bff<br/>Spring Boot BFF (JWT + RBAC)"]
-            BFF --> MS["6 Microservicios de Dominio"]
+    subgraph VPC["AWS VPC · us-east-1"]
+        direction TB
+
+        subgraph AppsEC2["ec2-eventomax-apps · 52.20.127.84 (VPC 172.31.22.43)"]
+            direction TB
+            Proxy["Nginx Edge Proxy (:8080)<br/>eventomax-edge-proxy"]
+            BFF["ms-eventomax-bff (:8081)<br/>Spring Boot BFF · JWT + RBAC + Swagger UI"]
+
+            subgraph Services["Microservicios Backend (Docker · eventomax-net)"]
+                direction LR
+                MS["Dominio<br/>productions · catalog · notify<br/>report · audit"]
+                ADM["Administración Brokers<br/>kafka-admin · rabbit-admin"]
+            end
+
+            Proxy -->|"/api/** · /swagger-ui/**"| BFF
+            BFF --> MS
+            BFF --> ADM
         end
 
-        Proxy -->|/kafka-ui/**| KafkaNode["ec2-eventomax-kafka (172.31.20.204)<br/>3 Kafka Brokers + Kafka UI"]
-        Proxy -->|/rabbitmq/**| MQNode["ec2-eventomax-mq (172.31.25.8)<br/>2 Nodos RabbitMQ Cluster"]
+        APIGW -->|"HTTP :8080"| Proxy
 
-        MS -->|Eventos| KafkaNode
-        MS -->|Comandos / Colas| MQNode
-        MS -->|JDBC| RDS[("Amazon RDS<br/>PostgreSQL")]
+        subgraph DataPlane["Mensajería y Persistencia en VPC"]
+            direction LR
+            KafkaEC2["ec2-eventomax-kafka (172.31.20.204)<br/>Apache Kafka 3.8 (3 Brokers) · Kafka UI"]
+            MQEC2["ec2-eventomax-mq (172.31.25.8)<br/>RabbitMQ Cluster HA (2 Nodos)"]
+            RDS[("Amazon RDS<br/>PostgreSQL")]
+        end
+
+        Proxy -->|"/kafka-ui/**"| KafkaEC2
+        Proxy -->|"/rabbitmq/**"| MQEC2
+        MS -->|"Eventos Kafka"| KafkaEC2
+        ADM -->|"Admin Tópicos"| KafkaEC2
+        MS -->|"Comandos AMQP"| MQEC2
+        ADM -->|"AmqpAdmin"| MQEC2
+        MS -->|"JDBC"| RDS
     end
+
+    classDef client fill:#024ffc,stroke:#60a5fa,stroke-width:2px,color:#ffffff;
+    classDef edge fill:#0f294d,stroke:#3b82f6,stroke-width:1.5px,color:#f8fafc;
+    classDef app fill:#1e3a5f,stroke:#38bdf8,stroke-width:1.5px,color:#f8fafc;
+    classDef infra fill:#1e293b,stroke:#94a3b8,stroke-width:1.5px,color:#f8fafc;
+    classDef aws fill:#2d200f,stroke:#f59e0b,stroke-width:1.5px,color:#fef3c7;
+
+    class User client;
+    class Entra,APIGW edge;
+    class S3,RDS aws;
+    class Proxy,BFF,MS,ADM app;
+    class KafkaEC2,MQEC2 infra;
 ```
 
 ---
