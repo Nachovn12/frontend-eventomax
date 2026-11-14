@@ -18,7 +18,7 @@ Todas las interfaces están expuestas bajo **HTTPS público** (Amazon S3 y AWS A
 | :--- | :--- | :--- | :--- |
 | **Portal Web EventoMax** | [Abrir Portal Web](https://eventomax-production-portal-app.s3.us-east-1.amazonaws.com/index.html) | Cuenta Microsoft Entra ID | Login federado OAuth 2.0 (PKCE) |
 | **Swagger UI (API BFF)** | [Abrir Swagger UI](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/swagger-ui/index.html) · [JSON](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/v3/api-docs) | Lectura pública | Para probar `/api/**`: botón **Authorize** con `Bearer <JWT>` |
-| **Apache Kafka UI** | [Abrir Kafka UI](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/kafka-ui/) | `eventomax_admin` | `EventoMax2026!` |
+| **Apache Kafka UI** | [Abrir Kafka UI](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/kafka-ui/) | Sin login | Acceso directo al clúster `eventomax-cluster` |
 | **RabbitMQ Management** | [Abrir RabbitMQ UI](https://7dewsdyt7i.execute-api.us-east-1.amazonaws.com/rabbitmq/) | `eventomax` | `eventomax` |
 
 *Nota de operación: la infraestructura backend y de mensajería se ejecuta en **AWS Academy Learner Lab**. Antes de iniciar la demostración, verificar que el laboratorio y las instancias `ec2-eventomax-apps`, `ec2-eventomax-kafka` y `ec2-eventomax-mq` estén encendidas (`running`).*
