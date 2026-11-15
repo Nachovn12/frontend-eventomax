@@ -111,6 +111,20 @@ export class StatusDistributionChart implements AfterViewInit, OnDestroy {
         extraCssText: isDark
           ? 'box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.14), 0 12px 32px 0 rgba(0, 0, 0, 0.65);'
           : 'box-shadow: 0 10px 38px -10px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(15, 23, 42, 0.08);',
+        formatter: (params: unknown) => {
+          const p = Array.isArray(params) ? params[0] : params;
+          const typed = p as { name?: string; value?: number; color?: string };
+          const labels: Record<string, string> = {
+            SOLICITADO: 'Solicitado',
+            CONFIRMADO: 'Confirmado',
+            EN_MONTAJE: 'En montaje',
+            EN_EJECUCION: 'En ejecución',
+            CERRADO: 'Cerrado',
+            CANCELADO: 'Cancelado',
+          };
+          const label = (typed?.name && labels[typed.name]) || typed?.name || '';
+          return `<strong>${label}</strong><br/>Producciones en estado: <strong>${typed?.value ?? 0}</strong>`;
+        },
       },
       xAxis: {
         type: 'value',

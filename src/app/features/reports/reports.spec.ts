@@ -6,6 +6,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { Reports } from './reports';
 import { ReportsDataService } from './reports-data.service';
+import { KafkaAdminDataService } from './kafka-admin-data.service';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { ReportKpisResponse, ReportTopServicesResponse } from './models/report.model';
 
@@ -54,6 +55,7 @@ describe('Reports EP2 (EMX-105)', () => {
       imports: [Reports],
       providers: [
         { provide: ReportsDataService, useValue: api },
+        { provide: KafkaAdminDataService, useValue: { isAvailable: false } },
         { provide: AuthorizationService, useValue: {
           hasRole: () => allowed, hasScope: () => allowed
         } },
@@ -104,6 +106,7 @@ describe('Reports EP2 (EMX-105)', () => {
       imports: [Reports],
       providers: [
         { provide: ReportsDataService, useValue: api },
+        { provide: KafkaAdminDataService, useValue: { isAvailable: false } },
         { provide: AuthorizationService, useValue: {
           hasRole: () => true, hasScope: () => true
         } },
@@ -141,5 +144,39 @@ describe('Reports EP2 (EMX-105)', () => {
     expect(fixture.nativeElement.textContent).toContain('No pudimos obtener el ranking de servicios');
     expect(fixture.nativeElement.textContent).toContain('No fue posible cargar la información. Intenta nuevamente.');
     expect(fixture.nativeElement.textContent).not.toContain('No fue posible cargar los KPIs.');
+  });
+
+  it('refreshes KPIs and top-services automatically every 30s without blanking view', async () => {
+    vi.useFakeTimers();
+    try {
+      const api = {
+        getKpis: vi.fn(() => of(response)),
+        getTopServices: vi.fn(() => of(topServicesResponse))
+      };
+      await TestBed.configureTestingModule({
+        imports: [Reports],
+        providers: [
+          { provide: ReportsDataService, useValue: api },
+          { provide: AuthorizationService, useValue: {
+            hasRole: () => true, hasScope: () => true
+          } },
+          { provide: LOCALE_ID, useValue: 'es-CL' }
+        ]
+      }).compileComponents();
+      const fixture = TestBed.createComponent(Reports);
+      fixture.detectChanges();
+
+      expect(api.getKpis).toHaveBeenCalledTimes(1);
+      expect(api.getTopServices).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(30_000);
+      fixture.detectChanges();
+
+      expect(api.getKpis).toHaveBeenCalledTimes(2);
+      expect(api.getTopServices).toHaveBeenCalledTimes(2);
+      expect(fixture.nativeElement.textContent).toContain('Cambios de estado');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

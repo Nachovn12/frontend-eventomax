@@ -283,6 +283,13 @@
                     </button>
                   </div>
 
+                  @if (item.source) {
+                    <div class="tech-tag" [title]="'Servicio origen: ' + item.source">
+                      <span class="tech-tag-label">Origen:</span>
+                      <span class="tech-tag-val">{{ item.source }}</span>
+                    </div>
+                  }
+
                   @if (item.traceId) {
                     <div class="tech-tag" (click)="copyText(item.traceId, 'tr-' + item.eventId)" title="Click para copiar Trace ID">
                       <span class="tech-tag-label">Trace ID:</span>

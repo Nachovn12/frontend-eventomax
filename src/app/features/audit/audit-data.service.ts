@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClientService } from '../../core/http/api-client.service';
 import { environment } from '../../../environments/environment';
-import { AuditEvent, AuditTimelineFilters } from './models/audit-event.model';
+import { AuditEvent, AuditTimelineFilters, ProductionTimelineSnapshot } from './models/audit-event.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuditDataService {
@@ -19,6 +19,16 @@ export class AuditDataService {
     params.set('size', String(filters.size ?? 50));
     return this.api.get<readonly AuditEvent[]>(
       `${environment.apiGatewayUrl}/api/audit/timeline?${params.toString()}`
+    );
+  }
+
+  getLatestSnapshots(productionId?: string, page = 0, size = 25): Observable<readonly ProductionTimelineSnapshot[]> {
+    const params = new URLSearchParams();
+    if (productionId?.trim()) params.set('productionId', productionId.trim());
+    params.set('page', String(page));
+    params.set('size', String(size));
+    return this.api.get<readonly ProductionTimelineSnapshot[]>(
+      `${environment.apiGatewayUrl}/api/audit/timeline/latest?${params.toString()}`
     );
   }
 }
