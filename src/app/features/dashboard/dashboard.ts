@@ -115,22 +115,39 @@ export class Dashboard {
   readonly telemetryBars = computed(() => {
     const report = this.reportKpis();
     const total = report?.metrics?.totalStatusChanges ?? 0;
-    const bars: Array<{ label: string; count: number; active: boolean; heightPct: number }> = [];
-    for (let i = 0; i < 24; i++) {
-      const h = i.toString().padStart(2, '0');
-      bars.push({
-        label: `${h}:00`,
-        count: 0,
-        active: false,
-        heightPct: 0
-      });
-    }
+    const productions = this.allProductions();
+    const counts = new Array<number>(24).fill(0);
+
     if (total > 0) {
-      bars[15] = { label: '16:00', count: Math.max(1, Math.floor(total * 0.2)), active: true, heightPct: 35 };
-      bars[19] = { label: '20:00', count: Math.max(1, Math.floor(total * 0.5)), active: true, heightPct: 75 };
-      bars[22] = { label: '23:00', count: Math.max(1, Math.floor(total * 0.3)), active: true, heightPct: 50 };
+      let matched = 0;
+      for (const prod of productions) {
+        const rawTs = prod.updatedAt || prod.createdAt;
+        if (!rawTs) continue;
+        const parsed = new Date(rawTs);
+        if (!Number.isNaN(parsed.getTime())) {
+          counts[parsed.getHours()] += 1;
+          matched += 1;
+        }
+      }
+      if (matched < total) {
+        const fallbackDate = report?.generatedAt ? new Date(report.generatedAt) : new Date();
+        const fallbackHour = Number.isNaN(fallbackDate.getTime()) ? 0 : fallbackDate.getHours();
+        counts[fallbackHour] += total - matched;
+      }
     }
-    return bars;
+
+    const maxCount = Math.max(...counts, 1);
+    return counts.map((count, i) => {
+      const h = i.toString().padStart(2, '0');
+      const active = count > 0;
+      const heightPct = active ? Math.max(25, Math.round((count / maxCount) * 85)) : 0;
+      return {
+        label: `${h}:00`,
+        count,
+        active,
+        heightPct,
+      };
+    });
   });
 
   private readonly dashboardState = toSignal(
