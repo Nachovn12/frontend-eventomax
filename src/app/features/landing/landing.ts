@@ -128,8 +128,8 @@ export class Landing implements OnInit, OnDestroy {
       tabLabel: 'Panel Principal',
       routePath: '/dashboard',
       title: 'Panel de Control y Monitoreo en Tiempo Real',
-      subtitle: 'Supervisión operativa centralizada: estado de producciones, transiciones de montaje y métricas clave sin demoras.',
-      toast: 'Panel operativo sincronizado: producciones y métricas actualizadas en tiempo real.',
+      subtitle: 'Supervisión centralizada de todas las producciones: visualiza al instante qué eventos están solicitados, confirmados, en montaje o finalizados.',
+      toast: 'Panel operativo sincronizado: 24 producciones y métricas de montaje actualizadas al instante.',
       image: '/branding/eventomax/demo/demo-real-1-dashboard.png',
       imageAlt: 'Panel de control real de EventoMax con telemetría en tiempo real y métricas operativas',
       hotspots: [
@@ -138,10 +138,10 @@ export class Landing implements OnInit, OnDestroy {
           top: '59%',
           left: '72%',
           stepNumber: 1,
-          tag: 'FLUJO EN TIEMPO REAL',
+          tag: 'ACTUALIZACIÓN AUTOMÁTICA',
           title: 'Flujo de Eventos en Tiempo Real',
-          description: 'Transmisión continua de actualizaciones operacionales. Cada cambio de estado se refleja de inmediato en pantalla sin demoras ni recargas.',
-          metric: 'Actualizaciones continuas'
+          description: 'Cada vez que un equipo confirma o avanza en el montaje, la pantalla se actualiza sola sin necesidad de recargar ni llamar por teléfono.',
+          metric: 'Actualización instantánea'
         },
         {
           id: 'k2',
@@ -150,8 +150,8 @@ export class Landing implements OnInit, OnDestroy {
           stepNumber: 2,
           tag: 'RED MULTISEDE',
           title: 'Monitoreo Centralizado de Producciones',
-          description: 'Producciones activas coordinadas en tiempo real. Ciclo de vida completo trazado desde la solicitud hasta el cierre sin usar planillas Excel.',
-          metric: '4 registradas · 3 activas'
+          description: 'Todas las producciones de Santiago, Valparaíso y Concepción en un solo lugar, desde la solicitud inicial hasta el acta de cierre.',
+          metric: '24 producciones · 3 sedes'
         }
       ]
     },
@@ -161,8 +161,8 @@ export class Landing implements OnInit, OnDestroy {
       tabLabel: 'Gestión de Producciones',
       routePath: '/productions',
       title: 'Agenda de Producciones y Control de Etapas',
-      subtitle: 'Control de etapas con validación rigurosa: no es posible pasar a montaje sin confirmación previa y reserva garantizada de equipos.',
-      toast: 'Reserva completada: equipamiento de sonido e iluminación reservado para Cumbre Sur #003.',
+      subtitle: 'Avance ordenado paso a paso: ningún evento pasa a montaje sin contar primero con su reserva de equipos confirmada.',
+      toast: 'Reserva garantizada: equipamiento de sonido e iluminación asignado para Cumbre Sur #003.',
       image: '/branding/eventomax/demo/demo-real-2-productions.png',
       imageAlt: 'Módulo de producciones real de EventoMax con agenda y control de estados',
       hotspots: [
@@ -172,8 +172,8 @@ export class Landing implements OnInit, OnDestroy {
           left: '32%',
           stepNumber: 1,
           tag: 'RESERVA GARANTIZADA',
-          title: 'Bloqueo Atómico de Inventario AV',
-          description: 'Al confirmar el evento, los equipos audiovisuales requeridos quedan reservados de forma exclusiva, impidiendo duplicidades o sobrearriendos.',
+          title: 'Reserva Exclusiva de Equipos Audiovisuales',
+          description: 'Al confirmar un evento, el sonido, la iluminación y las pantallas quedan apartados de inmediato para que ningún otro evento los ocupe por error.',
           metric: '14 equipos reservados'
         },
         {
@@ -181,10 +181,10 @@ export class Landing implements OnInit, OnDestroy {
           top: '73%',
           left: '79.5%',
           stepNumber: 2,
-          tag: 'CONTROL DE MONTAJE',
-          title: 'Control de Transición a EN_MONTAJE',
-          description: 'El sistema valida los permisos y la autorización del productor responsable antes de habilitar el montaje en terreno.',
-          metric: 'Validación de acceso rigurosa'
+          tag: 'PASO A TERRENO',
+          title: 'Autorización Segura de Inicio de Montaje',
+          description: 'El sistema verifica que el productor responsable haya validado los equipos y el recinto antes de dar luz verde al montaje en terreno.',
+          metric: 'Validación por rol activo'
         }
       ]
     },
@@ -194,8 +194,8 @@ export class Landing implements OnInit, OnDestroy {
       tabLabel: 'Hoja de Ruta Cuadrilla',
       routePath: '/productions/3/ticket',
       title: 'Orden de Trabajo y Despacho a Terreno',
-      subtitle: 'Despacho digital directo a los técnicos: adiós a los grupos de WhatsApp y con instrucciones claras de llegada al recinto.',
-      toast: 'Orden de trabajo enviada a los especialistas vía despacho digital (q.cmd.crew).',
+      subtitle: 'Instrucciones claras para cada especialista: horario de citación, equipos asignados y acceso de descarga sin depender de grupos de chat.',
+      toast: 'Orden de trabajo enviada a los especialistas con confirmación inmediata de recepción.',
       image: '/branding/eventomax/demo/demo-real-3-crewticket.png',
       imageAlt: 'Modal real de Orden de Trabajo Técnica con asignación de cuadrilla, horas y reservas',
       hotspots: [
@@ -204,20 +204,20 @@ export class Landing implements OnInit, OnDestroy {
           top: '15%',
           left: '61%',
           stepNumber: 1,
-          tag: 'DESPACHO DIGITAL',
-          title: 'Despacho Asíncrono de Cuadrilla',
-          description: 'Envío de asignaciones mediante la cola de trabajo q.cmd.crew. Cada técnico recibe su orden con citación horaria y rampa de descarga.',
-          metric: 'ACK 100% (4 notificados)'
+          tag: 'CITACIÓN DIGITAL',
+          title: 'Envío Directo de Orden a la Cuadrilla',
+          description: 'Cada especialista de sonido, iluminación, video y estructuras recibe su orden de trabajo con hora de llegada y acceso de descarga.',
+          metric: '100% confirmados (4 técnicos)'
         },
         {
           id: 'c2',
           top: '56%',
           left: '38%',
           stepNumber: 2,
-          tag: 'EQUIPAMIENTO & DIRECTIVA',
-          title: 'Equipos Verificados y Directiva de Terreno',
-          description: 'Consola DiGiCo Quantum 338, 16 cajas Meyer Sound LYON-M y Robe MegaPointe. Directiva de descarga en rampa norte con opción de impresión oficial.',
-          metric: '4 partidas técnicas'
+          tag: 'CHECKLIST DE TERRENO',
+          title: 'Equipos Verificados e Instrucciones de Acceso',
+          description: 'Detalle completo del equipamiento asignado (consolas, sistemas line array y luminarias) junto con las indicaciones de ingreso al recinto.',
+          metric: '4 partidas listas para carga'
         }
       ]
     },
@@ -227,8 +227,8 @@ export class Landing implements OnInit, OnDestroy {
       tabLabel: 'Historial y Auditoría',
       routePath: '/audit',
       title: 'Historial Transparente de Operaciones',
-      subtitle: 'Registro permanente y transparente de cada acción: quién solicitó, quién confirmó, quién montó y quién cerró cada evento.',
-      toast: 'Evento ProductionStatusChanged auditado en línea de tiempo con identificador correlacionado.',
+      subtitle: 'Respaldo completo de principio a fin: consulta con total claridad quién solicitó, quién confirmó, quién montó y quién cerró cada evento.',
+      toast: 'Cambio de etapa registrado en el historial oficial con responsable, fecha y hora exacta.',
       image: '/branding/eventomax/demo/demo-real-4-audit.png',
       imageAlt: 'Módulo de auditoría real de EventoMax con timeline de eventos inmutables',
       hotspots: [
@@ -237,10 +237,10 @@ export class Landing implements OnInit, OnDestroy {
           top: '71%',
           left: '44%',
           stepNumber: 1,
-          tag: 'REGISTRO AUDITADO',
-          title: 'Evento ProductionStatusChanged Auditado',
-          description: 'Registro de auditoría que identifica al usuario responsable (ignacio.valeria@eventomax.cl), fecha exacta y detalles del cambio de estado.',
-          metric: 'Trace: tr-c4b9-8f2e-71a0'
+          tag: 'REGISTRO VERIFICADO',
+          title: 'Constancia Exacta de Cada Cambio de Etapa',
+          description: 'Cada avance guarda automáticamente el nombre del responsable (ignacio.valeria@eventomax.cl), la hora exacta y el detalle de la operación.',
+          metric: 'Folio #AUD-2026-003'
         },
         {
           id: 'a2',
@@ -248,8 +248,8 @@ export class Landing implements OnInit, OnDestroy {
           left: '72%',
           stepNumber: 2,
           tag: 'TRANSPARENCIA TOTAL',
-          title: 'Historial Inmutable de Solo Lectura',
-          description: 'Los auditores y organizadores disponen de un respaldo confiable para actas de entrega, informes de cierre y facturación.',
+          title: 'Respaldo Oficial para Clientes y Productoras',
+          description: 'Historial protegido contra modificaciones manuales, listo para respaldar actas de recepción, cierres de producción y facturación.',
           metric: '100% trazabilidad'
         }
       ]

@@ -63,11 +63,11 @@ describe('Landing Component (Storylane Real Platform UX Walkthrough)', () => {
     expect(img.getAttribute('src')).toBe('/branding/eventomax/demo/demo-real-2-productions.png');
 
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Bloqueo Atómico de Inventario AV');
-    expect(text).toContain('Control de Transición a EN_MONTAJE');
+    expect(text).toContain('Reserva Exclusiva de Equipos Audiovisuales');
+    expect(text).toContain('Autorización Segura de Inicio de Montaje');
   });
 
-  it('switches to Step 2 (Real Crew Ticket Modal) and displays RabbitMQ dispatch info', () => {
+  it('switches to Step 2 (Real Crew Ticket Modal) and displays crew dispatch info', () => {
     component.setTab(2);
     fixture.detectChanges();
 
@@ -76,12 +76,11 @@ describe('Landing Component (Storylane Real Platform UX Walkthrough)', () => {
     expect(img.getAttribute('src')).toBe('/branding/eventomax/demo/demo-real-3-crewticket.png');
 
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Despacho Asíncrono de Cuadrilla');
-    expect(text).toContain('q.cmd.crew');
-    expect(text).toContain('ACK 100%');
+    expect(text).toContain('Envío Directo de Orden a la Cuadrilla');
+    expect(text).toContain('100% confirmados (4 técnicos)');
   });
 
-  it('switches to Step 3 (Real Audit Timeline) and displays Kafka event consumer details', () => {
+  it('switches to Step 3 (Real Audit Timeline) and displays audit trail details', () => {
     component.setTab(3);
     fixture.detectChanges();
 
@@ -90,9 +89,9 @@ describe('Landing Component (Storylane Real Platform UX Walkthrough)', () => {
     expect(img.getAttribute('src')).toBe('/branding/eventomax/demo/demo-real-4-audit.png');
 
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Evento ProductionStatusChanged Auditado');
+    expect(text).toContain('Constancia Exacta de Cada Cambio de Etapa');
     expect(text).toContain('ignacio.valeria@eventomax.cl');
-    expect(text).toContain('tr-c4b9-8f2e-71a0');
+    expect(text).toContain('Folio #AUD-2026-003');
   });
 
   it('toggles between interactive mode and video mode seamlessly', () => {

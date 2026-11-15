@@ -505,63 +505,63 @@
     </div>
   </section>
 
-  <!-- 5. Cloud Native Enterprise Architecture Stack -->
+      <!-- 5. Cloud Native Enterprise Architecture Stack -->
   <section id="arquitectura" class="architecture-section reveal-on-scroll" aria-labelledby="arch-title">
     <div class="section-shell">
       <div class="section-header">
         <span class="section-badge">ESTÁNDAR CLOUD NATIVE</span>
         <h2 id="arch-title" class="section-heading">Infraestructura diseñada para la industria del espectáculo</h2>
         <p class="section-subheading">
-          El espectáculo en vivo no admite fallas de red ni caídas de servidor. Arquitectura desacoplada y tolerante a fallos.
+          Los eventos en vivo no admiten imprevistos ni caídas de sistema. Tu operación está respaldada por tecnología de alta disponibilidad.
         </p>
       </div>
 
       <div class="arch-cards-grid">
         <div class="arch-card">
           <div class="arch-card-hd">
-            <div class="arch-badge">SEGURIDAD & IDaaS</div>
+            <div class="arch-badge">ACCESO CORPORATIVO</div>
             <img src="/branding/tech/microsoft-azure.svg" alt="Microsoft Azure / Entra ID" class="arch-brand-logo" />
           </div>
           <h3 class="arch-name">Microsoft Entra ID</h3>
           <p class="arch-text">
-            Autenticación federada corporativa mediante MSAL Angular 6.2 y JWT Authorizer en AWS API Gateway. Control de acceso estricto por roles (Admin, Productor, Organizador, Auditor).
+            Inicio de sesión único y seguro con cuenta corporativa Microsoft. Cada integrante accede solo a lo que corresponde a su función: Administrador, Productor, Organizador o Auditor.
           </p>
           <div class="arch-footer-code">
-            <code>issuer: login.microsoftonline.com · MSAL v6</code>
+            <code>SSO Corporativo · Permisos por Rol (RBAC)</code>
           </div>
         </div>
 
         <div class="arch-card">
           <div class="arch-card-hd">
-            <div class="arch-badge">COLAS DE TRABAJO</div>
+            <div class="arch-badge">DESPACHO CONFIABLE</div>
             <img src="/branding/tech/rabbitmq.svg" alt="RabbitMQ" class="arch-brand-logo" />
           </div>
           <h3 class="arch-name">RabbitMQ 4.3 Async Dispatch</h3>
           <p class="arch-text">
-            Cola <code>q.cmd.crew</code> para tickets de montaje y notificaciones transaccionales a organizadores. Desacoplamiento total con colas durables y dead-letter exchange (DLQ).
+            Envío garantizado de órdenes de trabajo a las cuadrillas técnicas y avisos a los organizadores. Aunque se confirmen decenas de eventos a la vez, ninguna instrucción se pierde.
           </p>
           <div class="arch-footer-code">
-            <code>exchange: cmd.direct · AMQP 0-9-1</code>
+            <code>Entrega Garantizada · Órdenes de Cuadrilla</code>
           </div>
         </div>
 
         <div class="arch-card">
           <div class="arch-card-hd">
-            <div class="arch-badge">STREAMING DE EVENTOS</div>
+            <div class="arch-badge">MONITOREO EN VIVO</div>
             <img src="/branding/tech/apache-kafka.svg" alt="Apache Kafka" class="arch-brand-logo" />
           </div>
           <h3 class="arch-name">Apache Kafka 7.8 Cluster</h3>
           <p class="arch-text">
-            Topic <code>productions.events</code> y <code>audit.timeline</code> con 3 brokers y persistencia distribuida. Analítica de KPIs operacionales y timeline de auditoría forense con acuse ACK=all.
+            Actualización instantánea del panel de control y del historial de auditoría. Cada avance del montaje se respalda al mismo tiempo en tres servidores para máxima seguridad.
           </p>
           <div class="arch-footer-code">
-            <code>replication-factor: 3 · partitions: 3 · Outbox Pattern</code>
+            <code>3 Servidores en Paralelo · Respaldo Continuo</code>
           </div>
         </div>
 
         <div class="arch-card">
           <div class="arch-card-hd">
-            <div class="arch-badge">MICROSERVICIOS & UI</div>
+            <div class="arch-badge">PLATAFORMA MODULAR</div>
             <div class="arch-dual-brand">
               <img src="/branding/tech/spring-boot.svg" alt="Spring Boot" class="arch-brand-logo" />
               <img src="/branding/tech/angular.svg" alt="Angular" class="arch-brand-logo" />
@@ -569,10 +569,10 @@
           </div>
           <h3 class="arch-name">Spring Boot 4.1 + Angular 22</h3>
           <p class="arch-text">
-            Microservicios de dominio (<code>productions</code>, <code>catalog</code>, <code>notify</code>, <code>audit</code>, <code>report</code>, <code>bff</code>) con persistencia PostgreSQL 17 y frontend de alta reactividad con Signals.
+            Módulos independientes para producciones, catálogo, notificaciones, reportes y auditoría, logrando una interfaz rápida que responde al instante desde cualquier dispositivo.
           </p>
           <div class="arch-footer-code">
-            <code>Java 25 (Temurin) · PostgreSQL 17 ACID · Angular Signals</code>
+            <code>6 Módulos Independientes · Interfaz Reactiva</code>
           </div>
         </div>
       </div>
@@ -583,7 +583,7 @@
           <span class="stack-badge">PROVEEDORES Y ESTÁNDARES OFICIALES</span>
           <h3 class="stack-title">Siempre sincronizado con el ecosistema Cloud Native</h3>
           <p class="stack-desc">
-            Cada servicio de EventoMax se integra de forma desacoplada con plataformas de grado enterprise y especificaciones abiertas.
+            Respaldado por los mismos servicios en la nube que utilizan las principales plataformas empresariales del mundo.
           </p>
         </div>
 
@@ -594,7 +594,7 @@
             </div>
             <div class="stack-tile-meta">
               <span class="stack-tile-name">AWS API Gateway</span>
-              <span class="stack-tile-role">Edge HTTPS Routing, CORS & JWT Authorizer</span>
+              <span class="stack-tile-role">Conexión segura y cifrada entre el portal y los servicios</span>
             </div>
           </div>
 
@@ -604,7 +604,7 @@
             </div>
             <div class="stack-tile-meta">
               <span class="stack-tile-name">Amazon S3</span>
-              <span class="stack-tile-role">Portal SPA Hosting & Bucket de Evidencias</span>
+              <span class="stack-tile-role">Alojamiento web de alta velocidad y archivo de actas</span>
             </div>
           </div>
 
@@ -614,7 +614,7 @@
             </div>
             <div class="stack-tile-meta">
               <span class="stack-tile-name">Amazon RDS PostgreSQL 17</span>
-              <span class="stack-tile-role">Persistencia ACID Multi-Esquema & Flyway</span>
+              <span class="stack-tile-role">Base de datos protegida para reservas y catálogo</span>
             </div>
           </div>
 
@@ -624,7 +624,7 @@
             </div>
             <div class="stack-tile-meta">
               <span class="stack-tile-name">Amazon EC2 (us-east-1)</span>
-              <span class="stack-tile-role">Clúster de Microservicios & AWS Systems Manager</span>
+              <span class="stack-tile-role">Servidores dedicados activos 24/7 en la nube de AWS</span>
             </div>
           </div>
 
@@ -634,7 +634,7 @@
             </div>
             <div class="stack-tile-meta">
               <span class="stack-tile-name">Microsoft Entra ID</span>
-              <span class="stack-tile-role">Identidad Federada OAuth 2.0 / OIDC (PKCE)</span>
+              <span class="stack-tile-role">Inicio de sesión corporativo con cuenta Microsoft</span>
             </div>
           </div>
 
@@ -644,7 +644,7 @@
             </div>
             <div class="stack-tile-meta">
               <span class="stack-tile-name">RabbitMQ 4.3 AMQP</span>
-              <span class="stack-tile-role">Despacho Transaccional & Dead-Letter Exchange</span>
+              <span class="stack-tile-role">Envío inmediato de órdenes de trabajo a cuadrillas</span>
             </div>
           </div>
 
@@ -654,7 +654,7 @@
             </div>
             <div class="stack-tile-meta">
               <span class="stack-tile-name">Apache Kafka 7.8</span>
-              <span class="stack-tile-role">Outbox Event Streaming & Telemetría Forense</span>
+              <span class="stack-tile-role">Sincronización en vivo de métricas e historial</span>
             </div>
           </div>
 
@@ -664,7 +664,7 @@
             </div>
             <div class="stack-tile-meta">
               <span class="stack-tile-name">Docker OCI & Temurin 25</span>
-              <span class="stack-tile-role">Imágenes Multi-Stage Non-Root & Healthchecks</span>
+              <span class="stack-tile-role">Servicios aislados con recuperación automática</span>
             </div>
           </div>
 
@@ -674,7 +674,7 @@
             </div>
             <div class="stack-tile-meta">
               <span class="stack-tile-name">GitHub Actions CI/CD</span>
-              <span class="stack-tile-role">Pipelines Automatizados (JDK 25 / Node 22 / Vitest)</span>
+              <span class="stack-tile-role">Calidad verificada con pruebas automáticas continuas</span>
             </div>
           </div>
         </div>
