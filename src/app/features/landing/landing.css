@@ -1558,6 +1558,8 @@
   background-color: #fafafc;
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 12px;
+  display: flex;
+  flex-direction: column;
   opacity: 0;
   transform: translateY(14px) scale(0.98);
   transition: 
@@ -1698,14 +1700,20 @@
 
 .arch-footer-code {
   background: #f5f5f7;
-  padding: 6px 10px;
-  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 8px 12px;
+  border-radius: 8px;
   font-size: 11px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .arch-footer-code code {
   font-family: "SF Mono", Menlo, Consolas, monospace;
   color: #424245;
+  line-height: 1.35;
 }
 
 /* 10.1 Filmo-Inspired Tech Stack Ecosystem Grid */

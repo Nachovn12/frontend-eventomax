@@ -201,8 +201,8 @@ export class Landing implements OnInit, OnDestroy {
       hotspots: [
         {
           id: 'c1',
-          top: '19%',
-          left: '64%',
+          top: '15%',
+          left: '61%',
           stepNumber: 1,
           tag: 'DESPACHO DIGITAL',
           title: 'Despacho Asíncrono de Cuadrilla',
@@ -211,8 +211,8 @@ export class Landing implements OnInit, OnDestroy {
         },
         {
           id: 'c2',
-          top: '57%',
-          left: '60%',
+          top: '56%',
+          left: '38%',
           stepNumber: 2,
           tag: 'EQUIPAMIENTO & DIRECTIVA',
           title: 'Equipos Verificados y Directiva de Terreno',
