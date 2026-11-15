@@ -181,11 +181,11 @@
             </div>
 
             <div class="histogram-axis font-mono-num">
-              <span>Ayer 21:00</span>
-              <span>Hoy 03:00</span>
-              <span>Hoy 09:00</span>
-              <span>Hoy 15:00</span>
-              <span class="axis-live">● Tiempo Real (Ahora)</span>
+              <span>{{ telemetryAxisLabels().first }}</span>
+              <span>{{ telemetryAxisLabels().second }}</span>
+              <span>{{ telemetryAxisLabels().third }}</span>
+              <span>{{ telemetryAxisLabels().fourth }}</span>
+              <span class="axis-live">● Tiempo Real ({{ telemetryAxisLabels().now }} CLT)</span>
             </div>
           </div>
 

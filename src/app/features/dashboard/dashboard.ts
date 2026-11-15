@@ -112,11 +112,47 @@ export class Dashboard {
     return minutes && minutes > 0 ? Math.round(minutes) : 0;
   });
 
+  private getSantiagoDateHour(date: Date): { dateKey: string; hour: number } {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Santiago',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(date);
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00';
+    return {
+      dateKey: `${get('year')}-${get('month')}-${get('day')}`,
+      hour: Number.parseInt(get('hour'), 10) % 24,
+    };
+  }
+
   readonly telemetryBars = computed(() => {
     const report = this.reportKpis();
     const total = report?.metrics?.totalStatusChanges ?? 0;
     const productions = this.allProductions();
-    const counts = new Array<number>(24).fill(0);
+    const anchorDate = report?.generatedAt ? new Date(report.generatedAt) : new Date();
+    const validAnchor = Number.isNaN(anchorDate.getTime()) ? new Date() : anchorDate;
+    const todayKey = this.getSantiagoDateHour(validAnchor).dateKey;
+
+    // 24 bloques horarios móviles en hora de Chile (America/Santiago), donde el índice 23 es la hora actual
+    const slots = Array.from({ length: 24 }, (_, idx) => {
+      const slotDate = new Date(validAnchor.getTime() - (23 - idx) * 3_600_000);
+      const { dateKey, hour } = this.getSantiagoDateHour(slotDate);
+      const dayPrefix = dateKey === todayKey ? 'Hoy' : 'Ayer';
+      const hh = hour.toString().padStart(2, '0');
+      return {
+        key: `${dateKey}-${hh}`,
+        hour,
+        dayPrefix,
+        timeLabel: `${hh}:00`,
+        axisLabel: `${dayPrefix} ${hh}:00`,
+        count: 0,
+      };
+    });
+
+    const slotByKey = new Map(slots.map((s) => [s.key, s]));
 
     if (total > 0) {
       let matched = 0;
@@ -125,29 +161,45 @@ export class Dashboard {
         if (!rawTs) continue;
         const parsed = new Date(rawTs);
         if (!Number.isNaN(parsed.getTime())) {
-          counts[parsed.getHours()] += 1;
-          matched += 1;
+          const { dateKey, hour } = this.getSantiagoDateHour(parsed);
+          const hh = hour.toString().padStart(2, '0');
+          const slot = slotByKey.get(`${dateKey}-${hh}`);
+          if (slot) {
+            slot.count += 1;
+            matched += 1;
+          }
         }
       }
       if (matched < total) {
-        const fallbackDate = report?.generatedAt ? new Date(report.generatedAt) : new Date();
-        const fallbackHour = Number.isNaN(fallbackDate.getTime()) ? 0 : fallbackDate.getHours();
-        counts[fallbackHour] += total - matched;
+        slots[23].count += total - matched;
       }
     }
 
-    const maxCount = Math.max(...counts, 1);
-    return counts.map((count, i) => {
-      const h = i.toString().padStart(2, '0');
-      const active = count > 0;
-      const heightPct = active ? Math.max(25, Math.round((count / maxCount) * 85)) : 0;
+    const maxCount = Math.max(...slots.map((s) => s.count), 1);
+    return slots.map((slot, idx) => {
+      const active = slot.count > 0;
+      const heightPct = active ? Math.max(25, Math.round((slot.count / maxCount) * 85)) : 0;
+      const isNow = idx === 23;
       return {
-        label: `${h}:00`,
-        count,
+        label: isNow ? `Ahora (${slot.timeLabel} CLT)` : `${slot.axisLabel} CLT`,
+        axisLabel: slot.axisLabel,
+        timeLabel: slot.timeLabel,
+        count: slot.count,
         active,
         heightPct,
       };
     });
+  });
+
+  readonly telemetryAxisLabels = computed(() => {
+    const bars = this.telemetryBars();
+    return {
+      first: bars[0]?.axisLabel ?? 'Ayer',
+      second: bars[6]?.axisLabel ?? '',
+      third: bars[12]?.axisLabel ?? '',
+      fourth: bars[18]?.axisLabel ?? '',
+      now: bars[23]?.timeLabel ?? '',
+    };
   });
 
   private readonly dashboardState = toSignal(
