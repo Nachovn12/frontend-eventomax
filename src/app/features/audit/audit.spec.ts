@@ -16,7 +16,8 @@ describe('Audit EP2 (EMX-109/110)', () => {
     timestamp: '2026-10-14T19:00:00',
     details: '{"productionId":4}',
     traceId: 'emx-audit-trace-1',
-    correlationId: null
+    correlationId: null,
+    source: 'ms-eventomax-productions'
   };
 
   async function setup(allowed = true, rows: readonly AuditEvent[] = [sample]) {
@@ -37,11 +38,12 @@ describe('Audit EP2 (EMX-109/110)', () => {
     return { api, fixture, component: fixture.componentInstance };
   }
 
-  it('loads actual timeline and prints escaped JSON string and trace metadata', async () => {
+  it('loads actual timeline and prints escaped JSON string, source and trace metadata', async () => {
     const { fixture, api } = await setup();
     expect(api.getTimeline).toHaveBeenCalledWith({ page: 0, size: 25 });
     expect(fixture.nativeElement.textContent).toContain('ProductionCreated');
     expect(fixture.nativeElement.textContent).toContain('emx-audit-trace-1');
+    expect(fixture.nativeElement.textContent).toContain('ms-eventomax-productions');
     expect(fixture.nativeElement.querySelectorAll('.audit-event')).toHaveLength(1);
     expect(fixture.nativeElement.textContent).toContain('Identidad activa: Auditor');
   });
@@ -104,5 +106,23 @@ describe('Audit EP2 (EMX-109/110)', () => {
   it('interprets LocalDateTime timestamps as UTC', async () => {
     const { component } = await setup();
     expect(component.timestampUtc('2026-10-14T19:00:00')).toBe('2026-10-14T19:00:00Z');
+  });
+
+  it('polls audit timeline automatically every 30s without losing active filters', async () => {
+    vi.useFakeTimers();
+    try {
+      const { api, component, fixture } = await setup();
+      component.filtersForm.patchValue({ actor: 'usuario-demo' });
+      component.applyFilters();
+      expect(api.getTimeline).toHaveBeenCalledTimes(2);
+
+      await vi.advanceTimersByTimeAsync(30_000);
+      fixture.detectChanges();
+
+      expect(api.getTimeline).toHaveBeenCalledTimes(3);
+      expect(api.getTimeline).toHaveBeenLastCalledWith({ actor: 'usuario-demo', page: 0, size: 25 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

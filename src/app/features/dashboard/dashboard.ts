@@ -16,6 +16,7 @@ import { ProductionTable } from '../../shared/ui/production-table';
 import { ButtonDirective } from '../../shared/ui/button.component';
 import { StatusPill, Tag } from '../../shared/ui/status-pill/status-pill';
 import { BehaviorSubject, catchError, forkJoin, map, of, startWith, switchMap, tap } from 'rxjs';
+import { withLivePolling } from '../../core/utils/live-polling';
 import { Production } from '../../core/models/production.model';
 import { CatalogService } from '../catalog/models/catalog-service.model';
 
@@ -74,8 +75,8 @@ export class Dashboard {
   // EMX-106: la reportería es independiente del panel operativo. Un fallo de Report
   // NO debe ocultar los datos válidos de Productions y Catalog.
   private readonly reportState = toSignal(
-    this.retrySubject.pipe(
-      switchMap(() => {
+    withLivePolling(this.retrySubject).pipe(
+      switchMap((isBackground) => {
         if (!this.isAdmin() || !this.authz.hasScope('access_as_user')) {
           return of<DashboardReportState>({
             data: null, loading: false, error: null
@@ -133,7 +134,7 @@ export class Dashboard {
   });
 
   private readonly dashboardState = toSignal(
-    this.retrySubject.pipe(
+    withLivePolling(this.retrySubject).pipe(
       switchMap(() => {
         // Auditor and Organizer do not fetch API data in Dashboard to avoid 403s or data leakage
         if ((this.authz.roles().length === 1 && this.isAuditor()) || this.isOrganizerOnly()) {

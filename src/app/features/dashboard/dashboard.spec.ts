@@ -204,4 +204,24 @@ describe('Dashboard', () => {
     expect(dataServiceMock.getProductions).not.toHaveBeenCalled();
   });
 
+  it('polls productions, catalog and Admin KPIs every 30s for quasi-real-time updates', async () => {
+    vi.useFakeTimers();
+    try {
+      roles.set([AppRole.Admin]);
+      fixture = TestBed.createComponent(Dashboard);
+      fixture.detectChanges();
+
+      expect(dataServiceMock.getProductions).toHaveBeenCalledTimes(1);
+      expect(reportsMock.getKpis).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(30_000);
+      fixture.detectChanges();
+
+      expect(dataServiceMock.getProductions).toHaveBeenCalledTimes(2);
+      expect(reportsMock.getKpis).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
 });

@@ -1,9 +1,15 @@
 <div class="page-content reports-page">
   <header class="page-header reports-header">
     <div class="header-titles">
-      <p class="eyebrow">Análisis y control</p>
+      <div class="eyebrow-row">
+        <p class="eyebrow">Análisis y control</p>
+        <span class="header-live-pill">
+          <span class="header-live-dot" aria-hidden="true"></span>
+          Tiempo real · 30s
+        </span>
+      </div>
       <h1 class="page-title">Reportes y analítica</h1>
-      <p class="page-description">Métricas consolidadas de transiciones operativas y flujo en tiempo real.</p>
+      <p class="page-description">Métricas consolidadas de transiciones operativas, demanda de servicios y telemetría Kafka.</p>
     </div>
     @if (canView()) {
       <div class="report-controls">
@@ -88,53 +94,92 @@
       </div>
     } @else if (response(); as result) {
       <div class="emx-content-fade-in">
+        @if (rangeControl.value === 'last24h' && result.metrics.totalStatusChanges === 0) {
+          <div class="empty-window-banner" role="status">
+            <div class="empty-window-banner-info">
+              <span class="empty-window-dot" aria-hidden="true"></span>
+              <div>
+                <strong>Sin actividad operativa en las últimas 24 horas</strong>
+                <span>No se registraron transiciones en esta ventana reciente. Explora la vista semanal para analizar el histórico consolidado.</span>
+              </div>
+            </div>
+            <button type="button" class="empty-window-cta" (click)="selectRange('last7d')">
+              Ver últimos 7 días →
+            </button>
+          </div>
+        }
+
         <!-- 1. Fila de KPIs Ejecutivos Minimalistas (Noticeline & Affect UI) -->
         <div class="report-metrics" aria-label="KPIs del período">
         <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
           <div class="metric-top">
             <span>Cambios de estado</span>
-            <svg lucideActivity class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
+            <span class="metric-icon-tile blue">
+              <svg lucideActivity class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
+            </span>
           </div>
-          <strong class="metric-value">{{ result.metrics.totalStatusChanges }}</strong>
-          <small>Transiciones observadas</small>
+          <div class="metric-value-row">
+            <strong class="metric-value">{{ result.metrics.totalStatusChanges }}</strong>
+            <span class="metric-trend-pill blue">{{ transitions().length }} rutas</span>
+          </div>
+          <small>Eventos Kafka procesados</small>
           <div class="kpi-meter">
-            <div class="kpi-meter-fill blue" style="width: 100%"></div>
+            <div class="kpi-meter-fill blue" [style.width.%]="result.metrics.totalStatusChanges > 0 ? 100 : 8"></div>
           </div>
         </article>
 
         <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
           <div class="metric-top">
             <span>Tiempo prom. montaje</span>
-            <svg lucideClock class="metric-icon amber" strokeWidth="1.75" aria-hidden="true" />
+            <span class="metric-icon-tile amber">
+              <svg lucideClock class="metric-icon amber" strokeWidth="1.75" aria-hidden="true" />
+            </span>
           </div>
-          <strong class="metric-value">{{ averageMontageTime() }} min</strong>
-          <small>Duración EN_MONTAJE a EN_EJECUCIÓN</small>
+          <div class="metric-value-row">
+            <strong class="metric-value">{{ averageMontageLabel() }}</strong>
+            <span class="metric-trend-pill amber">{{ montageTransitionsCount() }} ciclos</span>
+          </div>
+          <small>Ciclo En montaje a En ejecución</small>
           <div class="kpi-meter">
-            <div class="kpi-meter-fill amber" style="width: 75%"></div>
+            <div class="kpi-meter-fill amber" [style.width.%]="(averageMontageTime() > 0 || montageTransitionsCount() > 0) ? 78 : 8"></div>
           </div>
         </article>
 
         <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
           <div class="metric-top">
             <span>Producciones cerradas</span>
-            <svg lucideCircleCheck class="metric-icon green" strokeWidth="1.75" aria-hidden="true" />
+            <span class="metric-icon-tile green">
+              <svg lucideCircleCheck class="metric-icon green" strokeWidth="1.75" aria-hidden="true" />
+            </span>
           </div>
-          <strong class="metric-value">{{ result.metrics.closedCount }}</strong>
-          <small>Transiciones a CERRADO</small>
+          <div class="metric-value-row">
+            <strong class="metric-value">{{ result.metrics.closedCount }}</strong>
+            @if ((result.metrics.closedCount + result.metrics.cancelledCount) > 0) {
+              <span class="metric-trend-pill green">{{ operationalSuccessRate() }}% tasa</span>
+            } @else {
+              <span class="metric-trend-pill gray">Sin cierres</span>
+            }
+          </div>
+          <small>Transiciones a estado Cerrado</small>
           <div class="kpi-meter">
-            <div class="kpi-meter-fill green" style="width: 100%"></div>
+            <div class="kpi-meter-fill green" [style.width.%]="result.metrics.closedCount > 0 ? operationalSuccessRate() : 8"></div>
           </div>
         </article>
 
         <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
           <div class="metric-top">
             <span>Producciones canceladas</span>
-            <svg lucideCircleAlert class="metric-icon gray" strokeWidth="1.75" aria-hidden="true" />
+            <span class="metric-icon-tile gray">
+              <svg lucideCircleAlert class="metric-icon gray" strokeWidth="1.75" aria-hidden="true" />
+            </span>
           </div>
-          <strong class="metric-value">{{ result.metrics.cancelledCount }}</strong>
-          <small>Transiciones a CANCELADO</small>
+          <div class="metric-value-row">
+            <strong class="metric-value">{{ result.metrics.cancelledCount }}</strong>
+            <span class="metric-trend-pill gray">{{ result.metrics.cancelledCount === 0 ? '0 bajas' : 'Atención' }}</span>
+          </div>
+          <small>Transiciones a estado Cancelado</small>
           <div class="kpi-meter">
-            <div class="kpi-meter-fill gray" style="width: 100%"></div>
+            <div class="kpi-meter-fill gray" [style.width.%]="result.metrics.cancelledCount > 0 ? 100 : 8"></div>
           </div>
         </article>
       </div>
@@ -144,13 +189,34 @@
         <!-- Tarjeta 1: Gráfico de Eventos por día (ECharts 220px, sin tabla duplicada) -->
         <section class="report-section-card smooth-shadow-ring-xs" aria-labelledby="daily-events-heading">
           <div class="section-card-header">
-            <h3 id="daily-events-heading">Eventos por día</h3>
-            <p class="section-card-desc">Volumen diario en el período seleccionado</p>
+            <div>
+              <h3 id="daily-events-heading">Eventos por día</h3>
+              <p class="section-card-desc">Volumen diario en el período seleccionado</p>
+            </div>
+            <span class="section-card-badge" [class.has-data]="eventsPerDay().length > 0">
+              {{ totalDailyEvents() }} eventos
+            </span>
           </div>
           @if (eventsPerDay().length === 0) {
-            <p class="report-empty">Sin eventos por día registrados en este período.</p>
+            <div class="report-empty-well">
+              <span class="empty-well-icon" aria-hidden="true">
+                <svg lucideCalendar class="empty-svg" strokeWidth="1.75" />
+              </span>
+              <p class="report-empty">Sin eventos por día registrados en este período.</p>
+              <span class="report-empty-hint">Las transiciones diarias aparecerán aquí al procesarse en Kafka.</span>
+            </div>
           } @else {
-            <emx-daily-events-chart [points]="eventsPerDay()" />
+            <div class="chart-body-wrap">
+              <emx-daily-events-chart [points]="eventsPerDay()" />
+            </div>
+            <div class="card-insight-footer">
+              <span class="insight-item">
+                <strong>Días con actividad:</strong> {{ eventsPerDay().length }}
+              </span>
+              <span class="insight-item">
+                <strong>Pico diario:</strong> {{ peakDailyEvent().count }} eventos ({{ peakDailyEvent().date }})
+              </span>
+            </div>
             <div class="sr-only" role="region" aria-label="Tabla de eventos por día">
               <table>
                 <caption>Serie temporal de eventos por día</caption>
@@ -167,13 +233,34 @@
         <!-- Tarjeta 2: Distribución de estados observados (Solo estados con datos > 0) -->
         <section class="report-section-card smooth-shadow-ring-xs" aria-labelledby="distribution-heading">
           <div class="section-card-header">
-            <h3 id="distribution-heading">Distribución de estados observados</h3>
-            <p class="section-card-desc">Frecuencia de estados activos registrados</p>
+            <div>
+              <h3 id="distribution-heading">Distribución de estados observados</h3>
+              <p class="section-card-desc">Frecuencia de estados activos registrados</p>
+            </div>
+            <span class="section-card-badge" [class.has-data]="statusBars().length > 0">
+              {{ totalObservedProductions() }} producciones
+            </span>
           </div>
           @if (statusBars().length === 0) {
-            <p class="report-empty">Sin cambios de estado registrados en este período.</p>
+            <div class="report-empty-well">
+              <span class="empty-well-icon" aria-hidden="true">
+                <svg lucideActivity class="empty-svg" strokeWidth="1.75" />
+              </span>
+              <p class="report-empty">Sin cambios de estado registrados en este período.</p>
+              <span class="report-empty-hint">No hay estados observados dentro del rango seleccionado.</span>
+            </div>
           } @else {
-            <emx-status-distribution-chart [points]="statusBars()" />
+            <div class="chart-body-wrap">
+              <emx-status-distribution-chart [points]="statusBars()" />
+            </div>
+            <div class="card-insight-footer status-pills-footer">
+              @for (bar of statusBars(); track bar.status) {
+                <span class="status-chip mini" [attr.data-status]="bar.status">
+                  <span class="status-dot" aria-hidden="true"></span>
+                  {{ formatStatus(bar.status) }}: <strong>{{ bar.count }}</strong>
+                </span>
+              }
+            </div>
             <div class="report-bars sr-only" aria-label="Conteos accesibles de estados">
               @for (bar of statusBars(); track bar.status) {
                 <div class="report-bar-row">
@@ -197,11 +284,22 @@
         <!-- Tarjeta 3: Flujo de Transiciones registradas -->
         <section class="report-section-card smooth-shadow-ring-xs" aria-labelledby="transitions-heading">
           <div class="section-card-header">
-            <h3 id="transitions-heading">Transiciones registradas</h3>
-            <p class="section-card-desc">Flujo cronológico entre estados operativos</p>
+            <div>
+              <h3 id="transitions-heading">Transiciones registradas</h3>
+              <p class="section-card-desc">Flujo cronológico entre estados operativos</p>
+            </div>
+            <span class="section-card-badge" [class.has-data]="transitions().length > 0">
+              {{ transitions().length }} rutas
+            </span>
           </div>
           @if (transitions().length === 0) {
-            <p class="report-empty">Sin transiciones para mostrar.</p>
+            <div class="report-empty-well">
+              <span class="empty-well-icon" aria-hidden="true">
+                <svg lucideArrowRight class="empty-svg" strokeWidth="1.75" />
+              </span>
+              <p class="report-empty">Sin transiciones para mostrar.</p>
+              <span class="report-empty-hint">Los cambios de estado entre etapas operativas se listarán aquí.</span>
+            </div>
           } @else {
             <div class="report-table-scroll" role="region" aria-label="Tabla de transiciones" tabindex="0">
               <table class="data-table report-transitions-table">
@@ -211,6 +309,7 @@
                     <th scope="col">Estado anterior</th>
                     <th scope="col" class="th-arrow" aria-hidden="true"></th>
                     <th scope="col">Nuevo estado</th>
+                    <th scope="col" class="th-share">Flujo</th>
                     <th scope="col" class="th-count">Cantidad</th>
                   </tr>
                 </thead>
@@ -234,6 +333,14 @@
                           {{ formatStatus(transition.newStatus) }}
                         </span>
                       </td>
+                      <td class="td-share">
+                        <div class="demand-bar-wrapper compact">
+                          <div class="demand-bar-track">
+                            <div class="demand-bar-fill" [style.width.%]="calcTransitionPercent(transition.count)"></div>
+                          </div>
+                          <span class="demand-pct">{{ calcTransitionPercent(transition.count) }}%</span>
+                        </div>
+                      </td>
                       <td class="td-count">
                         <span class="count-pill">{{ transition.count }}</span>
                       </td>
@@ -242,14 +349,27 @@
                 </tbody>
               </table>
             </div>
+            <div class="card-insight-footer">
+              <span class="insight-item">
+                <strong>Total transiciones:</strong> {{ result.metrics.totalStatusChanges }} eventos
+              </span>
+              <span class="insight-item">
+                <strong>Tasa operativa:</strong> {{ operationalSuccessRate() }}% completadas
+              </span>
+            </div>
           }
         </section>
 
         <!-- Tarjeta 4: Servicios más contratados (Ranking con barras relativas) -->
         <section class="report-section-card smooth-shadow-ring-xs" aria-labelledby="top-services-heading">
           <div class="section-card-header">
-            <h3 id="top-services-heading">Servicios más contratados</h3>
-            <p class="section-card-desc">Ranking de demanda en producciones confirmadas</p>
+            <div>
+              <h3 id="top-services-heading">Servicios más contratados</h3>
+              <p class="section-card-desc">Ranking de demanda en producciones confirmadas</p>
+            </div>
+            <span class="section-card-badge" [class.has-data]="topServicesItems().length > 0">
+              {{ topServicesItems().length }} servicios
+            </span>
           </div>
 
           @if (isLoadingTopServices()) {
@@ -262,18 +382,23 @@
             </div>
           } @else if (topServicesResponse(); as topServices) {
             @if (topServices.items.length === 0) {
-              <p class="report-empty">Sin contrataciones de servicios registradas en este período.</p>
+              <div class="report-empty-well">
+                <span class="empty-well-icon" aria-hidden="true">
+                  <svg lucideCircleCheck class="empty-svg" strokeWidth="1.75" />
+                </span>
+                <p class="report-empty">Sin contrataciones de servicios registradas en este período.</p>
+                <span class="report-empty-hint">Se contabilizan servicios asociados a producciones confirmadas.</span>
+              </div>
             } @else {
               <div class="report-table-scroll" role="region" aria-label="Tabla de servicios más contratados" tabindex="0">
                 <table class="data-table ranking-table">
                   <caption class="sr-only">Ranking de servicios más contratados del período</caption>
                   <thead>
                     <tr>
-                      <th scope="col" class="th-rank">Posición</th>
-                      <th scope="col" class="th-id">ID</th>
+                      <th scope="col" class="th-rank">Ranking</th>
                       <th scope="col">Servicio</th>
-                      <th scope="col" class="th-demand">Demanda</th>
-                      <th scope="col" class="th-count">Total</th>
+                      <th scope="col" class="th-demand">Participación</th>
+                      <th scope="col" class="th-count">Contrataciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -284,12 +409,16 @@
                             #{{ idx + 1 }}
                           </span>
                         </td>
-                        <td class="cell-service-id">#{{ item.serviceId }}</td>
-                        <td><strong class="service-name-text">{{ item.serviceName }}</strong></td>
+                        <td>
+                          <div class="service-cell-main">
+                            <strong class="service-name-text">{{ item.serviceName }}</strong>
+                            <span class="cell-service-code">SRV-{{ item.serviceId }}</span>
+                          </div>
+                        </td>
                         <td class="td-demand">
                           <div class="demand-bar-wrapper">
                             <div class="demand-bar-track">
-                              <div class="demand-bar-fill" [style.width.%]="calcServicePercent(item.hireCount)"></div>
+                              <div class="demand-bar-fill" [style.width.%]="calcServiceBarWidth(item.hireCount)"></div>
                             </div>
                             <span class="demand-pct">{{ calcServicePercent(item.hireCount) }}%</span>
                           </div>
@@ -301,6 +430,14 @@
                     }
                   </tbody>
                 </table>
+              </div>
+              <div class="card-insight-footer">
+                <span class="insight-item">
+                  <strong>Contrataciones acumuladas:</strong> {{ totalServiceHires() }} asignaciones
+                </span>
+                <span class="insight-item">
+                  <strong>Líder de demanda:</strong> {{ topServices.items[0].serviceName }}
+                </span>
               </div>
             }
 
@@ -333,6 +470,7 @@
       </footer>
       </div>
     }
+    <emx-kafka-monitor />
   } @else {
     <section class="panel report-feedback" role="alert">
       Acceso restringido: Report requiere rol Admin y el permiso access_as_user.

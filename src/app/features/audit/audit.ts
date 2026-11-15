@@ -3,8 +3,9 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, of } from 'rxjs';
-import { catchError, map, startWith, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, merge, of, timer } from 'rxjs';
+import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
+import { DEFAULT_POLL_INTERVAL_MS } from '../../core/utils/live-polling';
 import {
   LucideActivity,
   LucideCircleCheck,
@@ -112,19 +113,32 @@ export class Audit {
   ];
 
   private readonly querySubject = new BehaviorSubject<AuditTimelineFilters>({ page: 0, size: this.pageSize });
+  private cachedItems: readonly AuditEvent[] = [];
 
   private readonly timelineState = toSignal(
-    this.querySubject.pipe(
-      switchMap((filters) => {
+    merge(
+      this.querySubject.pipe(map((filters) => ({ filters, isBackground: false }))),
+      timer(DEFAULT_POLL_INTERVAL_MS, DEFAULT_POLL_INTERVAL_MS).pipe(
+        map(() => ({ filters: this.querySubject.value, isBackground: true }))
+      ),
+    ).pipe(
+      switchMap(({ filters, isBackground }) => {
         if (!this.canView()) {
           return of<AuditViewState>({ items: [], loading: false, error: 403 });
         }
+        const hasCache = this.cachedItems.length > 0;
         return this.api.getTimeline(filters).pipe(
+          tap((items) => { this.cachedItems = items; }),
           map((items): AuditViewState => ({ items, loading: false, error: null })),
-          catchError((error: HttpErrorResponse) =>
-            of<AuditViewState>({ items: [], loading: false, error: error.status })
-          ),
-          startWith<AuditViewState>({ items: [], loading: true, error: null }),
+          catchError((error: HttpErrorResponse) => {
+            this.cachedItems = [];
+            return of<AuditViewState>({ items: [], loading: false, error: error.status });
+          }),
+          startWith<AuditViewState>({
+            items: isBackground ? this.cachedItems : [],
+            loading: !(isBackground && hasCache),
+            error: null,
+          }),
         );
       })
     ),

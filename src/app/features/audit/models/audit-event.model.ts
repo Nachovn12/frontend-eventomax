@@ -9,6 +9,22 @@ export interface AuditEvent {
   readonly details: string;
   readonly traceId: string | null;
   readonly correlationId: string | null;
+  readonly source?: string | null;
+}
+
+export interface ProductionTimelineSnapshot {
+  readonly productionId: string;
+  readonly lastEventId: string;
+  readonly lastEventType: string;
+  readonly currentStatus: string | null;
+  readonly productionName: string | null;
+  readonly actor: string;
+  readonly source: string | null;
+  readonly traceId: string | null;
+  readonly correlationId: string | null;
+  readonly lastOccurredAt: string;
+  readonly updatedAt: string;
+  readonly details: string | null;
 }
 
 export interface AuditTimelineFilters {

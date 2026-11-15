@@ -3,8 +3,8 @@ import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, of, timer } from 'rxjs';
-import { catchError, map, startWith, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, combineLatest, of } from 'rxjs';
+import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
 import {
   LucideActivity,
   LucideClock,
@@ -21,6 +21,8 @@ import { ReportKpisResponse, ReportRange, ReportTopServicesResponse } from './mo
 import { ReportsDataService } from './reports-data.service';
 import { StatusDistributionChart } from './status-distribution-chart';
 import { DailyEventsChart } from './daily-events-chart';
+import { KafkaMonitorComponent } from './kafka-monitor/kafka-monitor';
+import { withLivePolling } from '../../core/utils/live-polling';
 import { DatePickerPreset, DateRangePickerComponent } from '../../shared/ui/date-picker/date-range-picker.component';
 import { ButtonDirective } from '../../shared/ui/button.component';
 
@@ -44,6 +46,7 @@ interface TopServicesViewState {
     ReactiveFormsModule,
     StatusDistributionChart,
     DailyEventsChart,
+    KafkaMonitorComponent,
     LucideActivity,
     LucideClock,
     LucideCircleCheck,
@@ -70,6 +73,10 @@ export class Reports {
   ];
   readonly rangeControl = new FormControl<ReportRange>('last24h', { nonNullable: true });
   private readonly refreshSubject = new BehaviorSubject<void>(undefined);
+  private cachedKpis: ReportKpisResponse | null = null;
+  private cachedTopServices: ReportTopServicesResponse | null = null;
+  private lastKpisRange: ReportRange | null = null;
+  private lastTopServicesRange: ReportRange | null = null;
 
   onRangePicked(preset: string): void {
     if (preset === 'last24h' || preset === 'last7d') {
@@ -80,18 +87,29 @@ export class Reports {
   private readonly reportState = toSignal(
     combineLatest([
       this.rangeControl.valueChanges.pipe(startWith(this.rangeControl.value)),
-      this.refreshSubject,
+      withLivePolling(this.refreshSubject),
     ]).pipe(
-      switchMap(([range]) => {
+      switchMap(([range, isBackground]) => {
         if (!this.canView()) {
           return of<ReportViewState>({ data: null, loading: false, error: 403 });
         }
+        const rangeChanged = this.lastKpisRange !== range;
+        if (rangeChanged) {
+          this.cachedKpis = null;
+          this.lastKpisRange = range;
+        }
+        const hasCache = this.cachedKpis !== null;
         return this.reports.getKpis(range).pipe(
+          tap((data) => { this.cachedKpis = data; }),
           map((data): ReportViewState => ({ data, loading: false, error: null })),
           catchError((error: HttpErrorResponse) =>
-            of<ReportViewState>({ data: null, loading: false, error: error.status })
+            of<ReportViewState>({ data: isBackground ? this.cachedKpis : null, loading: false, error: error.status })
           ),
-          startWith<ReportViewState>({ data: null, loading: true, error: null }),
+          startWith<ReportViewState>({
+            data: isBackground ? this.cachedKpis : null,
+            loading: !(isBackground && hasCache),
+            error: null,
+          }),
         );
       })
     ),
@@ -101,18 +119,29 @@ export class Reports {
   private readonly topServicesState = toSignal(
     combineLatest([
       this.rangeControl.valueChanges.pipe(startWith(this.rangeControl.value)),
-      this.refreshSubject,
+      withLivePolling(this.refreshSubject),
     ]).pipe(
-      switchMap(([range]) => {
+      switchMap(([range, isBackground]) => {
         if (!this.canView()) {
           return of<TopServicesViewState>({ data: null, loading: false, error: 403 });
         }
+        const rangeChanged = this.lastTopServicesRange !== range;
+        if (rangeChanged) {
+          this.cachedTopServices = null;
+          this.lastTopServicesRange = range;
+        }
+        const hasCache = this.cachedTopServices !== null;
         return this.reports.getTopServices(range).pipe(
+          tap((data) => { this.cachedTopServices = data; }),
           map((data): TopServicesViewState => ({ data, loading: false, error: null })),
           catchError((error: HttpErrorResponse) =>
-            of<TopServicesViewState>({ data: null, loading: false, error: error.status })
+            of<TopServicesViewState>({ data: isBackground ? this.cachedTopServices : null, loading: false, error: error.status })
           ),
-          startWith<TopServicesViewState>({ data: null, loading: true, error: null }),
+          startWith<TopServicesViewState>({
+            data: isBackground ? this.cachedTopServices : null,
+            loading: !(isBackground && hasCache),
+            error: null,
+          }),
         );
       })
     ),
@@ -145,13 +174,55 @@ export class Reports {
 
   readonly transitions = computed(() => this.response()?.metrics.transitions ?? []);
 
+  readonly montageTransitionsCount = computed(() => {
+    return this.transitions()
+      .filter((t) => t.previousStatus === 'EN_MONTAJE' && t.newStatus === 'EN_EJECUCION')
+      .reduce((acc, t) => acc + t.count, 0);
+  });
+
   readonly averageMontageTime = computed(() => {
     const val = this.response()?.metrics.averageMontageTimeMinutes;
     if (val === undefined || val === null || val <= 0) return 0;
     return Math.round(val * 10) / 10;
   });
 
-  readonly eventsPerDay = computed(() => this.response()?.metrics.eventsPerDay ?? []);
+  readonly averageMontageLabel = computed(() => {
+    const avg = this.averageMontageTime();
+    if (avg > 0) return `${avg} min`;
+    if (this.montageTransitionsCount() > 0) return '< 1 min';
+    return '0 min';
+  });
+
+  readonly eventsPerDay = computed(() => {
+    const res = this.response();
+    const raw = res?.metrics.eventsPerDay ?? [];
+    if (raw.length > 0) return raw;
+    const total = res?.metrics.totalStatusChanges ?? 0;
+    if (total > 0) {
+      const fallbackDate = (res?.to || res?.generatedAt || '').slice(0, 10) || 'Período actual';
+      return [{ date: fallbackDate, count: total }];
+    }
+    return [];
+  });
+
+  readonly totalDailyEvents = computed(() =>
+    this.eventsPerDay().reduce((acc, item) => acc + item.count, 0)
+  );
+
+  readonly peakDailyEvent = computed(() =>
+    this.eventsPerDay().reduce(
+      (peak, item) => (item.count > peak.count ? item : peak),
+      { date: '—', count: 0 }
+    )
+  );
+
+  readonly totalObservedProductions = computed(() =>
+    this.statusBars().reduce((acc, item) => acc + item.count, 0)
+  );
+
+  readonly totalServiceHires = computed(() =>
+    this.topServicesItems().reduce((acc, item) => acc + item.hireCount, 0)
+  );
 
   readonly maxServiceHires = computed(() => {
     const items = this.topServicesItems();
@@ -159,8 +230,26 @@ export class Reports {
   });
 
   calcServicePercent(hires: number): number {
+    const total = this.totalServiceHires();
+    if (total <= 0) return 0;
+    return Math.round((hires / total) * 100);
+  }
+
+  calcServiceBarWidth(hires: number): number {
     const max = this.maxServiceHires();
     return Math.round((hires / max) * 100);
+  }
+
+  calcTransitionPercent(count: number): number {
+    const total = this.response()?.metrics.totalStatusChanges ?? 0;
+    if (total <= 0) return 0;
+    return Math.round((count / total) * 100);
+  }
+
+  selectRange(range: ReportRange): void {
+    if (this.rangeControl.value !== range) {
+      this.rangeControl.setValue(range);
+    }
   }
 
   readonly operationalSuccessRate = computed(() => {
