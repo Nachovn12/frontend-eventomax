@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ProductionViewModel } from '../../core/models/production.model';
 import { StatusChip } from './status-chip';
 import { ButtonDirective } from './button.component';
@@ -7,10 +8,10 @@ import { ButtonDirective } from './button.component';
 @Component({
   selector: 'emx-production-table',
   standalone: true,
-  imports: [StatusChip, DatePipe, ButtonDirective],
+  imports: [StatusChip, DatePipe, ButtonDirective, RouterLink],
   template: `
     <div class="table-scroll" role="region" [attr.aria-label]="caption()" tabindex="0">
-      <table class="data-table production-table" [class.is-selectable]="selectable()">
+      <table class="data-table production-table" [class.is-selectable]="selectable() || detailLinks()">
         <caption class="sr-only">
           {{ caption() }}
         </caption>
@@ -19,7 +20,7 @@ import { ButtonDirective } from './button.component';
           <col class="col-location" />
           <col class="col-schedule" />
           <col class="col-status" />
-          @if (selectable()) {
+          @if (selectable() || detailLinks()) {
             <col class="col-action" />
           }
         </colgroup>
@@ -29,7 +30,7 @@ import { ButtonDirective } from './button.component';
             <th scope="col">Ubicación</th>
             <th scope="col">Fecha programada</th>
             <th scope="col">Estado</th>
-            @if (selectable()) {
+            @if (selectable() || detailLinks()) {
               <th scope="col" class="th-action">Acción</th>
             }
           </tr>
@@ -86,7 +87,12 @@ import { ButtonDirective } from './button.component';
                 <span class="mobile-cell-label" aria-hidden="true">Estado</span>
                 <emx-status [status]="event.status" />
               </td>
-              @if (selectable()) {
+              @if (detailLinks()) {
+                <td class="cell-action">
+                  <a class="text-link" routerLink="/productions" [queryParams]="{ productionId: event.id }"
+                    [attr.aria-label]="'Ver detalle: ' + event.name">Ver detalle</a>
+                </td>
+              } @else if (selectable()) {
                 <td class="cell-action">
                   <button
                     type="button"
@@ -96,10 +102,10 @@ import { ButtonDirective } from './button.component';
                     class="row-select-btn"
                     [class.active]="selectedId() === event.id"
                     [attr.aria-pressed]="selectedId() === event.id"
-                    [attr.aria-label]="(selectedId() === event.id ? 'Producción seleccionada: ' : 'Gestionar producción ') + event.name"
+                    [attr.aria-label]="(selectedId() === event.id ? 'Producción seleccionada: ' : actionLabel() + ': ') + event.name"
                     (click)="onButtonSelect(event, $event)"
                   >
-                    <span>{{ selectedId() === event.id ? 'Seleccionada' : 'Gestionar' }}</span>
+                    <span>{{ selectedId() === event.id ? 'Seleccionada' : actionLabel() }}</span>
                   </button>
                 </td>
               }
@@ -522,6 +528,8 @@ export class ProductionTable {
   readonly caption = input('Listado de producciones');
   readonly selectable = input(false);
   readonly selectedId = input<number | null>(null);
+  readonly actionLabel = input('Gestionar');
+  readonly detailLinks = input(false);
   readonly selectProduction = output<ProductionViewModel>();
 
   onRowClick(event: ProductionViewModel): void {

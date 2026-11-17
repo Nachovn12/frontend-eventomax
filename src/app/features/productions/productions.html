@@ -219,7 +219,7 @@
           <p>Fechas programadas, ubicaciones y estado operativo en orden cronológico.</p>
         </div>
         @if (total() > 0) {
-          <span class="selection-hint">Haz clic en «Gestionar» para consultar el detalle o actualizar el estado</span>
+          <span class="selection-hint">{{ canUpdate() ? 'Haz clic en «Gestionar» para consultar el detalle o actualizar el estado' : 'Haz clic en «Ver detalle» para consultar tu producción' }}</span>
         }
       </div>
 
@@ -299,6 +299,7 @@
           [rows]="rows()"
           [selectable]="true"
           [selectedId]="selectedProductionId()"
+          [actionLabel]="canUpdate() ? 'Gestionar' : 'Ver detalle'"
           (selectProduction)="selectProduction($event)"
           caption="Agenda de producciones"
         />
