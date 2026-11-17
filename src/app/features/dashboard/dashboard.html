@@ -361,7 +361,7 @@
         <div class="panel-heading">
           <div>
             <h2>
-              Próximas producciones
+              {{ selectedPipelineFilter() === 'all' ? 'Próximas producciones' : 'Agenda operativa' }}
               <span class="count-badge font-mono-num">{{ filteredUpcoming().length }}</span>
             </h2>
             <p>Agenda operativa de producciones activas.</p>
@@ -403,7 +403,7 @@
         }
 
         <div class="panel-footer">
-          <span>Mostrando {{ filteredUpcoming().length }} de {{ activeProductions().length }} producciones activas ordenadas cronológicamente</span>
+          <span>Mostrando {{ filteredUpcoming().length }} de {{ filteredAgenda().length }} producciones para el filtro seleccionado</span>
           <span class="font-mono-num">Actualizado en tiempo real</span>
         </div>
       </section>
@@ -421,14 +421,28 @@
       <section class="panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel">
         <div class="panel-heading">
           <div>
-            <h2>Tus producciones</h2>
+            <h2>Mis eventos</h2>
+            <p>Próximas producciones y su estado actual.</p>
           </div>
         </div>
 
-        <div class="empty-state empty-state-panel">
-          <span class="icon-tile"><svg lucideCalendarDays class="metric-icon" /></span>
-          <p>La consulta personalizada de producciones estará disponible cuando el servicio aplique el alcance de datos por organizador.</p>
-        </div>
+        @if (upcoming().length > 0) {
+          <emx-production-table [rows]="upcoming()" [detailLinks]="true" caption="Mis próximas producciones" />
+        } @else {
+          <div class="empty-state empty-state-panel" role="status">
+            <span class="icon-tile"><svg lucideCalendarDays class="metric-icon" /></span>
+            <p>No tienes próximas producciones en tu listado autorizado.</p>
+          </div>
+        }
+        @if (overdueProductions().length > 0) {
+          <header class="panel-heading"><h3>Pendientes atrasadas</h3></header>
+          <emx-production-table [rows]="overdueProductions().slice(0, 4)" [detailLinks]="true" caption="Mis producciones pendientes atrasadas" />
+        }
+        @if (live() > 0) {
+          <header class="panel-heading"><h3>En montaje o ejecución</h3></header>
+          <emx-production-table [rows]="liveProductions().slice(0, 4)" [detailLinks]="true" caption="Mis producciones en montaje o ejecución" />
+        }
+        <div class="panel-footer"><a class="text-link" routerLink="/productions">Ver todos mis eventos</a></div>
       </section>
     }
 

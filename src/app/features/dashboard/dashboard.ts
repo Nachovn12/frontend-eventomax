@@ -56,7 +56,7 @@ export class Dashboard {
   private readonly reportsData = inject(ReportsDataService);
 
   readonly canViewProductions = computed(() =>
-    this.authz.roles().some((role) => [AppRole.Admin, AppRole.Productor].includes(role))
+    this.authz.roles().some((role) => [AppRole.Admin, AppRole.Productor, AppRole.Organizador].includes(role))
   );
   readonly canViewCatalog = computed(() =>
     this.authz.roles().some((role) => [AppRole.Admin, AppRole.Productor].includes(role))
@@ -71,6 +71,7 @@ export class Dashboard {
   private cachedReport: ReportKpisResponse | null = null;
   private cachedProductions: readonly Production[] = [];
   private cachedCatalog: readonly CatalogService[] = [];
+  private readonly agendaNow = signal(Date.now());
 
   // EMX-106: la reportería es independiente del panel operativo. Un fallo de Report
   // NO debe ocultar los datos válidos de Productions y Catalog.
@@ -205,8 +206,8 @@ export class Dashboard {
   private readonly dashboardState = toSignal(
     withLivePolling(this.retrySubject).pipe(
       switchMap(() => {
-        // Auditor and Organizer do not fetch API data in Dashboard to avoid 403s or data leakage
-        if ((this.authz.roles().length === 1 && this.isAuditor()) || this.isOrganizerOnly()) {
+        this.agendaNow.set(Date.now());
+        if (!this.canViewProductions()) {
           return of<DashboardDomainState>({ productions: [], catalog: [], loading: false, error: false });
         }
 
@@ -244,20 +245,31 @@ export class Dashboard {
     return [...active].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
   });
 
-  readonly upcoming = computed(() => this.activeProductions().slice(0, 4));
+  readonly upcomingProductions = computed(() => this.activeProductions().filter(
+    (p) => new Date(p.scheduledAt).getTime() >= this.agendaNow()
+  ));
+  readonly overdueProductions = computed(() => this.activeProductions().filter(
+    (p) => new Date(p.scheduledAt).getTime() < this.agendaNow()
+      && ['SOLICITADO', 'CONFIRMADO'].includes(p.status)
+  ));
+  readonly upcoming = computed(() => this.upcomingProductions().slice(0, 4));
+  readonly liveProductions = computed(() => this.activeProductions().filter(
+    (p) => ['EN_MONTAJE', 'EN_EJECUCION'].includes(p.status)
+  ));
 
   readonly selectedPipelineFilter = signal<'all' | 'live' | 'requested'>('all');
 
-  readonly filteredUpcoming = computed(() => {
+  readonly filteredAgenda = computed(() => {
     const filter = this.selectedPipelineFilter();
     if (filter === 'live') {
-      return this.upcoming().filter((p) => ['EN_MONTAJE', 'EN_EJECUCION'].includes(p.status));
+      return this.activeProductions().filter((p) => ['EN_MONTAJE', 'EN_EJECUCION'].includes(p.status));
     }
     if (filter === 'requested') {
-      return this.upcoming().filter((p) => p.status === 'SOLICITADO');
+      return this.activeProductions().filter((p) => p.status === 'SOLICITADO');
     }
-    return this.upcoming();
+    return this.upcomingProductions();
   });
+  readonly filteredUpcoming = computed(() => this.filteredAgenda().slice(0, 4));
 
   setPipelineFilter(filter: 'all' | 'live' | 'requested'): void {
     this.selectedPipelineFilter.set(filter);
