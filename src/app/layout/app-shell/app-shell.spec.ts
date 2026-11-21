@@ -110,7 +110,7 @@ describe('AppShell', () => {
     expect(element.querySelector('.user-name-role')?.textContent?.trim()).toBe('Persona De Prueba');
   });
   it.each([
-    [AppRole.Admin, ['/dashboard', '/productions', '/catalog', '/reports', '/audit', '/organizers']],
+    [AppRole.Admin, ['/dashboard', '/productions', '/catalog', '/reports', '/audit']],
     [AppRole.Productor, ['/dashboard', '/productions', '/catalog']],
     [AppRole.Organizador, ['/dashboard', '/productions']],
     [AppRole.Auditor, ['/dashboard', '/audit']],
@@ -185,7 +185,7 @@ describe('AppShell', () => {
 
     const lists = fixture.nativeElement.querySelectorAll('nav[aria-label="Navegación principal"] ul[role="list"]');
     expect(lists.length).toBe(2);
-    expect(fixture.nativeElement.querySelectorAll('nav[aria-label="Navegación principal"] li.nav-list-item').length).toBe(6);
+    expect(fixture.nativeElement.querySelectorAll('nav[aria-label="Navegación principal"] li.nav-list-item').length).toBe(5);
 
     const ctrlB = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true });
     document.dispatchEvent(ctrlB);
@@ -233,6 +233,8 @@ describe('AppShell', () => {
     const badge = prodLink?.querySelector('.nav-count-badge');
     expect(badge).not.toBeNull();
     expect(badge?.textContent?.trim()).toBe('4');
+    expect(badge?.getAttribute('title')).toContain('4 abiertas (estados no terminales)');
+    expect(prodLink?.getAttribute('data-tooltip')).toContain('Producciones · 4 abiertas');
 
     // Set 0 active productions (Apple silent UI rule)
     store.setActiveCount(0);
@@ -242,13 +244,9 @@ describe('AppShell', () => {
     expect(emptyBadge).toBeNull();
   });
 
-  it('shows /organizers navigation link exclusively for Admin and hides it for Productor, Organizador and Auditor', () => {
-    roles.set([AppRole.Admin]);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('a[href="/organizers"]')).not.toBeNull();
-
-    for (const nonAdminRole of [AppRole.Productor, AppRole.Organizador, AppRole.Auditor]) {
-      roles.set([nonAdminRole]);
+  it('does not expose /organizers navigation link for any role after Etapa 4 removal', () => {
+    for (const role of [AppRole.Admin, AppRole.Productor, AppRole.Organizador, AppRole.Auditor]) {
+      roles.set([role]);
       fixture.detectChanges();
       expect(fixture.nativeElement.querySelector('a[href="/organizers"]')).toBeNull();
     }

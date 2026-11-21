@@ -7,7 +7,7 @@ describe('EP2 feature guard', () => {
     providers: [{ provide: Router, useValue: { parseUrl: vi.fn() } }]
   }));
 
-  it.each(['dashboard', 'productions', 'catalog', 'reports', 'audit', 'organizers'])(
+  it.each(['dashboard', 'productions', 'catalog', 'reports', 'audit'])(
     'enables /%s while existing roleGuard and MsalGuard remain active',
     (feature) => {
       const route = { data: { feature } } as unknown as ActivatedRouteSnapshot;

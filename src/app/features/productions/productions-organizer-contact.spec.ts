@@ -7,10 +7,11 @@ import { ProductionsDataService, PRODUCTION_STATUSES } from './productions-data.
 import { CatalogDataService } from '../catalog/catalog-data.service';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
-import { OrganizerContact, Production } from '../../core/models/production.model';
+import { EligibleOrganizersPage, OrganizerContact, Production } from '../../core/models/production.model';
 
-describe('Productions organizer contact behavior (Caso 8)', () => {
+describe('Productions SELF / EXTERNAL & organizer contact behavior (Etapa 4)', () => {
   const canonicalOwnerId = 'f191bdc8-7926-4722-9ec0-cba663701940:11111111-2222-3333-4444-555555555555';
+  const entraOrgId = 'f191bdc8-7926-4722-9ec0-cba663701940:e5660fea-f5dd-4974-abb0-47e92f389d63';
 
   const aliasProduction: Production = {
     id: 9,
@@ -29,6 +30,29 @@ describe('Productions organizer contact behavior (Caso 8)', () => {
     organizerId: canonicalOwnerId,
   };
 
+  const sampleEligiblePage: EligibleOrganizersPage = {
+    items: [
+      {
+        organizerId: entraOrgId,
+        displayName: 'Benjamin Espinoza',
+        source: 'ENTRA_ORGANIZER',
+        hasRegisteredContact: true,
+        maskedEmail: 'be***@duocuc.cl',
+      },
+      {
+        organizerId: 'ext-client-01',
+        displayName: 'Productora Sur',
+        source: 'EXTERNAL_CONTACT',
+        hasRegisteredContact: true,
+        maskedEmail: 'co***@sur.cl',
+      },
+    ],
+    page: 0,
+    size: 20,
+    total: 2,
+    directorySyncStatus: 'OK',
+  };
+
   async function setup(options: {
     roles: readonly AppRole[];
     ownerId?: string;
@@ -37,17 +61,20 @@ describe('Productions organizer contact behavior (Caso 8)', () => {
     productions?: readonly Production[];
     getContactImpl?: (organizerId: string) => any;
     upsertContactImpl?: (organizerId: string, body: any) => any;
+    getEligibleImpl?: (params: any) => any;
+    createProductionImpl?: (body: any) => any;
   }) {
     const queryParamMap$ = new BehaviorSubject(convertToParamMap({}));
     const list = options.productions ?? [aliasProduction];
     const api = {
       getProductions: vi.fn(() => of(list)),
       getStatuses: vi.fn(() => of(PRODUCTION_STATUSES)),
-      createProduction: vi.fn(() => of(list[0])),
+      createProduction: vi.fn(options.createProductionImpl ?? (() => of(list[0]))),
       getProduction: vi.fn((id: number) => of(list.find((p) => p.id === id) ?? list[0])),
       updateStatus: vi.fn(() => of(list[0])),
       getCrewTicket: vi.fn(() => of(null)),
       downloadQuotePdf: vi.fn(() => of(new Blob())),
+      getEligibleOrganizers: vi.fn(options.getEligibleImpl ?? (() => of(sampleEligiblePage))),
       getOrganizerContact: vi.fn(
         options.getContactImpl ?? (() => throwError(() => new HttpErrorResponse({ status: 404 })))
       ),
@@ -104,21 +131,20 @@ describe('Productions organizer contact behavior (Caso 8)', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
-  it('Organizador: preserves self-contact panel, prefills login email as suggestion, saves via PUT and labels as registered (not verified)', async () => {
+  it('Organizador: preserves self-contact panel, submits SELF without organizerId, and cannot use EXTERNAL or updateStatus', async () => {
     const { api, fixture, component } = await setup({
       roles: [AppRole.Organizador],
       productions: [ownProduction],
-      userEmail: 'ig.valeria@duocuc.cl',
-      userDisplayName: 'Ignacio Valeria',
     });
 
+    expect(component.canCreate()).toBe(true);
+    expect(component.canUseExternalMode()).toBe(false);
+    expect(component.canUpdate()).toBe(false);
     expect(api.getOrganizerContact).toHaveBeenCalledWith(canonicalOwnerId);
     expect(component.selfContactMissing()).toBe(true);
 
     component.openSelfContactForm();
     fixture.detectChanges();
-    expect(component.selfContactForm.controls.email.value).toBe('ig.valeria@duocuc.cl');
-
     component.selfContactForm.controls.email.setValue('contacto.confirmado@duocuc.cl');
     component.submitSelfContact();
     fixture.detectChanges();
@@ -128,251 +154,249 @@ describe('Productions organizer contact behavior (Caso 8)', () => {
       contactName: 'Ignacio Valeria',
       phone: undefined,
     });
-    expect(component.selfContact()?.email).toBe('contacto.confirmado@duocuc.cl');
     const text = (fixture.nativeElement.textContent as string).toLowerCase();
     expect(text).toContain('contacto registrado');
     expect(text).not.toContain('correo verificado');
+
+    // SELF creation omits organizerId and hides EXTERNAL mode
+    component.openCreateModal();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.create-mode-tabs')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#create-organizer-input')).toBeNull();
+
+    component.createForm.setValue({
+      name: 'Evento Propio Organizador',
+      scheduledAt: '2035-06-15T18:00',
+      location: 'Centro Cultural',
+    });
+    component.submitCreate();
+    expect(api.createProduction).toHaveBeenCalledWith({
+      organizerMode: 'SELF',
+      name: 'Evento Propio Organizador',
+      scheduledAt: '2035-06-15T18:00',
+      location: 'Centro Cultural',
+    });
+
+    // Cannot update status
+    component.updateId.setValue('10');
+    component.nextStatus.setValue('CONFIRMADO');
+    component.submitStatus();
+    expect(api.updateStatus).not.toHaveBeenCalled();
   });
 
-  it('Organizador: handles 403 on self-contact lookup and update gracefully', async () => {
-    const { fixture, component } = await setup({
-      roles: [AppRole.Organizador],
+  it('Productor exclusivo & Admin+Productor: show SELF & EXTERNAL modes, complete exceptional self-contact without userOid, and prevent duplicate submits', async () => {
+    const pendingCreate$ = new Subject<Production>();
+    const { api, fixture, component } = await setup({
+      roles: [AppRole.Productor],
       productions: [ownProduction],
-      getContactImpl: () => throwError(() => new HttpErrorResponse({ status: 403 })),
-      upsertContactImpl: () => throwError(() => new HttpErrorResponse({ status: 403 })),
+      createProductionImpl: () => pendingCreate$.asObservable(),
     });
 
-    expect(component.selfContactError()).toContain('No tienes permisos');
+    // Exceptional self-contact available for Productor exclusivo when 404
+    expect(component.canManageSelfContact()).toBe(true);
+    expect(component.showSelfContactPanel()).toBe(true);
     component.openSelfContactForm();
-    component.selfContactForm.controls.email.setValue('ig.valeria@duocuc.cl');
+    component.selfContactForm.controls.email.setValue('productor@duocuc.cl');
     component.submitSelfContact();
-    fixture.detectChanges();
-
-    expect(component.selfContactError()).toContain('No tienes permisos');
-  });
-
-  it('Detail drawer does NOT render organizer contact management or perform redundant contact HTTP calls for Admin', async () => {
-    const { api, fixture, component } = await setup({
-      roles: [AppRole.Admin],
-      productions: [aliasProduction],
+    expect(api.upsertOrganizerContact).toHaveBeenCalledWith(canonicalOwnerId, {
+      email: 'productor@duocuc.cl',
+      contactName: 'Ignacio Valeria',
+      phone: undefined,
     });
+    expect((api.upsertOrganizerContact.mock.calls[0][1] as any).userOid).toBeUndefined();
 
-    component.selectProduction(aliasProduction);
+    // SELF submit prevents duplicate submissions while saving
+    component.openCreateModal();
     fixture.detectChanges();
-
-    expect(api.getOrganizerContact).not.toHaveBeenCalled();
-    const drawer = fixture.nativeElement.querySelector('.detail-drawer') as HTMLElement;
-    expect(drawer).not.toBeNull();
-    expect(drawer.textContent).toContain('DEMO-NOTIFY-V2-20261121');
-    expect(drawer.textContent).toContain('org-demo-ignacio-valeria');
-    expect(drawer.textContent).not.toContain('Contacto del organizador');
-    expect(drawer.textContent).not.toContain('Registrar contacto');
-    expect(drawer.textContent).not.toContain('Sin contacto registrado');
-  });
-
-  it('Detail drawer does NOT render organizer contact management or perform redundant contact HTTP calls for Productor', async () => {
-    const { api, fixture, component } = await setup({
-      roles: [AppRole.Productor],
-      productions: [aliasProduction],
+    expect(fixture.nativeElement.querySelector('.create-mode-tabs')).not.toBeNull();
+    component.createForm.setValue({
+      name: 'Evento Propio Productor',
+      scheduledAt: '2035-06-15T18:00',
+      location: 'Santiago',
     });
-
-    component.selectProduction(aliasProduction);
-    fixture.detectChanges();
-
-    expect(api.getOrganizerContact).not.toHaveBeenCalled();
-    const drawer = fixture.nativeElement.querySelector('.detail-drawer') as HTMLElement;
-    expect(drawer).not.toBeNull();
-    expect(drawer.textContent).not.toContain('Contacto del organizador');
-    expect(drawer.textContent).not.toContain('Registrar contacto');
-    expect(drawer.textContent).not.toContain('Sin contacto registrado');
+    component.submitCreate();
+    component.submitCreate();
+    expect(api.createProduction).toHaveBeenCalledTimes(1);
+    expect(api.createProduction).toHaveBeenCalledWith({
+      organizerMode: 'SELF',
+      name: 'Evento Propio Productor',
+      scheduledAt: '2035-06-15T18:00',
+      location: 'Santiago',
+    });
+    pendingCreate$.next(ownProduction);
+    pendingCreate$.complete();
   });
 
-  it('Productor create modal: checks organizer contact passively (200/404/errors), ignores stale responses, cleans up on close and does not block creation', async () => {
-    const first$ = new Subject<OrganizerContact>();
-    const second$ = new Subject<OrganizerContact>();
-    let callCount = 0;
+  it('EXTERNAL selector: searches eligible organizers, cancels stale responses, handles ENTRA_ORGANIZER, EXTERNAL_CONTACT, DISABLED, DEGRADED, pagination and NEW_EXTERNAL', async () => {
+    const first$ = new Subject<EligibleOrganizersPage>();
+    const second$ = new Subject<EligibleOrganizersPage>();
+    let calls = 0;
 
     const { api, fixture, component } = await setup({
-      roles: [AppRole.Productor],
+      roles: [AppRole.Admin, AppRole.Productor],
       productions: [aliasProduction],
-      getContactImpl: (id: string) => {
-        callCount++;
-        if (id === 'org-slow') return first$.asObservable();
-        if (id === 'org-fast') return second$.asObservable();
-        if (id === 'org-missing') return throwError(() => new HttpErrorResponse({ status: 404 }));
-        if (id === 'org-forbidden') return throwError(() => new HttpErrorResponse({ status: 403 }));
-        if (id === 'org-net') return throwError(() => new HttpErrorResponse({ status: 0 }));
-        return of({
-          id: 1,
-          organizerId: id,
-          email: 'ig.valeria@duocuc.cl',
-          active: true,
-        });
+      getEligibleImpl: (params: any) => {
+        calls++;
+        if (params.q === 'slow') return first$.asObservable();
+        if (params.q === 'fast') return second$.asObservable();
+        if (params.page === 1) {
+          return of({ ...sampleEligiblePage, page: 1, total: 25 });
+        }
+        return of({ ...sampleEligiblePage, total: 25 });
       },
     });
 
     component.openCreateModal();
+    component.setCreateMode('EXTERNAL');
     fixture.detectChanges();
 
-    // Stale async response protection
-    component.createForm.controls.organizerId.setValue('org-slow');
-    component.checkCreateOrganizerContact();
-    component.createForm.controls.organizerId.setValue('org-fast');
-    component.checkCreateOrganizerContact();
+    expect(api.getEligibleOrganizers).toHaveBeenCalledWith({ q: '', page: 0, size: 20 });
+    expect(fixture.nativeElement.textContent).toContain('Benjamin Espinoza');
+    expect(fixture.nativeElement.textContent).toContain('Cuenta EventoMax');
+    expect(fixture.nativeElement.textContent).toContain('Productora Sur');
+    expect(fixture.nativeElement.textContent).toContain('Cliente externo');
 
-    second$.next({ id: 2, organizerId: 'org-fast', email: 'vigente@duocuc.cl', active: true });
+    // Pagination
+    component.goToEligiblePage(1);
+    expect(component.eligiblePage()).toBe(1);
+
+    // Stale search cancellation via switchMap
+    (component as any).eligibleSearchTrigger$.next({ q: 'slow', page: 0 });
+    (component as any).eligibleSearchTrigger$.next({ q: 'fast', page: 0 });
+    second$.next({
+      items: [sampleEligiblePage.items[1]],
+      page: 0,
+      size: 20,
+      total: 1,
+      directorySyncStatus: 'DISABLED',
+    });
     second$.complete();
-    first$.next({ id: 1, organizerId: 'org-slow', email: 'obsoleto@duocuc.cl', active: true });
+    first$.next(sampleEligiblePage);
     first$.complete();
     fixture.detectChanges();
 
-    expect(callCount).toBe(2);
-    expect(component.createContactStatus()).toBe('found');
-    expect(component.createContactEmail()).toBe('vigente@duocuc.cl');
+    expect(component.eligibleDirectoryStatus()).toBe('DISABLED');
+    expect(component.eligibleOrganizers()).toHaveLength(1);
+    expect(fixture.nativeElement.textContent).toContain('temporalmente deshabilitada');
 
-    // 404 shows discreet warning but does NOT block creation
-    component.createForm.controls.organizerId.setValue('org-missing');
-    component.checkCreateOrganizerContact();
-    fixture.detectChanges();
-    expect(component.createContactStatus()).toBe('missing');
-    expect(component.createContactMessage()).toContain('Organizadores');
+    // Selecting EXTERNAL_CONTACT produces EXISTING_EXTERNAL payload without editable email
+    component.selectEligibleOrganizer(sampleEligiblePage.items[1]);
+    component.createForm.setValue({
+      name: 'Evento Cliente Existente',
+      scheduledAt: '2035-07-01T18:00',
+      location: 'Concepción',
+    });
+    component.submitCreate();
+    expect(api.createProduction).toHaveBeenCalledWith({
+      organizerMode: 'EXTERNAL',
+      externalOrganizerType: 'EXISTING_EXTERNAL',
+      organizerId: 'ext-client-01',
+      name: 'Evento Cliente Existente',
+      scheduledAt: '2035-07-01T18:00',
+      location: 'Concepción',
+    });
 
-    component.createForm.patchValue({
-      name: 'Evento sin contacto',
-      scheduledAt: '2030-12-01T18:00',
+    // DEGRADED blocks selecting ENTRA_ORGANIZER
+    component.openCreateModal();
+    component.setCreateMode('EXTERNAL');
+    component.eligibleDirectoryStatus.set('DEGRADED');
+    component.selectEligibleOrganizer(sampleEligiblePage.items[0]);
+    expect(component.selectedEligibleOrganizer()).toBeNull();
+    expect(component.externalSelectionError()).toContain('no está disponible temporalmente');
+
+    // OK allows selecting ENTRA_ORGANIZER
+    component.eligibleDirectoryStatus.set('OK');
+    component.selectEligibleOrganizer(sampleEligiblePage.items[0]);
+    component.createForm.setValue({
+      name: 'Evento Entra',
+      scheduledAt: '2035-07-05T18:00',
       location: 'Santiago',
     });
     component.submitCreate();
-    expect(api.createProduction).toHaveBeenCalledWith(
-      expect.objectContaining({ organizerId: 'org-missing' })
-    );
+    expect(api.createProduction).toHaveBeenCalledWith({
+      organizerMode: 'EXTERNAL',
+      externalOrganizerType: 'ENTRA_ORGANIZER',
+      organizerId: entraOrgId,
+      name: 'Evento Entra',
+      scheduledAt: '2035-07-05T18:00',
+      location: 'Santiago',
+    });
 
-    // 403 and network errors handled cleanly
+    // NEW_EXTERNAL generates payload without organizerId and without extra PUT calls
     component.openCreateModal();
-    component.createForm.controls.organizerId.setValue('org-forbidden');
-    component.checkCreateOrganizerContact();
-    expect(component.createContactStatus()).toBe('error');
-    expect(component.createContactMessage()).toContain('No tienes permisos');
+    component.setCreateMode('EXTERNAL');
+    component.toggleNewExternalClient(true);
+    fixture.detectChanges();
 
-    component.createForm.controls.organizerId.setValue('org-net');
-    component.checkCreateOrganizerContact();
-    expect(component.createContactStatus()).toBe('error');
-    expect(component.createContactMessage()).toContain('No se pudo conectar');
+    component.createForm.setValue({
+      name: 'Festival Nuevo Cliente',
+      scheduledAt: '2035-08-10T20:00',
+      location: 'Valparaíso',
+    });
+    component.newExternalClientForm.setValue({
+      externalClientName: 'Festival Costero SpA',
+      externalClientEmail: 'contacto@festivalcostero.cl',
+    });
+    component.submitCreate();
 
-    // Close resets state
-    component.closeCreateModal();
-    expect(component.createContactStatus()).toBe('idle');
-    expect(component.createContactMessage()).toBe('');
+    expect(api.createProduction).toHaveBeenCalledWith({
+      organizerMode: 'EXTERNAL',
+      externalOrganizerType: 'NEW_EXTERNAL',
+      externalClientName: 'Festival Costero SpA',
+      externalClientEmail: 'contacto@festivalcostero.cl',
+      name: 'Festival Nuevo Cliente',
+      scheduledAt: '2035-08-10T20:00',
+      location: 'Valparaíso',
+    });
+    expect(api.upsertOrganizerContact).not.toHaveBeenCalled();
+    expect(calls).toBeGreaterThanOrEqual(4);
   });
 
-  it('warns non-blockingly before confirming SOLICITADO production when organizer contact is 404', async () => {
+  it('handles 403, 409 and 503 errors cleanly on createProduction without catalog/inventory jargon', async () => {
+    for (const [status, expectedFragment] of [
+      [403, 'no está autorizado'],
+      [409, 'conflicto'],
+      [503, 'directorio'],
+    ] as const) {
+      const { component } = await setup({
+        roles: [AppRole.Productor],
+        createProductionImpl: () => throwError(() => new HttpErrorResponse({ status })),
+      });
+      component.openCreateModal();
+      component.createForm.setValue({
+        name: 'Evento Error',
+        scheduledAt: '2035-08-10T20:00',
+        location: 'Santiago',
+      });
+      component.submitCreate();
+      expect(component.operationError().toLowerCase()).toContain(expectedFragment);
+      expect(component.operationError().toLowerCase()).not.toContain('inventario');
+      TestBed.resetTestingModule();
+    }
+  });
+
+  it('Role permission matrix: Admin-only and Auditor cannot create; detail drawer has no contact admin form', async () => {
+    for (const role of [AppRole.Admin, AppRole.Auditor]) {
+      const { api, fixture, component } = await setup({ roles: [role] });
+      expect(component.canCreate()).toBe(false);
+      expect(component.canUseExternalMode()).toBe(false);
+      expect(fixture.nativeElement.querySelector('.btn-create-primary')).toBeNull();
+      component.submitCreate();
+      expect(api.createProduction).not.toHaveBeenCalled();
+      TestBed.resetTestingModule();
+    }
+
+    // Confirm notice in SOLICITADO drawer stays non-blocking and does NOT mention /organizers
     const solicitadoProd: Production = { ...aliasProduction, id: 12, status: 'SOLICITADO' };
     const { fixture, component } = await setup({
       roles: [AppRole.Productor],
       productions: [solicitadoProd],
       getContactImpl: () => throwError(() => new HttpErrorResponse({ status: 404 })),
     });
-
     component.selectProduction(solicitadoProd);
     fixture.detectChanges();
-
-    expect(component.confirmContactMissing()).toBe(true);
     const drawer = fixture.nativeElement.querySelector('.detail-drawer') as HTMLElement;
     expect(drawer.textContent).toContain('el organizador no tiene un contacto registrado');
-    expect(drawer.textContent).not.toContain('Contacto del organizador');
-    expect(drawer.textContent).not.toContain('Registrar contacto');
-  });
-
-  it('Organizador: can create own production using tid:oid, renders Nueva producción button, and cannot update/confirm/close', async () => {
-    const { api, fixture, component } = await setup({
-      roles: [AppRole.Organizador],
-      productions: [ownProduction],
-    });
-
-    expect(component.canCreate()).toBe(true);
-    expect(component.canUpdate()).toBe(false);
-    expect(component.canViewCrewTicket()).toBe(false);
-
-    const createBtn = fixture.nativeElement.querySelector('.btn-create-primary') as HTMLButtonElement | null;
-    expect(createBtn).not.toBeNull();
-    expect(createBtn?.textContent).toContain('Nueva producción');
-
-    component.openCreateModal();
-    fixture.detectChanges();
-
-    const orgInput = fixture.nativeElement.querySelector('#create-organizer-input') as HTMLInputElement | null;
-    expect(orgInput).not.toBeNull();
-    expect(orgInput?.readOnly).toBe(true);
-    expect(component.createForm.controls.organizerId.value).toBe(canonicalOwnerId);
-
-    // Even if organizerId control were altered, submitCreate enforces currentOwnerId() (tid:oid)
-    component.createForm.patchValue({
-      organizerId: 'org-otro-no-autorizado',
-      name: 'Evento propio de Organizador',
-      scheduledAt: '2030-12-15T19:00',
-      location: 'Centro Cultural',
-    });
-    component.submitCreate();
-    fixture.detectChanges();
-
-    expect(api.createProduction).toHaveBeenCalledWith({
-      organizerId: canonicalOwnerId,
-      name: 'Evento propio de Organizador',
-      scheduledAt: '2030-12-15T19:00',
-      location: 'Centro Cultural',
-    });
-
-    // Cannot confirm, assign crew, or close productions
-    component.selectProduction({ ...ownProduction, status: 'SOLICITADO' });
-    fixture.detectChanges();
-    const drawer = fixture.nativeElement.querySelector('.detail-drawer') as HTMLElement;
-    expect(drawer.querySelector('.workflow-form')).toBeNull();
-
-    component.updateId.setValue(String(ownProduction.id));
-    component.nextStatus.setValue('CONFIRMADO');
-    component.submitStatus();
-    expect(api.updateStatus).not.toHaveBeenCalled();
-  });
-
-  it('Role permission matrix: Productor creates/updates, Admin-only updates without creating, Admin+Productor creates, Auditor is read-only', async () => {
-    // Productor
-    {
-      const { fixture, component } = await setup({ roles: [AppRole.Productor] });
-      expect(component.canCreate()).toBe(true);
-      expect(component.canUpdate()).toBe(true);
-      expect(fixture.nativeElement.querySelector('.btn-create-primary')).not.toBeNull();
-      TestBed.resetTestingModule();
-    }
-
-    // Admin alone (cannot create without Productor/Organizador authorization)
-    {
-      const { fixture, component } = await setup({ roles: [AppRole.Admin] });
-      expect(component.canCreate()).toBe(false);
-      expect(component.canUpdate()).toBe(true);
-      expect(fixture.nativeElement.querySelector('.btn-create-primary')).toBeNull();
-      TestBed.resetTestingModule();
-    }
-
-    // Admin + Productor (can create because of Productor authorization)
-    {
-      const { fixture, component } = await setup({ roles: [AppRole.Admin, AppRole.Productor] });
-      expect(component.canCreate()).toBe(true);
-      expect(component.canUpdate()).toBe(true);
-      expect(fixture.nativeElement.querySelector('.btn-create-primary')).not.toBeNull();
-      TestBed.resetTestingModule();
-    }
-
-    // Auditor (strictly read-only)
-    {
-      const { api, fixture, component } = await setup({ roles: [AppRole.Auditor] });
-      expect(component.canCreate()).toBe(false);
-      expect(component.canUpdate()).toBe(false);
-      expect(component.canViewCrewTicket()).toBe(false);
-      expect(fixture.nativeElement.querySelector('.btn-create-primary')).toBeNull();
-      component.submitCreate();
-      component.submitStatus();
-      expect(api.createProduction).not.toHaveBeenCalled();
-      expect(api.updateStatus).not.toHaveBeenCalled();
-    }
+    expect(drawer.textContent).not.toContain('en Organizadores');
   });
 });

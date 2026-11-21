@@ -13,7 +13,6 @@ import {
   LucidePackage,
   LucideBarChart3,
   LucideShieldCheck,
-  LucideUsers,
 } from '@lucide/angular';
 import { SidebarNavItem } from './sidebar.models';
 
@@ -28,7 +27,6 @@ import { SidebarNavItem } from './sidebar.models';
     LucidePackage,
     LucideBarChart3,
     LucideShieldCheck,
-    LucideUsers,
   ],
   template: `
     <a
@@ -58,9 +56,6 @@ import { SidebarNavItem } from './sidebar.models';
           @case ('audit') {
             <svg lucideShieldCheck class="nav-icon" />
           }
-          @case ('organizers') {
-            <svg lucideUsers class="nav-icon" />
-          }
         }
         @if (item().badge !== undefined && item().badge !== null) {
           <span class="nav-collapsed-dot" aria-hidden="true"></span>
@@ -71,7 +66,11 @@ import { SidebarNavItem } from './sidebar.models';
       </span>
       <span class="nav-label brand-copy">{{ item().label }}</span>
       @if (item().badge !== undefined && item().badge !== null) {
-        <span class="nav-count-badge brand-copy">{{ item().badge }}</span>
+        <span
+          class="nav-count-badge brand-copy"
+          [attr.title]="item().badgeLabel || null"
+          [attr.aria-label]="item().badgeLabel || null"
+        >{{ item().badge }}</span>
       }
       @if (item().statusDot) {
         <span
@@ -92,6 +91,9 @@ export class SidebarItem {
 
   readonly tooltipText = computed(() => {
     const current = this.item();
+    if (current.badgeLabel) {
+      return `${current.label} · ${current.badgeLabel}`;
+    }
     if (current.badge !== undefined && current.badge !== null) {
       return `${current.label} · ${current.badge}`;
     }

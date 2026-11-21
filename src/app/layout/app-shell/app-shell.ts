@@ -165,7 +165,6 @@ export class AppShell implements OnInit {
     catalog: true,
     reports: true,
     audit: true,
-    organizers: true,
   };
 
   readonly canViewProductions = computed(
@@ -178,7 +177,6 @@ export class AppShell implements OnInit {
   readonly canViewAudit = computed(
     () => (this.isAdmin() || this.isAuditor()) && this.features.audit,
   );
-  readonly canViewOrganizers = computed(() => this.isAdmin() && this.features.organizers);
 
   readonly currentSection = signal('Dashboard');
 
@@ -189,7 +187,6 @@ export class AppShell implements OnInit {
     catalog: 'Catálogo',
     reports: 'Reportes',
     audit: 'Auditoría',
-    organizers: 'Organizadores',
   };
 
   readonly primaryNavItems = computed<readonly SidebarNavItem[]>(() => {
@@ -208,7 +205,9 @@ export class AppShell implements OnInit {
         label: this.navLabels.productions,
         route: '/productions',
         icon: 'productions',
-        ...(activeBadge !== undefined ? { badge: activeBadge } : {}),
+        ...(activeBadge !== undefined
+          ? { badge: activeBadge, badgeLabel: `${activeBadge} abiertas (estados no terminales)` }
+          : {}),
       });
     }
     if (this.canViewCatalog()) {
@@ -242,14 +241,6 @@ export class AppShell implements OnInit {
         statusLabel: 'Kafka Live',
       });
     }
-    if (this.canViewOrganizers()) {
-      items.push({
-        id: 'organizers',
-        label: this.navLabels.organizers,
-        route: '/organizers',
-        icon: 'organizers',
-      });
-    }
     return items;
   });
 
@@ -276,7 +267,6 @@ export class AppShell implements OnInit {
         else if (url.includes('/catalog')) section = 'Catálogo';
         else if (url.includes('/reports')) section = 'Reportes';
         else if (url.includes('/audit')) section = 'Auditoría';
-        else if (url.includes('/organizers')) section = 'Organizadores';
         this.currentSection.set(section);
       });
 

@@ -8,6 +8,7 @@ import {
   CrewTicket,
   OrganizerContact,
   OrganizerContactRequest,
+  EligibleOrganizersPage,
 } from '../../core/models/production.model';
 import { ApiClientService } from '../../core/http/api-client.service';
 import { environment } from '../../../environments/environment';
@@ -51,6 +52,18 @@ export class ProductionsDataService {
 
   downloadQuotePdf(productionId: number): Observable<Blob> {
     return this.apiClient.getBlob(`${environment.apiGatewayUrl}/api/productions/${productionId}/quote-pdf`);
+  }
+
+  getEligibleOrganizers(params?: { q?: string; page?: number; size?: number }): Observable<EligibleOrganizersPage> {
+    const query = new URLSearchParams();
+    if (params?.q && params.q.trim()) {
+      query.set('q', params.q.trim());
+    }
+    query.set('page', String(params?.page ?? 0));
+    query.set('size', String(params?.size ?? 20));
+    return this.apiClient.get<EligibleOrganizersPage>(
+      `${environment.apiGatewayUrl}/api/organizers/eligible?${query.toString()}`
+    );
   }
 
   getOrganizerContact(organizerId: string): Observable<OrganizerContact> {

@@ -96,15 +96,6 @@ export const routes: Routes = [
             AppRole.Auditor
           ]
         }
-      },
-      {
-        path: 'organizers',
-        loadComponent: () => import('./features/organizers/organizers').then(m => m.Organizers),
-        canActivate: [MsalGuard, roleGuard, featureGuard],
-        data: {
-          feature: 'organizers',
-          roles: [AppRole.Admin]
-        }
       }
     ]
   },

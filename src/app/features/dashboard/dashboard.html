@@ -279,7 +279,7 @@
           <strong class="metric-value font-mono-num">{{ totalProductions() }}</strong>
           <p class="metric-foot">Producciones registradas</p>
           <div class="kpi-micro-meta">
-            <span class="meta-dot blue"></span>{{ activeProductionsCount() }} activas
+            <span class="meta-dot blue"></span><span title="Estados no terminales (solicitado, confirmado, en montaje y en ejecución)">{{ activeProductionsCount() }} abiertas</span>
             <span class="meta-sep">·</span>
             <span class="meta-dot slate"></span>{{ closed() }} cerradas
           </div>
@@ -364,7 +364,7 @@
               {{ selectedPipelineFilter() === 'all' ? 'Próximas producciones' : 'Agenda operativa' }}
               <span class="count-badge font-mono-num">{{ filteredUpcoming().length }}</span>
             </h2>
-            <p>Agenda operativa de producciones activas.</p>
+            <p>Agenda operativa de producciones abiertas (estados no terminales).</p>
           </div>
 
           <div class="agenda-controls-group">
@@ -394,11 +394,11 @@
         </div>
 
         @if (filteredUpcoming().length > 0) {
-          <emx-production-table [rows]="filteredUpcoming()" caption="Próximas producciones activas" />
+          <emx-production-table [rows]="filteredUpcoming()" caption="Próximas producciones abiertas" />
         } @else {
           <div class="empty-state empty-state-panel">
             <span class="icon-tile"><svg lucideCalendarDays class="metric-icon" /></span>
-            <p>No hay producciones activas programadas para el filtro seleccionado.</p>
+            <p>No hay producciones abiertas programadas para el filtro seleccionado.</p>
           </div>
         }
 

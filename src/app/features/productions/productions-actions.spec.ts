@@ -89,10 +89,9 @@ describe('Productions EP2 actions', () => {
     component.submitStatus();
   }, 15000);
 
-  it('creates a production with the real request contract', async () => {
+  it('creates a production with the real SELF request contract without organizerId', async () => {
     const { api, component, fixture } = await setup(true);
     component.createForm.setValue({
-      organizerId: 'org-demo',
       name: 'Evento EP2',
       location: 'Santiago',
       scheduledAt: '2030-11-20T18:00'
@@ -100,7 +99,7 @@ describe('Productions EP2 actions', () => {
     component.submitCreate();
     fixture.detectChanges();
     expect(api.createProduction).toHaveBeenCalledWith({
-      organizerId: 'org-demo',
+      organizerMode: 'SELF',
       name: 'Evento EP2',
       location: 'Santiago',
       scheduledAt: '2030-11-20T18:00'

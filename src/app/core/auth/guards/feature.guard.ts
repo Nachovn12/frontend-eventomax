@@ -7,7 +7,6 @@ const features: Readonly<Record<string, boolean>> = {
   catalog: true,
   reports: true,
   audit: true,
-  organizers: true,
 };
 
 export const featureGuard: CanActivateFn = (route) => {
