@@ -1,7 +1,18 @@
+export type ActorResolutionSource =
+  | 'SYSTEM'
+  | 'EVENT'
+  | 'ENTRA_DIRECTORY'
+  | 'VERIFIED_SUB_TO_ENTRA_DIRECTORY'
+  | 'LEGACY'
+  | 'UNRESOLVED';
+
 /** Read-only REST contract defined by ms-eventomax-audit (EMX-69). */
 export interface AuditEvent {
   readonly eventId: string;
   readonly actor: string | null;
+  readonly actorDisplayName?: string | null;
+  readonly actorEmail?: string | null;
+  readonly actorResolutionSource?: ActorResolutionSource | null;
   readonly type: string;
   /** ISO local without offset; backend contract interprets this value in UTC. */
   readonly timestamp: string;
@@ -19,6 +30,9 @@ export interface ProductionTimelineSnapshot {
   readonly currentStatus: string | null;
   readonly productionName: string | null;
   readonly actor: string;
+  readonly actorDisplayName?: string | null;
+  readonly actorEmail?: string | null;
+  readonly actorResolutionSource?: ActorResolutionSource | null;
   readonly source: string | null;
   readonly traceId: string | null;
   readonly correlationId: string | null;

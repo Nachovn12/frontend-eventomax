@@ -212,9 +212,14 @@
                     </span>
                   </div>
 
-                  <div class="actor-badge" [title]="'Actor: ' + (item.actor || 'No informado')">
-                    <span class="actor-avatar" aria-hidden="true">{{ (item.actor || 'S').charAt(0).toUpperCase() }}</span>
-                    <span class="actor-name">Actor: {{ item.actor || 'No informado' }}</span>
+                  <div class="actor-badge" [title]="'Actor: ' + formatActorLabel(item)">
+                    <span class="actor-avatar" aria-hidden="true">{{ actorInitial(item) }}</span>
+                    <span class="actor-text-group">
+                      <span class="actor-name">Actor: {{ formatActorLabel(item) }}</span>
+                      @if (formatActorEmail(item); as email) {
+                        <span class="actor-email">{{ email }}</span>
+                      }
+                    </span>
                   </div>
                 </div>
 
@@ -319,32 +324,67 @@
                   }
                 </div>
 
-                <!-- Inspección Desplegable del Payload JSON -->
-                @if (item.details) {
+                <!-- Inspección Desplegable de Detalles Técnicos y Payload JSON -->
+                @if (hasExpandableDetails(item)) {
                   <details class="audit-details-accordion">
                     <summary class="audit-details-summary">
                       <span class="summary-title">
                         <svg lucideChevronDown class="accordion-chevron" strokeWidth="2" aria-hidden="true" />
                         Ver detalles del evento
                       </span>
-                      <button
-                        type="button"
-                        emxButton
-                        variant="secondary"
-                        size="xs"
-                        class="btn-copy-json"
-                        (click)="copyText(item.details, 'json-' + item.eventId, $event)"
-                      >
-                        @if (isCopied('json-' + item.eventId)) {
-                          <svg lucideCheck class="copy-icon copied" strokeWidth="2" aria-hidden="true" />
-                          <span>¡Copiado!</span>
-                        } @else {
-                          <svg lucideCopy class="copy-icon" strokeWidth="2" aria-hidden="true" />
-                          <span>Copiar JSON</span>
-                        }
-                      </button>
+                      @if (item.details) {
+                        <button
+                          type="button"
+                          emxButton
+                          variant="secondary"
+                          size="xs"
+                          class="btn-copy-json"
+                          (click)="copyText(item.details, 'json-' + item.eventId, $event)"
+                        >
+                          @if (isCopied('json-' + item.eventId)) {
+                            <svg lucideCheck class="copy-icon copied" strokeWidth="2" aria-hidden="true" />
+                            <span>¡Copiado!</span>
+                          } @else {
+                            <svg lucideCopy class="copy-icon" strokeWidth="2" aria-hidden="true" />
+                            <span>Copiar JSON</span>
+                          }
+                        </button>
+                      }
                     </summary>
-                    <pre class="audit-json">{{ formatJson(item.details) }}</pre>
+                    @if (item.actor) {
+                      <div class="audit-actor-tech-row">
+                        <div class="audit-actor-tech-meta">
+                          <span class="audit-actor-tech-label">Identificador técnico del actor</span>
+                          <code class="audit-actor-tech-value">{{ item.actor }}</code>
+                        </div>
+                        <button
+                          type="button"
+                          emxButton
+                          variant="secondary"
+                          size="xs"
+                          class="btn-copy-actor-id"
+                          [attr.aria-label]="'Copiar identificador técnico del actor ' + item.actor"
+                          (click)="copyText(item.actor, 'actor-' + item.eventId, $event)"
+                        >
+                          @if (isCopied('actor-' + item.eventId)) {
+                            <svg lucideCheck class="copy-icon copied" strokeWidth="2" aria-hidden="true" />
+                            <span>¡Copiado!</span>
+                          } @else {
+                            <svg lucideCopy class="copy-icon" strokeWidth="2" aria-hidden="true" />
+                            <span>Copiar ID</span>
+                          }
+                        </button>
+                      </div>
+                    }
+                    @if (formatResolutionSource(item); as sourceLabel) {
+                      <div class="audit-actor-source-row">
+                        <span class="audit-actor-tech-label">Fuente de resolución</span>
+                        <span class="audit-actor-source-value">{{ sourceLabel }}</span>
+                      </div>
+                    }
+                    @if (item.details) {
+                      <pre class="audit-json">{{ formatJson(item.details) }}</pre>
+                    }
                   </details>
                 }
               </div>
