@@ -1470,3 +1470,95 @@
   border-radius: 0.5rem;
   border: 1px solid var(--border-subtle);
 }
+
+/* ==========================================================================
+   Agenda de producciones — Column Header & Cell Alignment
+   Scoped exclusively to the Productions agenda table.
+   ========================================================================== */
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable {
+  min-width: 780px;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable .col-production {
+  width: 32%;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable .col-location {
+  width: 22%;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable .col-schedule {
+  width: 17%;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable .col-status {
+  width: 15%;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable .col-action {
+  width: 14%;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table thead th,
+:host ::ng-deep .agenda-production-table .data-table.production-table thead th.th-action {
+  text-align: center;
+  vertical-align: middle;
+  padding: 10px 14px;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table thead th:first-child,
+:host ::ng-deep .agenda-production-table .data-table.production-table thead th:last-child {
+  padding-inline: 14px;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-production,
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-location {
+  text-align: left;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-schedule {
+  text-align: center;
+  padding-inline: 12px;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-schedule .schedule-time-row {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-status {
+  text-align: center;
+  padding-inline: 12px;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-action,
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-action:last-child {
+  text-align: center;
+  padding-inline: 12px;
+}
+
+@container (max-width: 640px) {
+  :host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable {
+    min-width: 0;
+  }
+
+  :host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-schedule {
+    padding-inline: 0;
+    text-align: right;
+  }
+
+  :host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-schedule .schedule-time-row {
+    display: flex;
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  :host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-status,
+  :host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-action,
+  :host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-action:last-child {
+    padding-inline: 0;
+    text-align: left;
+  }
+}
