@@ -54,6 +54,75 @@
     </div>
   }
 
+  @if (isOrganizerOnly() && currentOwnerId()) {
+    <section class="panel organizer-contact-panel smooth-shadow-ring-xs" aria-labelledby="self-contact-heading">
+      <div class="contact-panel-row">
+        <div>
+          <h2 id="self-contact-heading" class="contact-panel-title">Contacto de notificaciones</h2>
+          @if (selfContactLoading()) {
+            <p class="contact-panel-desc">Consultando contacto registrado…</p>
+          } @else if (selfContact(); as contact) {
+            <p class="contact-panel-desc">
+              Contacto registrado: <strong>{{ contact.email }}</strong>
+              @if (contact.contactName) { · {{ contact.contactName }} }
+            </p>
+          } @else if (selfContactMissing()) {
+            <p class="contact-panel-desc contact-warning-text" role="status">
+              Sin contacto registrado. Confirma tu correo para recibir notificaciones de tus producciones.
+            </p>
+          } @else if (selfContactError()) {
+            <p class="contact-panel-desc contact-error-text" role="alert">{{ selfContactError() }}</p>
+          }
+          @if (selfContactSuccess()) {
+            <p class="contact-panel-desc contact-success-text" role="status">{{ selfContactSuccess() }}</p>
+          }
+        </div>
+        @if (!showSelfContactForm() && !selfContactLoading()) {
+          <button
+            type="button"
+            emxButton
+            variant="secondary"
+            size="small"
+            class="btn-self-contact-toggle"
+            (click)="openSelfContactForm()"
+          >
+            {{ selfContact() ? 'Actualizar contacto' : 'Confirmar contacto' }}
+          </button>
+        }
+      </div>
+
+      @if (showSelfContactForm()) {
+        <form class="contact-inline-form" [formGroup]="selfContactForm" (ngSubmit)="submitSelfContact()" novalidate>
+          @if (selfContactError()) {
+            <div class="field-error-banner" role="alert">{{ selfContactError() }}</div>
+          }
+          <div class="contact-form-grid">
+            <label class="form-field" for="self-contact-email">
+              <span>Correo electrónico (sugerido desde tu inicio de sesión) *</span>
+              <input id="self-contact-email" type="email" formControlName="email" placeholder="nombre@organizacion.cl" />
+            </label>
+            <label class="form-field" for="self-contact-name">
+              <span>Nombre de contacto</span>
+              <input id="self-contact-name" type="text" formControlName="contactName" placeholder="Nombre o productora" />
+            </label>
+            <label class="form-field" for="self-contact-phone">
+              <span>Teléfono (opcional)</span>
+              <input id="self-contact-phone" type="text" formControlName="phone" placeholder="+56912345678" />
+            </label>
+          </div>
+          <div class="contact-form-actions">
+            <button type="button" emxButton variant="ghost" size="small" [disabled]="selfContactSaving()" (click)="cancelSelfContactForm()">
+              Cancelar
+            </button>
+            <button type="submit" emxButton variant="primary" size="small" class="btn-self-contact-save" [disabled]="selfContactSaving()">
+              {{ selfContactSaving() ? 'Guardando…' : 'Guardar contacto' }}
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+  }
+
   @if (isLoading()) {
     <section class="metric-grid productions-metrics" aria-busy="true" aria-label="Cargando métricas">
       @for (card of [1, 2, 3, 4]; track card) {

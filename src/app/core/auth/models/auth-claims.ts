@@ -12,5 +12,9 @@ export interface AuthClaims {
   tid?: unknown;
   oid?: unknown;
   sub?: unknown;
+  preferred_username?: unknown;
+  email?: unknown;
+  upn?: unknown;
+  name?: unknown;
   [key: string]: unknown;
 }

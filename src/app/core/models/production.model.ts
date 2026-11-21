@@ -55,3 +55,22 @@ export interface CrewTicket {
   readonly createdAt: string;
   readonly updatedAt: string;
 }
+
+export interface OrganizerContact {
+  readonly id: number;
+  readonly organizerId: string;
+  readonly email: string;
+  readonly contactName?: string | null;
+  readonly phone?: string | null;
+  readonly userOid?: string | null;
+  readonly active: boolean;
+  readonly createdAt?: string;
+  readonly updatedAt?: string;
+}
+
+export interface OrganizerContactRequest {
+  email: string;
+  contactName?: string;
+  phone?: string;
+  userOid?: string;
+}

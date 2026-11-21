@@ -25,7 +25,14 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
-import { Production, ProductionStatus, ProductionReservationItemRequest, CrewTicket } from '../../core/models/production.model';
+import {
+  Production,
+  ProductionStatus,
+  ProductionReservationItemRequest,
+  CrewTicket,
+  OrganizerContact,
+  OrganizerContactRequest,
+} from '../../core/models/production.model';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { StatusChip } from '../../shared/ui/status-chip';
 import { Tag } from '../../shared/ui/status-pill/status-pill';
@@ -145,7 +152,23 @@ export class Productions implements OnInit, OnDestroy {
   readonly canViewCrewTicket = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]) && this.authz.hasScope('access_as_user'));
   readonly canDownloadQuote = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor, AppRole.Organizador]) && this.authz.hasScope('access_as_user'));
   readonly isOrganizerOnly = computed(() => this.authz.hasAnyRole([AppRole.Organizador]) && !this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]));
-  readonly currentOwnerId = computed(() => this.authz.ownerId());
+  readonly currentOwnerId = computed(() => (typeof this.authz.ownerId === 'function' ? this.authz.ownerId() : ''));
+  readonly suggestedEmail = computed(() => (typeof this.authz.userEmail === 'function' ? this.authz.userEmail() : ''));
+  readonly suggestedDisplayName = computed(() => (typeof this.authz.userDisplayName === 'function' ? this.authz.userDisplayName() : ''));
+
+  // Self organizer contact (Organizador)
+  readonly selfContact = signal<OrganizerContact | null>(null);
+  readonly selfContactLoading = signal(false);
+  readonly selfContactMissing = signal(false);
+  readonly selfContactError = signal<string | null>(null);
+  readonly selfContactSuccess = signal<string | null>(null);
+  readonly showSelfContactForm = signal(false);
+  readonly selfContactSaving = signal(false);
+  readonly selfContactForm = new FormGroup({
+    email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email, Validators.maxLength(255)] }),
+    contactName: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(150)] }),
+    phone: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(50)] }),
+  });
   readonly showCreate = signal(false);
   readonly createSubmitted = signal(false);
   readonly saving = signal(false);
@@ -279,6 +302,9 @@ export class Productions implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    if (this.isOrganizerOnly() && this.currentOwnerId()) {
+      this.loadSelfContact();
+    }
     this.route?.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((params) => {
@@ -961,5 +987,103 @@ export class Productions implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  // --- Gestión de contacto propio del Organizador ---
+
+  loadSelfContact(): void {
+    const ownerId = this.currentOwnerId().trim();
+    if (!this.isOrganizerOnly() || !ownerId || typeof this.dataService.getOrganizerContact !== 'function') {
+      return;
+    }
+    this.selfContactLoading.set(true);
+    this.selfContactMissing.set(false);
+    this.selfContactError.set(null);
+    this.dataService.getOrganizerContact(ownerId).subscribe({
+      next: (contact) => {
+        this.selfContactLoading.set(false);
+        this.selfContact.set(contact);
+        this.selfContactMissing.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.selfContactLoading.set(false);
+        if (err.status === 404) {
+          this.selfContact.set(null);
+          this.selfContactMissing.set(true);
+          this.prefillSelfContactForm();
+        } else if (err.status === 403) {
+          this.selfContactError.set('No tienes permisos para consultar este contacto de organizador.');
+        } else {
+          this.selfContactError.set('No pudimos consultar tu contacto de notificaciones en este momento.');
+        }
+      }
+    });
+  }
+
+  openSelfContactForm(): void {
+    if (!this.isOrganizerOnly()) return;
+    this.selfContactError.set(null);
+    this.selfContactSuccess.set(null);
+    this.prefillSelfContactForm();
+    this.showSelfContactForm.set(true);
+  }
+
+  cancelSelfContactForm(): void {
+    if (this.selfContactSaving()) return;
+    this.showSelfContactForm.set(false);
+    this.selfContactError.set(null);
+  }
+
+  submitSelfContact(): void {
+    const ownerId = this.currentOwnerId().trim();
+    if (!this.isOrganizerOnly() || !ownerId || this.selfContactSaving()) return;
+    this.selfContactForm.markAllAsTouched();
+    if (this.selfContactForm.invalid || typeof this.dataService.upsertOrganizerContact !== 'function') return;
+
+    const raw = this.selfContactForm.getRawValue();
+    const request: OrganizerContactRequest = {
+      email: raw.email.trim(),
+      contactName: raw.contactName.trim() || undefined,
+      phone: raw.phone.trim() || undefined,
+    };
+
+    this.selfContactSaving.set(true);
+    this.selfContactError.set(null);
+    this.selfContactSuccess.set(null);
+    this.dataService.upsertOrganizerContact(ownerId, request).subscribe({
+      next: (saved) => {
+        this.selfContactSaving.set(false);
+        this.selfContact.set(saved);
+        this.selfContactMissing.set(false);
+        this.showSelfContactForm.set(false);
+        this.selfContactSuccess.set(`Contacto registrado para notificaciones: ${saved.email}.`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.selfContactSaving.set(false);
+        this.selfContactError.set(this.contactErrorMessage(err));
+      }
+    });
+  }
+
+  private prefillSelfContactForm(): void {
+    const existing = this.selfContact();
+    this.selfContactForm.reset({
+      email: existing?.email ?? this.suggestedEmail(),
+      contactName: existing?.contactName ?? this.suggestedDisplayName(),
+      phone: existing?.phone ?? '',
+    });
+  }
+
+  private contactErrorMessage(err: HttpErrorResponse): string {
+    if (err.status === 403) {
+      return 'No tienes permisos para registrar o modificar el contacto de este organizador.';
+    }
+    if (err.status === 400) {
+      return 'Verifica que el correo electrónico y los datos de contacto sean válidos.';
+    }
+    if (err.status === 401) {
+      return 'Sesión expirada o no autorizada. Vuelve a iniciar sesión.';
+    }
+    return 'No pudimos guardar el contacto del organizador en este momento.';
   }
 }

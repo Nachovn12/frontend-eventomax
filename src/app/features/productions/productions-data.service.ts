@@ -1,6 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, of, tap } from 'rxjs';
-import { Production, ProductionStatus, CreateProductionRequest, ProductionStatusUpdateRequest, CrewTicket } from '../../core/models/production.model';
+import {
+  Production,
+  ProductionStatus,
+  CreateProductionRequest,
+  ProductionStatusUpdateRequest,
+  CrewTicket,
+  OrganizerContact,
+  OrganizerContactRequest,
+} from '../../core/models/production.model';
 import { ApiClientService } from '../../core/http/api-client.service';
 import { environment } from '../../../environments/environment';
 import { ActiveProductionsStore } from '../../core/state/active-productions.store';
@@ -43,6 +51,19 @@ export class ProductionsDataService {
 
   downloadQuotePdf(productionId: number): Observable<Blob> {
     return this.apiClient.getBlob(`${environment.apiGatewayUrl}/api/productions/${productionId}/quote-pdf`);
+  }
+
+  getOrganizerContact(organizerId: string): Observable<OrganizerContact> {
+    return this.apiClient.get<OrganizerContact>(
+      `${environment.apiGatewayUrl}/api/organizers/${encodeURIComponent(organizerId.trim())}/contact`
+    );
+  }
+
+  upsertOrganizerContact(organizerId: string, request: OrganizerContactRequest): Observable<OrganizerContact> {
+    return this.apiClient.put<OrganizerContact>(
+      `${environment.apiGatewayUrl}/api/organizers/${encodeURIComponent(organizerId.trim())}/contact`,
+      request
+    );
   }
 
   getStatuses(): Observable<readonly ProductionStatus[]> {
