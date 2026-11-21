@@ -1,0 +1,146 @@
+<div class="page-content">
+  <header class="page-header">
+    <div class="header-copy">
+      <p class="eyebrow">Administración de destinatarios</p>
+      <h1 class="page-title">Organizadores</h1>
+      <p class="page-description">
+        Consulta y administra el contacto autorizado de notificación buscando por identificador de organizador.
+      </p>
+    </div>
+  </header>
+
+  <section class="panel organizers-search-panel smooth-shadow-ring-xs" aria-labelledby="organizer-search-heading">
+    <div class="panel-heading">
+      <div>
+        <h2 id="organizer-search-heading">Consulta por identificador de organizador</h2>
+        <p>Ingresa un alias comercial (ej. <code>org-demo-ignacio-valeria</code>) o una identidad <code>tid:oid</code>.</p>
+      </div>
+    </div>
+
+    <form class="organizer-lookup-form" (ngSubmit)="submitLookup()" novalidate>
+      <label class="form-field grow" for="organizer-lookup-input">
+        <span>Organizador ID *</span>
+        <input
+          id="organizer-lookup-input"
+          type="text"
+          [formControl]="searchOrganizerId"
+          autocomplete="off"
+          maxlength="255"
+          placeholder="Ej: org-demo-ignacio-valeria"
+        />
+      </label>
+      <button
+        type="submit"
+        emxButton
+        variant="primary"
+        size="medium"
+        class="btn-organizer-lookup"
+        [disabled]="loading() || !canAdmin()"
+      >
+        <svg lucideSearch class="icon-inline" strokeWidth="2" aria-hidden="true" />
+        <span>{{ loading() ? 'Consultando…' : 'Consultar contacto' }}</span>
+      </button>
+    </form>
+
+    @if (lookupError()) {
+      <div class="field-error-banner" role="alert">{{ lookupError() }}</div>
+    }
+  </section>
+
+  @if (activeOrganizerId() && !loading() && !lookupError()) {
+    <section class="panel organizers-detail-panel smooth-shadow-ring-xs" aria-labelledby="organizer-contact-result-heading">
+      <div class="panel-heading">
+        <div>
+          <div class="heading-title-row">
+            <svg lucideUsers class="icon-inline" strokeWidth="1.75" aria-hidden="true" />
+            <h2 id="organizer-contact-result-heading">{{ activeOrganizerId() }}</h2>
+          </div>
+          @if (contact(); as current) {
+            <p class="organizer-status-line" role="status">
+              <span class="organizer-badge registered">Contacto registrado</span>
+              <strong>{{ current.email }}</strong>
+              @if (current.contactName) { · {{ current.contactName }} }
+            </p>
+          } @else if (notFound()) {
+            <p class="organizer-status-missing" role="status">
+              <svg lucideCircleAlert class="icon-inline" strokeWidth="2" aria-hidden="true" />
+              <span>Sin contacto registrado para este organizador. Completa el formulario para registrarlo.</span>
+            </p>
+          }
+        </div>
+      </div>
+
+      @if (saveSuccess()) {
+        <div class="status-banner status-banner-success" role="status" aria-live="polite">
+          <svg lucideCircleCheck class="banner-icon" strokeWidth="2" aria-hidden="true" />
+          <span>{{ saveSuccess() }}</span>
+        </div>
+      }
+
+      @if (saveError()) {
+        <div class="field-error-banner" role="alert">{{ saveError() }}</div>
+      }
+
+      <form class="organizer-edit-form" [formGroup]="contactForm" (ngSubmit)="submitSave()" novalidate>
+        <div class="organizer-form-grid">
+          <label class="form-field" for="organizer-email-input">
+            <span>Correo de notificaciones *</span>
+            <input
+              id="organizer-email-input"
+              type="email"
+              formControlName="email"
+              maxlength="255"
+              placeholder="contacto@organizacion.cl"
+            />
+          </label>
+
+          <label class="form-field" for="organizer-name-input">
+            <span>Nombre de contacto</span>
+            <input
+              id="organizer-name-input"
+              type="text"
+              formControlName="contactName"
+              maxlength="150"
+              placeholder="Nombre o razón social"
+            />
+          </label>
+
+          <label class="form-field" for="organizer-phone-input">
+            <span>Teléfono (opcional)</span>
+            <input
+              id="organizer-phone-input"
+              type="text"
+              formControlName="phone"
+              maxlength="50"
+              placeholder="+56912345678"
+            />
+          </label>
+
+          <label class="form-field" for="organizer-oid-input">
+            <span>Vínculo Entra ID (userOid, opcional)</span>
+            <input
+              id="organizer-oid-input"
+              type="text"
+              formControlName="userOid"
+              maxlength="255"
+              placeholder="UUID de Entra ID (se conserva si ya existe)"
+            />
+          </label>
+        </div>
+
+        <div class="organizer-form-actions">
+          <button
+            type="submit"
+            emxButton
+            variant="primary"
+            size="medium"
+            class="btn-organizer-save"
+            [disabled]="saving() || !canAdmin()"
+          >
+            {{ saving() ? 'Guardando…' : (contact() ? 'Actualizar contacto' : 'Registrar contacto') }}
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+</div>

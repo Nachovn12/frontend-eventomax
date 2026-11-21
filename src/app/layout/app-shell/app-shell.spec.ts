@@ -110,7 +110,7 @@ describe('AppShell', () => {
     expect(element.querySelector('.user-name-role')?.textContent?.trim()).toBe('Persona De Prueba');
   });
   it.each([
-    [AppRole.Admin, ['/dashboard', '/productions', '/catalog', '/reports', '/audit']],
+    [AppRole.Admin, ['/dashboard', '/productions', '/catalog', '/reports', '/audit', '/organizers']],
     [AppRole.Productor, ['/dashboard', '/productions', '/catalog']],
     [AppRole.Organizador, ['/dashboard', '/productions']],
     [AppRole.Auditor, ['/dashboard', '/audit']],
@@ -185,7 +185,7 @@ describe('AppShell', () => {
 
     const lists = fixture.nativeElement.querySelectorAll('nav[aria-label="Navegación principal"] ul[role="list"]');
     expect(lists.length).toBe(2);
-    expect(fixture.nativeElement.querySelectorAll('nav[aria-label="Navegación principal"] li.nav-list-item').length).toBe(5);
+    expect(fixture.nativeElement.querySelectorAll('nav[aria-label="Navegación principal"] li.nav-list-item').length).toBe(6);
 
     const ctrlB = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true });
     document.dispatchEvent(ctrlB);
@@ -240,5 +240,17 @@ describe('AppShell', () => {
 
     const emptyBadge = prodLink?.querySelector('.nav-count-badge');
     expect(emptyBadge).toBeNull();
+  });
+
+  it('shows /organizers navigation link exclusively for Admin and hides it for Productor, Organizador and Auditor', () => {
+    roles.set([AppRole.Admin]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('a[href="/organizers"]')).not.toBeNull();
+
+    for (const nonAdminRole of [AppRole.Productor, AppRole.Organizador, AppRole.Auditor]) {
+      roles.set([nonAdminRole]);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[href="/organizers"]')).toBeNull();
+    }
   });
 });

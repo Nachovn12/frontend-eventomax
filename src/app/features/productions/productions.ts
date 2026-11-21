@@ -3,7 +3,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, Subject, of } from 'rxjs';
 import { switchMap, map, catchError, startWith, distinctUntilChanged } from 'rxjs/operators';
 import {
   LucideCalendarDays,
@@ -169,6 +169,16 @@ export class Productions implements OnInit, OnDestroy {
     contactName: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(150)] }),
     phone: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(50)] }),
   });
+
+  // Passive read-only organizer contact check in Create Production modal (Productor)
+  readonly createContactStatus = signal<'idle' | 'loading' | 'found' | 'missing' | 'error'>('idle');
+  readonly createContactEmail = signal('');
+  readonly createContactMessage = signal('');
+  private readonly createContactLookup$ = new Subject<string | null>();
+
+  // Passive non-blocking notice before CONFIRMADO transition if organizer lacks registered contact
+  readonly confirmContactMissing = signal(false);
+  private readonly confirmContactLookup$ = new Subject<string | null>();
   readonly showCreate = signal(false);
   readonly createSubmitted = signal(false);
   readonly saving = signal(false);
@@ -302,6 +312,7 @@ export class Productions implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    this.setupPassiveContactLookups();
     if (this.isOrganizerOnly() && this.currentOwnerId()) {
       this.loadSelfContact();
     }
@@ -404,6 +415,7 @@ export class Productions implements OnInit, OnDestroy {
     this.operationError.set('');
     this.operationSuccess.set('');
     this.createSubmitted.set(false);
+    this.resetCreateContactLookup();
     if (this.isOrganizerOnly()) {
       this.createForm.controls.organizerId.setValue(this.currentOwnerId());
     }
@@ -422,6 +434,7 @@ export class Productions implements OnInit, OnDestroy {
     this.showCreate.set(false);
     this.createSubmitted.set(false);
     this.operationError.set('');
+    this.resetCreateContactLookup();
     this.syncBodyScrollLock();
     const trigger = this.lastTriggerElement;
     this.lastTriggerElement = null;
@@ -572,6 +585,7 @@ export class Productions implements OnInit, OnDestroy {
     this.reservationItems.set([]);
     this.selectedServiceIds.set([]);
     this.reservationInputError.set('');
+    this.confirmContactLookup$.next(null);
     this.syncBodyScrollLock();
     const trigger = this.detailTriggerElement;
     this.detailTriggerElement = null;
@@ -613,6 +627,7 @@ export class Productions implements OnInit, OnDestroy {
         this.detailLoading.set(false);
         this.syncBodyScrollLock();
         this.fetchReservations(id);
+        this.checkConfirmContactWarning(result);
       },
       error: (error: HttpErrorResponse) => {
         this.detailLoading.set(false);
@@ -1085,5 +1100,102 @@ export class Productions implements OnInit, OnDestroy {
       return 'Sesión expirada o no autorizada. Vuelve a iniciar sesión.';
     }
     return 'No pudimos guardar el contacto del organizador en este momento.';
+  }
+
+  // --- Consulta pasiva de contacto en Creación (Productor) y Confirmación ---
+
+  private setupPassiveContactLookups(): void {
+    this.createContactLookup$
+      .pipe(
+        switchMap((organizerId) => {
+          if (!organizerId || typeof this.dataService.getOrganizerContact !== 'function') {
+            this.createContactStatus.set('idle');
+            this.createContactEmail.set('');
+            this.createContactMessage.set('');
+            return of(null);
+          }
+          this.createContactStatus.set('loading');
+          this.createContactEmail.set('');
+          this.createContactMessage.set('');
+          return this.dataService.getOrganizerContact(organizerId).pipe(
+            map((contact) => ({ kind: 'found' as const, email: contact.email })),
+            catchError((err: HttpErrorResponse) => {
+              if (err.status === 404) {
+                return of({ kind: 'missing' as const });
+              }
+              return of({ kind: 'error' as const, status: err.status ?? 0 });
+            })
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((outcome) => {
+        if (!outcome) return;
+        if (outcome.kind === 'found') {
+          this.createContactStatus.set('found');
+          this.createContactEmail.set(outcome.email);
+          this.createContactMessage.set(`Contacto registrado: ${outcome.email}.`);
+        } else if (outcome.kind === 'missing') {
+          this.createContactStatus.set('missing');
+          this.createContactEmail.set('');
+          this.createContactMessage.set(
+            'Este organizador aún no tiene contacto registrado. Requiere gestión administrativa en Organizadores para recibir notificaciones.'
+          );
+        } else {
+          this.createContactStatus.set('error');
+          this.createContactEmail.set('');
+          this.createContactMessage.set(this.lookupErrorMessage(outcome.status));
+        }
+      });
+
+    this.confirmContactLookup$
+      .pipe(
+        switchMap((organizerId) => {
+          if (!organizerId || typeof this.dataService.getOrganizerContact !== 'function') {
+            this.confirmContactMissing.set(false);
+            return of(null);
+          }
+          this.confirmContactMissing.set(false);
+          return this.dataService.getOrganizerContact(organizerId).pipe(
+            map(() => false),
+            catchError((err: HttpErrorResponse) => of(err.status === 404))
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((missing) => {
+        if (missing !== null) {
+          this.confirmContactMissing.set(missing);
+        }
+      });
+  }
+
+  checkCreateOrganizerContact(): void {
+    if (this.isOrganizerOnly()) return;
+    const organizerId = this.createForm.controls.organizerId.value.trim();
+    this.createContactLookup$.next(organizerId || null);
+  }
+
+  resetCreateContactLookup(): void {
+    this.createContactLookup$.next(null);
+    this.createContactStatus.set('idle');
+    this.createContactEmail.set('');
+    this.createContactMessage.set('');
+  }
+
+  private checkConfirmContactWarning(production: Production): void {
+    if (this.canUpdate() && production.status === 'SOLICITADO' && production.organizerId?.trim()) {
+      this.confirmContactLookup$.next(production.organizerId.trim());
+    } else {
+      this.confirmContactLookup$.next(null);
+    }
+  }
+
+  private lookupErrorMessage(status: number): string {
+    if (status === 400) return 'El identificador de organizador ingresado no es válido.';
+    if (status === 401) return 'Sesión expirada o no válida al consultar el contacto.';
+    if (status === 403) return 'No tienes permisos para consultar el contacto de este organizador.';
+    if (status === 0) return 'No se pudo conectar para consultar el contacto del organizador.';
+    return 'No fue posible consultar el contacto del organizador en este momento.';
   }
 }

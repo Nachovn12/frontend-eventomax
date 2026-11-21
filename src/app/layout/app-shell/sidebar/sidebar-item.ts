@@ -13,6 +13,7 @@ import {
   LucidePackage,
   LucideBarChart3,
   LucideShieldCheck,
+  LucideUsers,
 } from '@lucide/angular';
 import { SidebarNavItem } from './sidebar.models';
 
@@ -27,6 +28,7 @@ import { SidebarNavItem } from './sidebar.models';
     LucidePackage,
     LucideBarChart3,
     LucideShieldCheck,
+    LucideUsers,
   ],
   template: `
     <a
@@ -55,6 +57,9 @@ import { SidebarNavItem } from './sidebar.models';
           }
           @case ('audit') {
             <svg lucideShieldCheck class="nav-icon" />
+          }
+          @case ('organizers') {
+            <svg lucideUsers class="nav-icon" />
           }
         }
         @if (item().badge !== undefined && item().badge !== null) {

@@ -606,6 +606,11 @@
                 </div>
 
                 @if (nextStatus.value === 'CONFIRMADO') {
+                  @if (confirmContactMissing()) {
+                    <p class="confirm-contact-notice" role="status">
+                      Aviso: el organizador no tiene un contacto registrado. La confirmación continuará normalmente, pero requerirá registro en Organizadores para enviar notificaciones por correo.
+                    </p>
+                  }
                   <div class="reservation-builder">
                     <div class="reservation-builder-head">
                       <h4>Asignación obligatoria de equipos</h4>
@@ -847,6 +852,7 @@
               [attr.aria-readonly]="isOrganizerOnly() ? 'true' : null"
               [attr.aria-invalid]="hasFieldError('organizerId')"
               [attr.aria-describedby]="hasFieldError('organizerId') ? 'err-organizer' : 'hint-organizer'"
+              (blur)="checkCreateOrganizerContact()"
             />
             @if (hasFieldError('organizerId')) {
               <span id="err-organizer" class="field-error-text" role="alert">{{ getFieldError('organizerId') }}</span>
@@ -854,6 +860,15 @@
               <span id="hint-organizer" class="field-hint">Asignado automáticamente a tu identidad de Organizador.</span>
             } @else {
               <span id="hint-organizer" class="field-hint">Código o cuenta del cliente responsable del evento.</span>
+              @if (createContactStatus() === 'loading') {
+                <span class="create-contact-note" role="status">Consultando contacto registrado…</span>
+              } @else if (createContactStatus() === 'found') {
+                <span class="create-contact-note found" role="status">{{ createContactMessage() }}</span>
+              } @else if (createContactStatus() === 'missing') {
+                <span class="create-contact-note missing" role="status">{{ createContactMessage() }}</span>
+              } @else if (createContactStatus() === 'error') {
+                <span class="create-contact-note error" role="alert">{{ createContactMessage() }}</span>
+              }
             }
           </div>
 

@@ -3,7 +3,8 @@ export type SidebarIconName =
   | 'productions'
   | 'catalog'
   | 'reports'
-  | 'audit';
+  | 'audit'
+  | 'organizers';
 
 export interface SidebarNavItem {
   readonly id: SidebarIconName;
