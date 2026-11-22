@@ -638,8 +638,16 @@ export class Productions implements OnInit, OnDestroy {
     const effectiveMode: OrganizerMode = this.canUseExternalMode() ? this.createMode() : 'SELF';
 
     if (effectiveMode === 'SELF') {
+      const canonicalOwnerId = this.currentOwnerId().trim();
+      if (!canonicalOwnerId) {
+        this.operationError.set(
+          'No se pudo verificar tu identidad autenticada para asignar la producción. Cierra sesión y vuelve a ingresar.'
+        );
+        return;
+      }
       payload = {
         organizerMode: 'SELF',
+        organizerId: canonicalOwnerId,
         name: request.name.trim(),
         scheduledAt: request.scheduledAt,
         location: request.location.trim(),

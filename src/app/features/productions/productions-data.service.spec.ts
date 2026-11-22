@@ -83,6 +83,22 @@ describe('ProductionsDataService', () => {
     req.flush({ id: 7, ...body, status: 'SOLICITADO' });
   });
 
+  it('creates a SELF production with organizerMode and canonical organizerId using POST', () => {
+    const body = {
+      organizerMode: 'SELF' as const,
+      organizerId: '00000000-0000-0000-0000-000000000001:00000000-0000-0000-0000-000000000002',
+      name: 'Evento Propio SELF',
+      scheduledAt: '2026-12-20T18:00:00',
+      location: 'Santiago',
+    };
+    service.createProduction(body).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(body);
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ id: 8, ...body, status: 'SOLICITADO' });
+  });
+
   it('updates status with the backend contract via PUT', () => {
     service.updateStatus(7, { status: 'EN_MONTAJE' }).subscribe();
     const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions/7/status`);
