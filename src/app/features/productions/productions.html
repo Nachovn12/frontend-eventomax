@@ -9,6 +9,18 @@
     </div>
     @if (canCreate()) {
       <div class="header-actions">
+        @if (canManageSelfContact() && !showSelfContactPanel() && !selfContactLoading()) {
+          <button
+            type="button"
+            emxButton
+            variant="ghost"
+            size="small"
+            class="btn-self-contact-discreet"
+            (click)="openSelfContactForm()"
+          >
+            Mi contacto
+          </button>
+        }
         <button
           #createTrigger
           type="button"
@@ -52,6 +64,75 @@
         <svg lucideX class="dismiss-icon" strokeWidth="2" aria-hidden="true" />
       </button>
     </div>
+  }
+
+  @if (showSelfContactPanel()) {
+    <section class="panel organizer-contact-panel smooth-shadow-ring-xs" aria-labelledby="self-contact-heading">
+      <div class="contact-panel-row">
+        <div>
+          <h2 id="self-contact-heading" class="contact-panel-title">Mi contacto de notificaciones</h2>
+          @if (selfContactLoading()) {
+            <p class="contact-panel-desc">Consultando contacto registrado…</p>
+          } @else if (selfContact(); as contact) {
+            <p class="contact-panel-desc">
+              Contacto registrado: <strong>{{ contact.email }}</strong>
+              @if (contact.contactName) { · {{ contact.contactName }} }
+            </p>
+          } @else if (selfContactMissing()) {
+            <p class="contact-panel-desc contact-warning-text" role="status">
+              Sin contacto registrado para tus producciones propias. Configura tu correo para recibir notificaciones (contacto configurado, no verificado por enlace).
+            </p>
+          } @else if (selfContactError()) {
+            <p class="contact-panel-desc contact-error-text" role="alert">{{ selfContactError() }}</p>
+          }
+          @if (selfContactSuccess()) {
+            <p class="contact-panel-desc contact-success-text" role="status">{{ selfContactSuccess() }}</p>
+          }
+        </div>
+        @if (!showSelfContactForm() && !selfContactLoading()) {
+          <button
+            type="button"
+            emxButton
+            variant="secondary"
+            size="small"
+            class="btn-self-contact-toggle"
+            (click)="openSelfContactForm()"
+          >
+            {{ selfContact() ? 'Actualizar contacto' : 'Configurar contacto' }}
+          </button>
+        }
+      </div>
+
+      @if (showSelfContactForm()) {
+        <form class="contact-inline-form" [formGroup]="selfContactForm" (ngSubmit)="submitSelfContact()" novalidate>
+          @if (selfContactError()) {
+            <div class="field-error-banner" role="alert">{{ selfContactError() }}</div>
+          }
+          <div class="contact-form-grid">
+            <label class="form-field" for="self-contact-email">
+              <span>Correo electrónico (sugerido desde tu inicio de sesión) *</span>
+              <input id="self-contact-email" type="email" formControlName="email" placeholder="nombre@organizacion.cl" />
+            </label>
+            <label class="form-field" for="self-contact-name">
+              <span>Nombre de contacto</span>
+              <input id="self-contact-name" type="text" formControlName="contactName" placeholder="Nombre o productora" />
+            </label>
+            <label class="form-field" for="self-contact-phone">
+              <span>Teléfono (opcional)</span>
+              <input id="self-contact-phone" type="text" formControlName="phone" placeholder="+56912345678" />
+            </label>
+          </div>
+          <div class="contact-form-actions">
+            <button type="button" emxButton variant="ghost" size="small" [disabled]="selfContactSaving()" (click)="cancelSelfContactForm()">
+              Cancelar
+            </button>
+            <button type="submit" emxButton variant="primary" size="small" class="btn-self-contact-save" [disabled]="selfContactSaving()">
+              {{ selfContactSaving() ? 'Guardando…' : 'Guardar contacto' }}
+            </button>
+          </div>
+        </form>
+      }
+    </section>
   }
 
   @if (isLoading()) {
@@ -125,7 +206,7 @@
         <strong class="metric-value font-mono-num">{{ total() }}</strong>
         <p class="metric-foot">Eventos registrados en agenda</p>
         <div class="kpi-micro-meta">
-          <span class="meta-dot blue"></span>{{ active() }} activas
+          <span class="meta-dot blue"></span><span title="Producciones en montaje o ejecución">{{ active() }} en operación</span>
           <span class="meta-sep">·</span>
           <span class="meta-dot purple"></span>{{ closed() }} cerradas
         </div>
@@ -296,6 +377,7 @@
         </div>
       } @else {
         <emx-production-table
+          class="agenda-production-table"
           [rows]="rows()"
           [selectable]="true"
           [selectedId]="selectedProductionId()"
@@ -537,6 +619,11 @@
                 </div>
 
                 @if (nextStatus.value === 'CONFIRMADO') {
+                  @if (confirmContactMissing()) {
+                    <p class="confirm-contact-notice" role="status">
+                      Aviso: el organizador no tiene un contacto registrado. La confirmación continuará normalmente, pero las notificaciones por correo requerirán que el organizador configure su contacto.
+                    </p>
+                  }
                   <div class="reservation-builder">
                     <div class="reservation-builder-head">
                       <h4>Asignación obligatoria de equipos</h4>
@@ -763,30 +850,199 @@
             }
           </div>
 
-          <div class="form-field">
-            <label for="create-organizer-input">
-              Organizador ID <span class="required-mark" aria-hidden="true">*</span>
-            </label>
-            <input
-              id="create-organizer-input"
-              formControlName="organizerId"
-              maxlength="255"
-              required
-              autocomplete="off"
-              placeholder="Ej: org-productora-central"
-              [readonly]="isOrganizerOnly()"
-              [attr.aria-readonly]="isOrganizerOnly() ? 'true' : null"
-              [attr.aria-invalid]="hasFieldError('organizerId')"
-              [attr.aria-describedby]="hasFieldError('organizerId') ? 'err-organizer' : 'hint-organizer'"
-            />
-            @if (hasFieldError('organizerId')) {
-              <span id="err-organizer" class="field-error-text" role="alert">{{ getFieldError('organizerId') }}</span>
-            } @else if (isOrganizerOnly()) {
-              <span id="hint-organizer" class="field-hint">Asignado automáticamente a tu identidad de Organizador.</span>
-            } @else {
-              <span id="hint-organizer" class="field-hint">Código o cuenta del cliente responsable del evento.</span>
-            }
-          </div>
+          @if (canUseExternalMode()) {
+            <div class="create-mode-section">
+              <span class="create-mode-label" id="create-mode-heading">¿Para quién es el evento?</span>
+              <div class="create-mode-tabs" role="radiogroup" aria-labelledby="create-mode-heading">
+                <button
+                  type="button"
+                  role="radio"
+                  class="create-mode-tab"
+                  [class.active]="createMode() === 'SELF'"
+                  [attr.aria-checked]="createMode() === 'SELF'"
+                  (click)="setCreateMode('SELF')"
+                >
+                  Para mí — Soy el organizador
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  class="create-mode-tab"
+                  [class.active]="createMode() === 'EXTERNAL'"
+                  [attr.aria-checked]="createMode() === 'EXTERNAL'"
+                  (click)="setCreateMode('EXTERNAL')"
+                >
+                  Para otro cliente
+                </button>
+              </div>
+            </div>
+          }
+
+          @if (!canUseExternalMode() || createMode() === 'SELF') {
+            <p class="self-mode-hint" role="note">
+              Esta producción quedará asociada automáticamente a tu cuenta autenticada.
+            </p>
+          } @else {
+            <div class="external-selector-section">
+              @if (!creatingNewExternalClient()) {
+                <div class="external-selector-header">
+                  <label for="external-organizer-search">Buscar organizador o cliente</label>
+                  <button
+                    type="button"
+                    emxButton
+                    variant="secondary"
+                    size="xs"
+                    class="btn-new-external-client"
+                    (click)="toggleNewExternalClient(true)"
+                  >
+                    + Registrar nuevo cliente externo
+                  </button>
+                </div>
+
+                <input
+                  id="external-organizer-search"
+                  type="search"
+                  autocomplete="off"
+                  [formControl]="externalSearchControl"
+                  placeholder="Buscar por nombre del organizador o cliente…"
+                />
+
+                @if (eligibleDirectoryStatus() === 'DISABLED') {
+                  <p class="directory-status-note disabled" role="status">
+                    La búsqueda de cuentas Microsoft Entra está temporalmente deshabilitada. Mostrando clientes externos registrados.
+                  </p>
+                } @else if (eligibleDirectoryStatus() === 'DEGRADED') {
+                  <p class="directory-status-note degraded" role="status">
+                    El directorio Microsoft Entra no está disponible temporalmente. Puedes elegir un cliente externo registrado o registrar uno nuevo.
+                  </p>
+                }
+
+                @if (eligibleLoading()) {
+                  <p class="directory-status-note" role="status">Buscando organizadores elegibles…</p>
+                } @else if (eligibleError()) {
+                  <div class="directory-error-box" role="alert">
+                    <span>{{ eligibleError() }}</span>
+                    <button type="button" emxButton variant="secondary" size="xs" (click)="retryEligibleSearch()">
+                      Reintentar
+                    </button>
+                  </div>
+                } @else if (eligibleOrganizers().length === 0) {
+                  <p class="directory-status-note" role="status">
+                    No encontramos organizadores elegibles para esa búsqueda. Puedes registrar un nuevo cliente externo.
+                  </p>
+                } @else {
+                  <div class="eligible-list" role="listbox" aria-label="Organizadores elegibles">
+                    @for (org of eligibleOrganizers(); track org.organizerId) {
+                      <button
+                        type="button"
+                        role="option"
+                        class="eligible-option"
+                        [class.selected]="selectedEligibleOrganizer()?.organizerId === org.organizerId"
+                        [attr.aria-selected]="selectedEligibleOrganizer()?.organizerId === org.organizerId"
+                        [disabled]="org.source === 'ENTRA_ORGANIZER' && eligibleDirectoryStatus() === 'DEGRADED'"
+                        (click)="selectEligibleOrganizer(org)"
+                      >
+                        <div class="eligible-option-main">
+                          <strong>{{ org.displayName }}</strong>
+                          <span class="eligible-source-badge" [class.entra]="org.source === 'ENTRA_ORGANIZER'">
+                            {{ org.source === 'ENTRA_ORGANIZER' ? 'Cuenta EventoMax' : 'Cliente externo' }}
+                          </span>
+                        </div>
+                        <div class="eligible-option-meta">
+                          @if (org.hasRegisteredContact) {
+                            <span>Contacto registrado</span>
+                            @if (org.maskedEmail) { <span>· {{ org.maskedEmail }}</span> }
+                          } @else {
+                            <span>Sin contacto registrado</span>
+                          }
+                        </div>
+                      </button>
+                    }
+                  </div>
+
+                  @if (eligibleTotal() > eligiblePageSize) {
+                    <div class="eligible-pagination">
+                      <button
+                        type="button"
+                        emxButton
+                        variant="ghost"
+                        size="xs"
+                        [disabled]="eligiblePage() <= 0 || eligibleLoading()"
+                        (click)="goToEligiblePage(eligiblePage() - 1)"
+                      >
+                        Anterior
+                      </button>
+                      <span>Página {{ eligiblePage() + 1 }} de {{ eligibleTotalPages() }}</span>
+                      <button
+                        type="button"
+                        emxButton
+                        variant="ghost"
+                        size="xs"
+                        [disabled]="eligiblePage() + 1 >= eligibleTotalPages() || eligibleLoading()"
+                        (click)="goToEligiblePage(eligiblePage() + 1)"
+                      >
+                        Siguiente
+                      </button>
+                    </div>
+                  }
+                }
+
+                @if (externalSelectionError()) {
+                  <span class="field-error-text" role="alert">{{ externalSelectionError() }}</span>
+                }
+              } @else {
+                <div class="new-external-client-box" [formGroup]="newExternalClientForm">
+                  <div class="external-selector-header">
+                    <strong>Nuevo cliente externo</strong>
+                    <button
+                      type="button"
+                      emxButton
+                      variant="ghost"
+                      size="xs"
+                      class="btn-back-to-selector"
+                      (click)="toggleNewExternalClient(false)"
+                    >
+                      Volver al selector
+                    </button>
+                  </div>
+
+                  <div class="form-field">
+                    <label for="new-external-client-name">
+                      Nombre del cliente <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                      id="new-external-client-name"
+                      type="text"
+                      formControlName="externalClientName"
+                      maxlength="150"
+                      placeholder="Ej: Productora Costera SpA"
+                    />
+                    @if (hasExternalClientFieldError('externalClientName')) {
+                      <span class="field-error-text" role="alert">{{ getExternalClientFieldError('externalClientName') }}</span>
+                    }
+                  </div>
+
+                  <div class="form-field">
+                    <label for="new-external-client-email">
+                      Correo de notificaciones <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                      id="new-external-client-email"
+                      type="email"
+                      formControlName="externalClientEmail"
+                      maxlength="255"
+                      placeholder="contacto@cliente.cl"
+                    />
+                    @if (hasExternalClientFieldError('externalClientEmail')) {
+                      <span class="field-error-text" role="alert">{{ getExternalClientFieldError('externalClientEmail') }}</span>
+                    } @else {
+                      <span class="field-hint">Se guardará como contacto de notificaciones del cliente (no verificado por enlace o token).</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
 
           <div class="form-field">
             <label for="create-scheduled-input">

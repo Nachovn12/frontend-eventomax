@@ -195,7 +195,7 @@ describe('Productions', () => {
     form.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelectorAll('.field-error-text').length).toBe(4);
+    expect(fixture.nativeElement.querySelectorAll('.field-error-text').length).toBe(3);
     expect(dataServiceMock.createProduction).not.toHaveBeenCalled();
 
     // Press Escape to close dialog
@@ -209,7 +209,6 @@ describe('Productions', () => {
 
     fixture.componentInstance.createForm.setValue({
       name: 'Cumbre Cloud Native',
-      organizerId: 'org-enterprise',
       scheduledAt: '2030-12-01T10:00',
       location: 'Centro Parque'
     });
@@ -217,8 +216,8 @@ describe('Productions', () => {
     fixture.detectChanges();
 
     expect(dataServiceMock.createProduction).toHaveBeenCalledWith({
+      organizerMode: 'SELF',
       name: 'Cumbre Cloud Native',
-      organizerId: 'org-enterprise',
       scheduledAt: '2030-12-01T10:00',
       location: 'Centro Parque'
     });
@@ -399,25 +398,24 @@ describe('Productions', () => {
     expect(rows[2].id).toBe(1);
   });
 
-  it('pre-fills and sets readonly organizerId for Organizador-only role on modal open', async () => {
+  it('defaults to implicit SELF mode without organizerId input for Organizador-only role on modal open', async () => {
     enableRoles([AppRole.Organizador]);
     authzMock.ownerId.mockReturnValue('tenant-duoc:org-user-1');
     fixture = TestBed.createComponent(Productions);
     fixture.detectChanges();
 
     expect(fixture.componentInstance.isOrganizerOnly()).toBe(true);
-    expect(fixture.componentInstance.currentOwnerId()).toBe('tenant-duoc:org-user-1');
+    expect(fixture.componentInstance.canUseExternalMode()).toBe(false);
 
     fixture.componentInstance.openCreateModal();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.createForm.controls.organizerId.value).toBe('tenant-duoc:org-user-1');
-    const input: HTMLInputElement = fixture.nativeElement.querySelector('#create-organizer-input');
-    expect(input.readOnly).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Asignado automáticamente a tu identidad de Organizador.');
+    expect(fixture.nativeElement.querySelector('#create-organizer-input')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.create-mode-tabs')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('asociada automáticamente a tu cuenta autenticada');
   });
 
-  it('enforces authenticated ownerId on submitCreate for Organizador-only role', async () => {
+  it('submits SELF payload without organizerId for Organizador-only role', async () => {
     enableRoles([AppRole.Organizador]);
     authzMock.ownerId.mockReturnValue('tenant-duoc:org-user-1');
     fixture = TestBed.createComponent(Productions);
@@ -427,17 +425,16 @@ describe('Productions', () => {
     fixture.componentInstance.createForm.controls.name.setValue('Concierto Primavera');
     fixture.componentInstance.createForm.controls.scheduledAt.setValue('2030-10-10T20:00');
     fixture.componentInstance.createForm.controls.location.setValue('Teatro Caupolicán');
-    // Attempt to tamper with organizerId in form
-    fixture.componentInstance.createForm.controls.organizerId.setValue('spoofed-org-id');
 
     fixture.componentInstance.submitCreate();
     fixture.detectChanges();
 
-    expect(dataServiceMock.createProduction).toHaveBeenCalledWith(expect.objectContaining({
-      organizerId: 'tenant-duoc:org-user-1',
+    expect(dataServiceMock.createProduction).toHaveBeenCalledWith({
+      organizerMode: 'SELF',
       name: 'Concierto Primavera',
+      scheduledAt: '2030-10-10T20:00',
       location: 'Teatro Caupolicán'
-    }));
+    });
   });
 
   it('clears detail and sets friendly error when 403 Forbidden is returned loading production context', async () => {

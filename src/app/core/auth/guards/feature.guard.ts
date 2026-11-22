@@ -1,19 +1,23 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
-const features = {
+const features: Readonly<Record<string, boolean>> = {
   dashboard: true,
   productions: true,
   catalog: true,
   reports: true,
-  audit: true
+  audit: true,
 };
 
 export const featureGuard: CanActivateFn = (route) => {
   const router = inject(Router);
-  const featureName = route.data?.['feature'] as keyof typeof features;
+  const featureName = route.data?.['feature'];
 
-  if (featureName && features[featureName] === false) {
+  if (
+    typeof featureName !== 'string' ||
+    !Object.prototype.hasOwnProperty.call(features, featureName) ||
+    features[featureName] !== true
+  ) {
     return router.parseUrl('/dashboard');
   }
 

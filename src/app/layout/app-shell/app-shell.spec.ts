@@ -233,6 +233,8 @@ describe('AppShell', () => {
     const badge = prodLink?.querySelector('.nav-count-badge');
     expect(badge).not.toBeNull();
     expect(badge?.textContent?.trim()).toBe('4');
+    expect(badge?.getAttribute('title')).toContain('4 abiertas (estados no terminales)');
+    expect(prodLink?.getAttribute('data-tooltip')).toContain('Producciones · 4 abiertas');
 
     // Set 0 active productions (Apple silent UI rule)
     store.setActiveCount(0);
@@ -240,5 +242,13 @@ describe('AppShell', () => {
 
     const emptyBadge = prodLink?.querySelector('.nav-count-badge');
     expect(emptyBadge).toBeNull();
+  });
+
+  it('does not expose /organizers navigation link for any role after Etapa 4 removal', () => {
+    for (const role of [AppRole.Admin, AppRole.Productor, AppRole.Organizador, AppRole.Auditor]) {
+      roles.set([role]);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[href="/organizers"]')).toBeNull();
+    }
   });
 });

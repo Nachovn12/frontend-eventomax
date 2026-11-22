@@ -1230,4 +1230,335 @@
   }
 }
 
+.organizer-contact-panel {
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
 
+.contact-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.contact-panel-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.contact-panel-desc {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-muted, #64748B);
+}
+
+.contact-warning-text {
+  color: #B45309;
+}
+
+.contact-error-text {
+  color: #DC2626;
+}
+
+.contact-success-text {
+  color: #047857;
+  font-size: 13px;
+  margin: 6px 0 0;
+}
+
+.contact-inline-form {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.contact-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.create-contact-note,
+.confirm-contact-notice {
+  display: block;
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.create-contact-note.found {
+  color: #047857;
+}
+
+.create-contact-note.missing,
+.confirm-contact-notice {
+  color: #B45309;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+.create-contact-note.error {
+  color: #DC2626;
+}
+
+
+
+.create-mode-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.create-mode-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.create-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.create-mode-tab {
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-subtle, transparent);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+}
+
+.create-mode-tab.active {
+  border-color: var(--accent-primary, #2563eb);
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.self-mode-hint,
+.directory-status-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.directory-status-note.disabled,
+.directory-status-note.degraded {
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  background: rgba(217, 119, 6, 0.08);
+  color: var(--text-primary);
+}
+
+.external-selector-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.external-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.eligible-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 13rem;
+  overflow-y: auto;
+}
+
+.eligible-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.eligible-option.selected {
+  border-color: var(--accent-primary, #2563eb);
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.eligible-option:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.eligible-option-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.eligible-source-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.eligible-source-badge.entra {
+  border-color: rgba(37, 99, 235, 0.35);
+  color: var(--accent-primary, #2563eb);
+}
+
+.eligible-option-meta {
+  display: flex;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.eligible-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.directory-error-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.08);
+  font-size: 0.8125rem;
+}
+
+.new-external-client-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+}
+
+/* ==========================================================================
+   Agenda de producciones — Column Header & Cell Alignment
+   Scoped exclusively to the Productions agenda table.
+   ========================================================================== */
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable {
+  min-width: 780px;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable .col-production {
+  width: 32%;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable .col-location {
+  width: 22%;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable .col-schedule {
+  width: 17%;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable .col-status {
+  width: 15%;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable .col-action {
+  width: 14%;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table thead th,
+:host ::ng-deep .agenda-production-table .data-table.production-table thead th.th-action {
+  text-align: center;
+  vertical-align: middle;
+  padding: 10px 14px;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table thead th:first-child,
+:host ::ng-deep .agenda-production-table .data-table.production-table thead th:last-child {
+  padding-inline: 14px;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-production,
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-location {
+  text-align: left;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-schedule {
+  text-align: center;
+  padding-inline: 12px;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-schedule .schedule-time-row {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-status {
+  text-align: center;
+  padding-inline: 12px;
+}
+
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-action,
+:host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-action:last-child {
+  text-align: center;
+  padding-inline: 12px;
+}
+
+@container (max-width: 640px) {
+  :host ::ng-deep .agenda-production-table .data-table.production-table.is-selectable {
+    min-width: 0;
+  }
+
+  :host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-schedule {
+    padding-inline: 0;
+    text-align: right;
+  }
+
+  :host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-schedule .schedule-time-row {
+    display: flex;
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  :host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-status,
+  :host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-action,
+  :host ::ng-deep .agenda-production-table .data-table.production-table tbody td.cell-action:last-child {
+    padding-inline: 0;
+    text-align: left;
+  }
+}

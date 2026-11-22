@@ -5,6 +5,7 @@ import { MsalService } from '@azure/msal-angular';
 import { AuthenticationResult } from '@azure/msal-browser';
 import { AuthorizationService } from './core/auth/authorization.service';
 import { AuthService } from './core/auth/auth.service';
+import { AuditActorAliasRegistrationService } from './core/auth/audit-actor-alias-registration.service';
 
 /**
  * Root shell component.
@@ -26,6 +27,7 @@ export class App implements OnInit {
   private readonly msal = inject(MsalService);
   private readonly auth = inject(AuthService);
   private readonly authz = inject(AuthorizationService);
+  private readonly actorAliasRegistration = inject(AuditActorAliasRegistrationService);
   private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
@@ -42,6 +44,7 @@ export class App implements OnInit {
           // Log a safe message — never expose JWT or sensitive data
           console.error('MSAL redirect error:', error instanceof Error ? error.message : 'Unknown error');
           this.authz.clear();
+          this.actorAliasRegistration.reset();
         },
       });
   }
@@ -50,8 +53,10 @@ export class App implements OnInit {
     const account = this.auth.getAccount();
     if (!account) {
       this.authz.clear();
+      this.actorAliasRegistration.reset();
       return;
     }
     await this.authz.refreshAuthorization();
+    void this.actorAliasRegistration.registerIfEligible();
   }
 }

@@ -196,6 +196,74 @@ export class Audit {
     }
   }
 
+  private static readonly CANONICAL_TID_OID_PATTERN =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  private static readonly UUID_PATTERN =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  private static readonly OPAQUE_SUB_PATTERN =
+    /^(?:(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z0-9_-]{22,}|[A-Za-z0-9_-]{32,})$/;
+  private static readonly DELIVERABLE_EMAIL_PATTERN =
+    /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  isTechnicalActorId(actor: string | null | undefined): boolean {
+    const value = actor?.trim();
+    if (!value) return false;
+    return (
+      Audit.CANONICAL_TID_OID_PATTERN.test(value) ||
+      Audit.UUID_PATTERN.test(value) ||
+      Audit.OPAQUE_SUB_PATTERN.test(value)
+    );
+  }
+
+  formatActorLabel(item: AuditEvent): string {
+    const displayName = item.actorDisplayName?.trim();
+    if (displayName) return displayName;
+    if (item.actorResolutionSource === 'SYSTEM') return 'Sistema';
+    const rawActor = item.actor?.trim();
+    if (!rawActor) return 'No informado';
+    if (rawActor.toLowerCase() === 'system') return 'Sistema';
+    if (item.actorResolutionSource === 'UNRESOLVED' || this.isTechnicalActorId(rawActor)) {
+      return 'Usuario autenticado';
+    }
+    return rawActor;
+  }
+
+  formatActorEmail(item: AuditEvent): string | null {
+    const email = item.actorEmail?.trim();
+    if (!email || email.toUpperCase().includes('#EXT#')) {
+      return null;
+    }
+    return Audit.DELIVERABLE_EMAIL_PATTERN.test(email) ? email : null;
+  }
+
+  formatResolutionSource(item: AuditEvent): string | null {
+    switch (item.actorResolutionSource) {
+      case 'EVENT':
+        return 'Nombre registrado en el evento';
+      case 'ENTRA_DIRECTORY':
+        return 'Directorio Microsoft Entra ID (datos actuales)';
+      case 'VERIFIED_SUB_TO_ENTRA_DIRECTORY':
+        return 'Identidad histórica vinculada mediante asociación verificada';
+      case 'SYSTEM':
+        return 'Sistema';
+      case 'LEGACY':
+        return 'Identificador histórico legible';
+      case 'UNRESOLVED':
+        return 'Identidad no resuelta';
+      default:
+        return null;
+    }
+  }
+
+  actorInitial(item: AuditEvent): string {
+    const label = this.formatActorLabel(item);
+    return label.charAt(0).toUpperCase() || '?';
+  }
+
+  hasExpandableDetails(item: AuditEvent): boolean {
+    return Boolean(item.details?.trim() || item.actor?.trim() || item.actorResolutionSource);
+  }
+
   formatEventType(type: string): string {
     switch (type) {
       case 'ProductionCreated': return 'Creación de Producción';

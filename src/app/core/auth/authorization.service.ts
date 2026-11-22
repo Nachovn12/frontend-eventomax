@@ -22,6 +22,8 @@ export class AuthorizationService {
   private readonly _roles = signal<readonly AppRole[]>([]);
   private readonly _scopes = signal<readonly string[]>([]);
   private readonly _ownerId = signal<string>('');
+  private readonly _userEmail = signal<string>('');
+  private readonly _userDisplayName = signal<string>('');
 
   /** Returns normalized roles from the current access token. */
   roles(): readonly AppRole[] {
@@ -36,6 +38,19 @@ export class AuthorizationService {
   /** Returns canonical owner identifier resolved from current access token (tid:oid, oid, or sub). */
   ownerId(): string {
     return this._ownerId();
+  }
+
+  /**
+   * Returns the login email suggested by Entra ID claims (preferred_username, email, upn).
+   * UI suggestion ONLY — never used for authorization or ownership decisions.
+   */
+  userEmail(): string {
+    return this._userEmail();
+  }
+
+  /** Returns the display name from Entra ID claims (UI suggestion only). */
+  userDisplayName(): string {
+    return this._userDisplayName();
   }
 
   /** Check if the user has a specific role. */
@@ -59,6 +74,8 @@ export class AuthorizationService {
     this._roles.set([]);
     this._scopes.set([]);
     this._ownerId.set('');
+    this._userEmail.set('');
+    this._userDisplayName.set('');
   }
 
   /**
@@ -178,5 +195,23 @@ export class AuthorizationService {
       resolvedOwnerId = sub;
     }
     this._ownerId.set(resolvedOwnerId);
+
+    // UI suggestion only — never used for authorization or ownership decisions.
+    const account = typeof this.auth.getAccount === 'function' ? this.auth.getAccount() : null;
+    const claimEmail =
+      this.extractNonBlankString(payload['preferred_username']) ||
+      this.extractNonBlankString(payload['email']) ||
+      this.extractNonBlankString(payload['upn']) ||
+      this.extractNonBlankString(account?.username);
+    this._userEmail.set(claimEmail);
+
+    const displayName =
+      this.extractNonBlankString(payload['name']) ||
+      this.extractNonBlankString(account?.name);
+    this._userDisplayName.set(displayName);
+  }
+
+  private extractNonBlankString(value: unknown): string {
+    return typeof value === 'string' && value.trim().length > 0 ? value.trim() : '';
   }
 }

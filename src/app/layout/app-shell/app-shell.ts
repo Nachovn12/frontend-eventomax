@@ -205,7 +205,9 @@ export class AppShell implements OnInit {
         label: this.navLabels.productions,
         route: '/productions',
         icon: 'productions',
-        ...(activeBadge !== undefined ? { badge: activeBadge } : {}),
+        ...(activeBadge !== undefined
+          ? { badge: activeBadge, badgeLabel: `${activeBadge} abiertas (estados no terminales)` }
+          : {}),
       });
     }
     if (this.canViewCatalog()) {

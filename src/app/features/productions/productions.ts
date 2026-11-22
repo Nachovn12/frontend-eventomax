@@ -3,8 +3,8 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, of } from 'rxjs';
-import { switchMap, map, catchError, startWith, distinctUntilChanged } from 'rxjs/operators';
+import { BehaviorSubject, Subject, of } from 'rxjs';
+import { switchMap, map, catchError, startWith, distinctUntilChanged, debounceTime } from 'rxjs/operators';
 import {
   LucideCalendarDays,
   LucideClock3,
@@ -25,7 +25,18 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
-import { Production, ProductionStatus, ProductionReservationItemRequest, CrewTicket } from '../../core/models/production.model';
+import {
+  Production,
+  ProductionStatus,
+  CreateProductionRequest,
+  OrganizerMode,
+  EligibleOrganizer,
+  DirectorySyncStatus,
+  ProductionReservationItemRequest,
+  CrewTicket,
+  OrganizerContact,
+  OrganizerContactRequest,
+} from '../../core/models/production.model';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { StatusChip } from '../../shared/ui/status-chip';
 import { Tag } from '../../shared/ui/status-pill/status-pill';
@@ -141,11 +152,63 @@ export class Productions implements OnInit, OnDestroy {
 
   private readonly authz = inject(AuthorizationService);
   readonly canCreate = computed(() => this.authz.hasAnyRole([AppRole.Productor, AppRole.Organizador]) && this.authz.hasScope('access_as_user'));
+  readonly canUseExternalMode = computed(() => this.authz.hasAnyRole([AppRole.Productor]) && this.authz.hasScope('access_as_user'));
   readonly canUpdate = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]) && this.authz.hasScope('access_as_user'));
   readonly canViewCrewTicket = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]) && this.authz.hasScope('access_as_user'));
   readonly canDownloadQuote = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor, AppRole.Organizador]) && this.authz.hasScope('access_as_user'));
   readonly isOrganizerOnly = computed(() => this.authz.hasAnyRole([AppRole.Organizador]) && !this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]));
-  readonly currentOwnerId = computed(() => this.authz.ownerId());
+  readonly currentOwnerId = computed(() => (typeof this.authz.ownerId === 'function' ? this.authz.ownerId() : ''));
+  readonly canManageSelfContact = computed(() => this.canCreate() && Boolean(this.currentOwnerId().trim()));
+  readonly suggestedEmail = computed(() => (typeof this.authz.userEmail === 'function' ? this.authz.userEmail() : ''));
+  readonly suggestedDisplayName = computed(() => (typeof this.authz.userDisplayName === 'function' ? this.authz.userDisplayName() : ''));
+
+  // Self organizer contact (Organizador, Productor, Admin+Productor)
+  readonly selfContact = signal<OrganizerContact | null>(null);
+  readonly selfContactLoading = signal(false);
+  readonly selfContactMissing = signal(false);
+  readonly selfContactError = signal<string | null>(null);
+  readonly selfContactSuccess = signal<string | null>(null);
+  readonly showSelfContactForm = signal(false);
+  readonly selfContactSaving = signal(false);
+  readonly showSelfContactPanel = computed(
+    () =>
+      this.canManageSelfContact() &&
+      (this.isOrganizerOnly() ||
+        this.selfContactMissing() ||
+        this.showSelfContactForm() ||
+        Boolean(this.selfContactSuccess()) ||
+        Boolean(this.selfContactError()))
+  );
+  readonly selfContactForm = new FormGroup({
+    email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email, Validators.maxLength(255)] }),
+    contactName: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(150)] }),
+    phone: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(50)] }),
+  });
+
+  // Create Production modal mode: SELF vs EXTERNAL (eligible selector / NEW_EXTERNAL)
+  readonly createMode = signal<OrganizerMode>('SELF');
+  readonly creatingNewExternalClient = signal(false);
+  readonly externalSearchControl = new FormControl('', { nonNullable: true });
+  readonly eligibleOrganizers = signal<readonly EligibleOrganizer[]>([]);
+  readonly eligibleLoading = signal(false);
+  readonly eligibleError = signal<string | null>(null);
+  readonly eligibleDirectoryStatus = signal<DirectorySyncStatus>('OK');
+  readonly eligiblePage = signal(0);
+  readonly eligiblePageSize = 20;
+  readonly eligibleTotal = signal(0);
+  readonly eligibleTotalPages = computed(() => Math.max(1, Math.ceil(this.eligibleTotal() / this.eligiblePageSize)));
+  readonly selectedEligibleOrganizer = signal<EligibleOrganizer | null>(null);
+  readonly externalSelectionError = signal('');
+  private readonly eligibleSearchTrigger$ = new Subject<{ q: string; page: number } | null>();
+
+  readonly newExternalClientForm = new FormGroup({
+    externalClientName: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
+    externalClientEmail: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email, Validators.maxLength(255)] }),
+  });
+
+  // Passive non-blocking notice before CONFIRMADO transition if organizer lacks registered contact
+  readonly confirmContactMissing = signal(false);
+  private readonly confirmContactLookup$ = new Subject<string | null>();
   readonly showCreate = signal(false);
   readonly createSubmitted = signal(false);
   readonly saving = signal(false);
@@ -272,13 +335,17 @@ export class Productions implements OnInit, OnDestroy {
   });
 
   readonly createForm = new FormGroup({
-    organizerId: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
     name: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
     scheduledAt: new FormControl('', { nonNullable: true, validators: Validators.required }),
     location: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
   });
 
   ngOnInit(): void {
+    this.setupPassiveContactLookups();
+    this.setupEligibleOrganizerSearch();
+    if (this.canManageSelfContact()) {
+      this.loadSelfContact();
+    }
     this.route?.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((params) => {
@@ -378,14 +445,12 @@ export class Productions implements OnInit, OnDestroy {
     this.operationError.set('');
     this.operationSuccess.set('');
     this.createSubmitted.set(false);
-    if (this.isOrganizerOnly()) {
-      this.createForm.controls.organizerId.setValue(this.currentOwnerId());
-    }
+    this.resetCreateModeState();
     this.showCreate.set(true);
     this.syncBodyScrollLock();
     setTimeout(() => {
       if (typeof document !== 'undefined') {
-        const firstInput = document.getElementById('create-name-input') ?? document.getElementById('create-organizer-input');
+        const firstInput = document.getElementById('create-name-input');
         firstInput?.focus();
       }
     }, 0);
@@ -396,10 +461,77 @@ export class Productions implements OnInit, OnDestroy {
     this.showCreate.set(false);
     this.createSubmitted.set(false);
     this.operationError.set('');
+    this.resetCreateModeState();
     this.syncBodyScrollLock();
     const trigger = this.lastTriggerElement;
     this.lastTriggerElement = null;
     setTimeout(() => trigger?.focus(), 0);
+  }
+
+  setCreateMode(mode: OrganizerMode): void {
+    if (mode === 'EXTERNAL' && !this.canUseExternalMode()) return;
+    if (this.createMode() === mode) return;
+    this.createMode.set(mode);
+    this.creatingNewExternalClient.set(false);
+    this.selectedEligibleOrganizer.set(null);
+    this.externalSelectionError.set('');
+    this.operationError.set('');
+    if (mode === 'EXTERNAL') {
+      this.eligiblePage.set(0);
+      this.eligibleSearchTrigger$.next({ q: this.externalSearchControl.value.trim(), page: 0 });
+    } else {
+      this.eligibleSearchTrigger$.next(null);
+    }
+  }
+
+  toggleNewExternalClient(enabled: boolean): void {
+    if (!this.canUseExternalMode()) return;
+    this.creatingNewExternalClient.set(enabled);
+    this.externalSelectionError.set('');
+    this.operationError.set('');
+    if (enabled) {
+      this.selectedEligibleOrganizer.set(null);
+      this.newExternalClientForm.reset({ externalClientName: '', externalClientEmail: '' });
+      this.eligibleSearchTrigger$.next(null);
+    } else {
+      this.eligibleSearchTrigger$.next({ q: this.externalSearchControl.value.trim(), page: this.eligiblePage() });
+    }
+  }
+
+  selectEligibleOrganizer(item: EligibleOrganizer): void {
+    if (item.source === 'ENTRA_ORGANIZER' && this.eligibleDirectoryStatus() === 'DEGRADED') {
+      this.externalSelectionError.set('El directorio Entra no está disponible temporalmente. Selecciona un cliente externo o registra uno nuevo.');
+      return;
+    }
+    this.selectedEligibleOrganizer.set(item);
+    this.externalSelectionError.set('');
+    this.operationError.set('');
+  }
+
+  goToEligiblePage(page: number): void {
+    if (page < 0 || page >= this.eligibleTotalPages() || this.eligibleLoading()) return;
+    this.eligiblePage.set(page);
+    this.eligibleSearchTrigger$.next({ q: this.externalSearchControl.value.trim(), page });
+  }
+
+  retryEligibleSearch(): void {
+    this.eligibleSearchTrigger$.next({ q: this.externalSearchControl.value.trim(), page: this.eligiblePage() });
+  }
+
+  private resetCreateModeState(): void {
+    this.createMode.set('SELF');
+    this.creatingNewExternalClient.set(false);
+    this.externalSearchControl.setValue('', { emitEvent: false });
+    this.eligibleOrganizers.set([]);
+    this.eligibleLoading.set(false);
+    this.eligibleError.set(null);
+    this.eligibleDirectoryStatus.set('OK');
+    this.eligiblePage.set(0);
+    this.eligibleTotal.set(0);
+    this.selectedEligibleOrganizer.set(null);
+    this.externalSelectionError.set('');
+    this.newExternalClientForm.reset({ externalClientName: '', externalClientEmail: '' });
+    this.eligibleSearchTrigger$.next(null);
   }
 
   onDialogKeydown(event: KeyboardEvent): void {
@@ -444,12 +576,12 @@ export class Productions implements OnInit, OnDestroy {
     }
   }
 
-  hasFieldError(field: 'organizerId' | 'name' | 'scheduledAt' | 'location'): boolean {
+  hasFieldError(field: 'name' | 'scheduledAt' | 'location'): boolean {
     const control = this.createForm.controls[field];
     return control.invalid && (control.touched || control.dirty || this.createSubmitted());
   }
 
-  getFieldError(field: 'organizerId' | 'name' | 'scheduledAt' | 'location'): string {
+  getFieldError(field: 'name' | 'scheduledAt' | 'location'): string {
     const control = this.createForm.controls[field];
     if (!control.errors) return '';
     switch (field) {
@@ -457,10 +589,6 @@ export class Productions implements OnInit, OnDestroy {
         return control.errors['maxlength']
           ? 'El nombre del evento no puede superar los 150 caracteres.'
           : 'Ingresa el nombre del evento.';
-      case 'organizerId':
-        return control.errors['maxlength']
-          ? 'El identificador del organizador no puede superar los 255 caracteres.'
-          : 'Ingresa el identificador del organizador.';
       case 'scheduledAt':
         return 'Selecciona la fecha y hora programada para el evento.';
       case 'location':
@@ -470,43 +598,127 @@ export class Productions implements OnInit, OnDestroy {
     }
   }
 
+  hasExternalClientFieldError(field: 'externalClientName' | 'externalClientEmail'): boolean {
+    const control = this.newExternalClientForm.controls[field];
+    return control.invalid && (control.touched || control.dirty || this.createSubmitted());
+  }
+
+  getExternalClientFieldError(field: 'externalClientName' | 'externalClientEmail'): string {
+    const control = this.newExternalClientForm.controls[field];
+    if (!control.errors) return '';
+    if (field === 'externalClientName') {
+      return control.errors['maxlength']
+        ? 'El nombre del cliente no puede superar los 150 caracteres.'
+        : 'Ingresa el nombre del cliente externo.';
+    }
+    if (control.errors['email']) {
+      return 'Ingresa un correo electrónico con formato válido.';
+    }
+    if (control.errors['maxlength']) {
+      return 'El correo electrónico no puede superar los 255 caracteres.';
+    }
+    return 'Ingresa el correo de notificaciones del cliente externo.';
+  }
+
   submitCreate(): void {
     if (!this.canCreate() || this.saving()) return;
     this.createSubmitted.set(true);
     this.createForm.markAllAsTouched();
+    this.externalSelectionError.set('');
+    this.operationError.set('');
+
     if (this.createForm.invalid) return;
     const request = this.createForm.getRawValue();
     if (!Number.isFinite(Date.parse(request.scheduledAt)) || new Date(request.scheduledAt).getTime() < Date.now()) {
       this.operationError.set('Ingresa una fecha programada actual o futura.');
       return;
     }
-    const effectiveOrganizerId = this.isOrganizerOnly()
-      ? this.currentOwnerId()
-      : request.organizerId.trim();
+
+    let payload: CreateProductionRequest;
+    const effectiveMode: OrganizerMode = this.canUseExternalMode() ? this.createMode() : 'SELF';
+
+    if (effectiveMode === 'SELF') {
+      payload = {
+        organizerMode: 'SELF',
+        name: request.name.trim(),
+        scheduledAt: request.scheduledAt,
+        location: request.location.trim(),
+      };
+    } else if (this.creatingNewExternalClient()) {
+      this.newExternalClientForm.markAllAsTouched();
+      if (this.newExternalClientForm.invalid) return;
+      const ext = this.newExternalClientForm.getRawValue();
+      payload = {
+        organizerMode: 'EXTERNAL',
+        externalOrganizerType: 'NEW_EXTERNAL',
+        externalClientName: ext.externalClientName.trim(),
+        externalClientEmail: ext.externalClientEmail.trim(),
+        name: request.name.trim(),
+        scheduledAt: request.scheduledAt,
+        location: request.location.trim(),
+      };
+    } else {
+      const selected = this.selectedEligibleOrganizer();
+      if (!selected) {
+        this.externalSelectionError.set('Selecciona un organizador elegible o registra un nuevo cliente externo.');
+        return;
+      }
+      if (selected.source === 'ENTRA_ORGANIZER' && this.eligibleDirectoryStatus() === 'DEGRADED') {
+        this.externalSelectionError.set('El directorio Entra no está disponible temporalmente. Selecciona un cliente externo o registra uno nuevo.');
+        return;
+      }
+      payload = {
+        organizerMode: 'EXTERNAL',
+        externalOrganizerType: selected.source === 'ENTRA_ORGANIZER' ? 'ENTRA_ORGANIZER' : 'EXISTING_EXTERNAL',
+        organizerId: selected.organizerId,
+        name: request.name.trim(),
+        scheduledAt: request.scheduledAt,
+        location: request.location.trim(),
+      };
+    }
 
     this.saving.set(true);
-    this.operationError.set('');
     this.operationSuccess.set('');
-    this.dataService.createProduction({
-      organizerId: effectiveOrganizerId,
-      name: request.name.trim(),
-      scheduledAt: request.scheduledAt,
-      location: request.location.trim()
-    }).subscribe({
+    this.dataService.createProduction(payload).subscribe({
       next: (production) => {
         this.saving.set(false);
         this.createSubmitted.set(false);
         this.operationSuccess.set(`Producción #${production.id} («${production.name}») creada correctamente.`);
         this.createForm.reset();
+        this.resetCreateModeState();
         this.showCreate.set(false);
         this.syncBodyScrollLock();
+        if (effectiveMode === 'SELF' && this.canManageSelfContact()) {
+          this.loadSelfContact();
+        }
         this.retry();
       },
       error: (error: HttpErrorResponse) => {
         this.saving.set(false);
-        this.operationError.set(this.errorMessage(error));
+        this.operationError.set(this.createProductionErrorMessage(error));
       }
     });
+  }
+
+  private createProductionErrorMessage(error: HttpErrorResponse): string {
+    if (error.status === 0) return 'No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo nuevamente.';
+    if (error.status === 401) return 'Tu sesión expiró o el token no es válido. Inicia sesión nuevamente.';
+    if (error.status === 403) return 'No tienes permisos o el organizador seleccionado no está autorizado.';
+    if (error.status === 404) return 'El cliente o recurso seleccionado no existe.';
+    if (error.status === 409) {
+      return (error.error && typeof error.error === 'object' && error.error.message)
+        ? error.error.message
+        : 'Existe un conflicto con el contacto o el organizador seleccionado.';
+    }
+    if (error.status === 400) {
+      return (error.error && typeof error.error === 'object' && error.error.message)
+        ? error.error.message
+        : 'Revisa los datos ingresados en el formulario.';
+    }
+    if (error.status === 502 || error.status === 503) {
+      return 'El servicio de organizadores o directorio no está disponible temporalmente. Inténtalo nuevamente en unos instantes.';
+    }
+    return 'No fue posible crear la producción. Inténtalo nuevamente.';
   }
 
   selectProduction(item: Production): void {
@@ -546,6 +758,7 @@ export class Productions implements OnInit, OnDestroy {
     this.reservationItems.set([]);
     this.selectedServiceIds.set([]);
     this.reservationInputError.set('');
+    this.confirmContactLookup$.next(null);
     this.syncBodyScrollLock();
     const trigger = this.detailTriggerElement;
     this.detailTriggerElement = null;
@@ -587,6 +800,7 @@ export class Productions implements OnInit, OnDestroy {
         this.detailLoading.set(false);
         this.syncBodyScrollLock();
         this.fetchReservations(id);
+        this.checkConfirmContactWarning(result);
       },
       error: (error: HttpErrorResponse) => {
         this.detailLoading.set(false);
@@ -961,5 +1175,201 @@ export class Productions implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  // --- Gestión de contacto propio (Organizador, Productor, Admin+Productor) ---
+
+  loadSelfContact(): void {
+    const ownerId = this.currentOwnerId().trim();
+    if (!this.canManageSelfContact() || !ownerId || typeof this.dataService.getOrganizerContact !== 'function') {
+      return;
+    }
+    this.selfContactLoading.set(true);
+    this.selfContactMissing.set(false);
+    this.selfContactError.set(null);
+    this.dataService.getOrganizerContact(ownerId).subscribe({
+      next: (contact) => {
+        this.selfContactLoading.set(false);
+        this.selfContact.set(contact);
+        this.selfContactMissing.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.selfContactLoading.set(false);
+        if (err.status === 404) {
+          this.selfContact.set(null);
+          this.selfContactMissing.set(true);
+          this.prefillSelfContactForm();
+        } else if (err.status === 403) {
+          this.selfContactError.set('No tienes permisos para consultar este contacto de organizador.');
+        } else {
+          this.selfContactError.set('No pudimos consultar tu contacto de notificaciones en este momento.');
+        }
+      }
+    });
+  }
+
+  openSelfContactForm(): void {
+    if (!this.canManageSelfContact()) return;
+    this.selfContactError.set(null);
+    this.selfContactSuccess.set(null);
+    this.prefillSelfContactForm();
+    this.showSelfContactForm.set(true);
+  }
+
+  cancelSelfContactForm(): void {
+    if (this.selfContactSaving()) return;
+    this.showSelfContactForm.set(false);
+    this.selfContactError.set(null);
+  }
+
+  submitSelfContact(): void {
+    const ownerId = this.currentOwnerId().trim();
+    if (!this.canManageSelfContact() || !ownerId || this.selfContactSaving()) return;
+    this.selfContactForm.markAllAsTouched();
+    if (this.selfContactForm.invalid || typeof this.dataService.upsertOrganizerContact !== 'function') return;
+
+    const raw = this.selfContactForm.getRawValue();
+    const request: OrganizerContactRequest = {
+      email: raw.email.trim(),
+      contactName: raw.contactName.trim() || undefined,
+      phone: raw.phone.trim() || undefined,
+    };
+
+    this.selfContactSaving.set(true);
+    this.selfContactError.set(null);
+    this.selfContactSuccess.set(null);
+    this.dataService.upsertOrganizerContact(ownerId, request).subscribe({
+      next: (saved) => {
+        this.selfContactSaving.set(false);
+        this.selfContact.set(saved);
+        this.selfContactMissing.set(false);
+        this.showSelfContactForm.set(false);
+        this.selfContactSuccess.set(`Contacto registrado para notificaciones: ${saved.email} (contacto configurado, no verificado por enlace).`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.selfContactSaving.set(false);
+        this.selfContactError.set(this.contactErrorMessage(err));
+      }
+    });
+  }
+
+  private prefillSelfContactForm(): void {
+    const existing = this.selfContact();
+    this.selfContactForm.reset({
+      email: existing?.email ?? this.suggestedEmail(),
+      contactName: existing?.contactName ?? this.suggestedDisplayName(),
+      phone: existing?.phone ?? '',
+    });
+  }
+
+  private contactErrorMessage(err: HttpErrorResponse): string {
+    if (err.status === 403) {
+      return 'No tienes permisos para registrar o modificar el contacto de este organizador.';
+    }
+    if (err.status === 400) {
+      return 'Verifica que el correo electrónico y los datos de contacto sean válidos.';
+    }
+    if (err.status === 401) {
+      return 'Sesión expirada o no autorizada. Vuelve a iniciar sesión.';
+    }
+    return 'No pudimos guardar el contacto del organizador en este momento.';
+  }
+
+  // --- Búsqueda de organizadores elegibles (EXTERNAL) y aviso de confirmación ---
+
+  private setupEligibleOrganizerSearch(): void {
+    this.externalSearchControl.valueChanges
+      .pipe(
+        debounceTime(250),
+        map((val) => val.trim()),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((q) => {
+        if (this.showCreate() && this.createMode() === 'EXTERNAL' && !this.creatingNewExternalClient()) {
+          this.eligiblePage.set(0);
+          this.eligibleSearchTrigger$.next({ q, page: 0 });
+        }
+      });
+
+    this.eligibleSearchTrigger$
+      .pipe(
+        switchMap((req) => {
+          if (!req || typeof this.dataService.getEligibleOrganizers !== 'function') {
+            this.eligibleLoading.set(false);
+            return of(null);
+          }
+          this.eligibleLoading.set(true);
+          this.eligibleError.set(null);
+          return this.dataService.getEligibleOrganizers({
+            q: req.q,
+            page: req.page,
+            size: this.eligiblePageSize,
+          }).pipe(
+            map((page) => ({ ok: true as const, page })),
+            catchError((err: HttpErrorResponse) => of({ ok: false as const, status: err.status ?? 0 }))
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((outcome) => {
+        this.eligibleLoading.set(false);
+        if (!outcome) return;
+        if (outcome.ok) {
+          this.eligibleOrganizers.set(outcome.page.items);
+          this.eligiblePage.set(outcome.page.page);
+          this.eligibleTotal.set(outcome.page.total);
+          this.eligibleDirectoryStatus.set(outcome.page.directorySyncStatus);
+          if (
+            outcome.page.directorySyncStatus === 'DEGRADED' &&
+            this.selectedEligibleOrganizer()?.source === 'ENTRA_ORGANIZER'
+          ) {
+            this.selectedEligibleOrganizer.set(null);
+          }
+        } else {
+          this.eligibleOrganizers.set([]);
+          this.eligibleTotal.set(0);
+          this.eligibleError.set(this.directoryErrorMessage(outcome.status));
+        }
+      });
+  }
+
+  private setupPassiveContactLookups(): void {
+    this.confirmContactLookup$
+      .pipe(
+        switchMap((organizerId) => {
+          if (!organizerId || typeof this.dataService.getOrganizerContact !== 'function') {
+            this.confirmContactMissing.set(false);
+            return of(null);
+          }
+          this.confirmContactMissing.set(false);
+          return this.dataService.getOrganizerContact(organizerId).pipe(
+            map(() => false),
+            catchError((err: HttpErrorResponse) => of(err.status === 404))
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((missing) => {
+        if (missing !== null) {
+          this.confirmContactMissing.set(missing);
+        }
+      });
+  }
+
+  private checkConfirmContactWarning(production: Production): void {
+    if (this.canUpdate() && production.status === 'SOLICITADO' && production.organizerId?.trim()) {
+      this.confirmContactLookup$.next(production.organizerId.trim());
+    } else {
+      this.confirmContactLookup$.next(null);
+    }
+  }
+
+  private directoryErrorMessage(status: number): string {
+    if (status === 401) return 'Tu sesión expiró al consultar organizadores. Vuelve a iniciar sesión.';
+    if (status === 403) return 'No tienes permisos para consultar el directorio de organizadores.';
+    if (status === 502 || status === 503) return 'El directorio de organizadores no está disponible temporalmente. Puedes registrar un cliente externo nuevo.';
+    if (status === 0) return 'No se pudo conectar para consultar organizadores elegibles.';
+    return 'No fue posible consultar organizadores elegibles en este momento.';
   }
 }

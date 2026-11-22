@@ -131,6 +131,7 @@ describe('Dashboard', () => {
 
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Producciones2');
+    expect(text).toContain('2 abiertas');
     expect(text).toContain('Pendientes1');
     expect(text).toContain('En operación0');
     expect(text).toContain('Servicios activos 1/2');
