@@ -177,6 +177,7 @@ describe('Productions', () => {
 
   it('opens creation dialog, validates required fields, closes on Escape, and submits valid production', async () => {
     enableRoles([AppRole.Productor]);
+    authzMock.ownerId.mockReturnValue('tenant-duoc:prod-user-1');
     fixture = TestBed.createComponent(Productions);
     fixture.detectChanges();
     productionsSubject.next(mockProductions);
@@ -217,6 +218,7 @@ describe('Productions', () => {
 
     expect(dataServiceMock.createProduction).toHaveBeenCalledWith({
       organizerMode: 'SELF',
+      organizerId: 'tenant-duoc:prod-user-1',
       name: 'Cumbre Cloud Native',
       scheduledAt: '2030-12-01T10:00',
       location: 'Centro Parque'
@@ -415,7 +417,7 @@ describe('Productions', () => {
     expect(fixture.nativeElement.textContent).toContain('asociada automáticamente a tu cuenta autenticada');
   });
 
-  it('submits SELF payload without organizerId for Organizador-only role', async () => {
+  it('submits SELF payload with canonical organizerId for Organizador-only role', async () => {
     enableRoles([AppRole.Organizador]);
     authzMock.ownerId.mockReturnValue('tenant-duoc:org-user-1');
     fixture = TestBed.createComponent(Productions);
@@ -431,10 +433,31 @@ describe('Productions', () => {
 
     expect(dataServiceMock.createProduction).toHaveBeenCalledWith({
       organizerMode: 'SELF',
+      organizerId: 'tenant-duoc:org-user-1',
       name: 'Concierto Primavera',
       scheduledAt: '2030-10-10T20:00',
       location: 'Teatro Caupolicán'
     });
+  });
+
+  it('blocks SELF submission and displays a clear error when authenticated ownerId is unavailable', async () => {
+    enableRoles([AppRole.Organizador]);
+    authzMock.ownerId.mockReturnValue('   ');
+    fixture = TestBed.createComponent(Productions);
+    fixture.detectChanges();
+
+    fixture.componentInstance.openCreateModal();
+    fixture.componentInstance.createForm.setValue({
+      name: 'Concierto Sin Identidad',
+      scheduledAt: '2030-10-10T20:00',
+      location: 'Teatro Caupolicán'
+    });
+
+    fixture.componentInstance.submitCreate();
+    fixture.detectChanges();
+
+    expect(dataServiceMock.createProduction).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.operationError()).toContain('No se pudo verificar tu identidad autenticada');
   });
 
   it('clears detail and sets friendly error when 403 Forbidden is returned loading production context', async () => {

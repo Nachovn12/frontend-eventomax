@@ -50,7 +50,8 @@ describe('Productions EP2 actions', () => {
         createdAt: '2026-10-19T10:00:00',
         updatedAt: '2026-10-19T10:00:00'
       })),
-      downloadQuotePdf: vi.fn(() => of(new Blob(['%PDF-1.4'], { type: 'application/pdf' })))
+      downloadQuotePdf: vi.fn(() => of(new Blob(['%PDF-1.4'], { type: 'application/pdf' }))),
+      getOrganizerContact: vi.fn(() => of(null))
     };
     const catalogApi = {
       getEquipment: vi.fn(() => of([
@@ -70,7 +71,8 @@ describe('Productions EP2 actions', () => {
         { provide: Router, useValue: routerMock },
         { provide: AuthorizationService, useValue: {
           hasAnyRole: () => authorised,
-          hasScope: () => authorised
+          hasScope: () => authorised,
+          ownerId: () => (authorised ? 'tenant-ep2:owner-ep2' : '')
         } }
       ]
     }).compileComponents();
@@ -89,7 +91,7 @@ describe('Productions EP2 actions', () => {
     component.submitStatus();
   }, 15000);
 
-  it('creates a production with the real SELF request contract without organizerId', async () => {
+  it('creates a production with the real SELF request contract including canonical organizerId', async () => {
     const { api, component, fixture } = await setup(true);
     component.createForm.setValue({
       name: 'Evento EP2',
@@ -100,6 +102,7 @@ describe('Productions EP2 actions', () => {
     fixture.detectChanges();
     expect(api.createProduction).toHaveBeenCalledWith({
       organizerMode: 'SELF',
+      organizerId: 'tenant-ep2:owner-ep2',
       name: 'Evento EP2',
       location: 'Santiago',
       scheduledAt: '2030-11-20T18:00'

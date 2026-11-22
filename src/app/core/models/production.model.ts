@@ -45,6 +45,7 @@ export interface EligibleOrganizersPage {
 
 export interface CreateProductionSelfRequest {
   organizerMode: 'SELF';
+  organizerId: string;
   name: string;
   scheduledAt: string;
   location: string;

@@ -131,7 +131,7 @@ describe('Productions SELF / EXTERNAL & organizer contact behavior (Etapa 4)', (
 
   afterEach(() => TestBed.resetTestingModule());
 
-  it('Organizador: preserves self-contact panel, submits SELF without organizerId, and cannot use EXTERNAL or updateStatus', async () => {
+  it('Organizador: preserves self-contact panel, submits SELF with canonical organizerId, and cannot use EXTERNAL or updateStatus', async () => {
     const { api, fixture, component } = await setup({
       roles: [AppRole.Organizador],
       productions: [ownProduction],
@@ -158,7 +158,7 @@ describe('Productions SELF / EXTERNAL & organizer contact behavior (Etapa 4)', (
     expect(text).toContain('contacto registrado');
     expect(text).not.toContain('correo verificado');
 
-    // SELF creation omits organizerId and hides EXTERNAL mode
+    // SELF creation sends canonical organizerId (matching self-contact) and hides EXTERNAL mode
     component.openCreateModal();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.create-mode-tabs')).toBeNull();
@@ -172,6 +172,7 @@ describe('Productions SELF / EXTERNAL & organizer contact behavior (Etapa 4)', (
     component.submitCreate();
     expect(api.createProduction).toHaveBeenCalledWith({
       organizerMode: 'SELF',
+      organizerId: canonicalOwnerId,
       name: 'Evento Propio Organizador',
       scheduledAt: '2035-06-15T18:00',
       location: 'Centro Cultural',
@@ -205,7 +206,7 @@ describe('Productions SELF / EXTERNAL & organizer contact behavior (Etapa 4)', (
     });
     expect((api.upsertOrganizerContact.mock.calls[0][1] as any).userOid).toBeUndefined();
 
-    // SELF submit prevents duplicate submissions while saving
+    // SELF submit sends canonical organizerId and prevents duplicate submissions while saving
     component.openCreateModal();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.create-mode-tabs')).not.toBeNull();
@@ -219,12 +220,65 @@ describe('Productions SELF / EXTERNAL & organizer contact behavior (Etapa 4)', (
     expect(api.createProduction).toHaveBeenCalledTimes(1);
     expect(api.createProduction).toHaveBeenCalledWith({
       organizerMode: 'SELF',
+      organizerId: canonicalOwnerId,
       name: 'Evento Propio Productor',
       scheduledAt: '2035-06-15T18:00',
       location: 'Santiago',
     });
     pendingCreate$.next(ownProduction);
     pendingCreate$.complete();
+  });
+
+  it('Admin+Productor in SELF mode sends canonical organizerId compatible with both legacy and new backend DTOs', async () => {
+    const { api, component } = await setup({
+      roles: [AppRole.Admin, AppRole.Productor],
+      ownerId: canonicalOwnerId,
+      productions: [ownProduction],
+    });
+
+    component.openCreateModal();
+    component.setCreateMode('SELF');
+    component.createForm.setValue({
+      name: 'Cumbre Corporativa SELF',
+      scheduledAt: '2035-09-10T19:00',
+      location: 'Centro Eventos Santiago',
+    });
+    component.submitCreate();
+
+    expect(api.createProduction).toHaveBeenCalledTimes(1);
+    const sentPayload = api.createProduction.mock.calls[0][0] as Record<string, unknown>;
+    // Legacy DTO contract (@NotBlank organizerId, name, scheduledAt, location)
+    expect(sentPayload['organizerId']).toBe(canonicalOwnerId);
+    expect(typeof sentPayload['organizerId']).toBe('string');
+    expect((sentPayload['organizerId'] as string).trim().length).toBeGreaterThan(0);
+    expect(sentPayload['organizerId']).not.toContain('@');
+    // New DTO contract (organizerMode=SELF, no EXTERNAL fields)
+    expect(sentPayload['organizerMode']).toBe('SELF');
+    expect(sentPayload['externalOrganizerType']).toBeUndefined();
+    expect(sentPayload['externalClientName']).toBeUndefined();
+    expect(sentPayload['externalClientEmail']).toBeUndefined();
+    // Same canonical identifier used for self-contact lookup
+    expect(api.getOrganizerContact).toHaveBeenCalledWith(sentPayload['organizerId']);
+  });
+
+  it('Admin+Productor in SELF mode blocks submission when ownerId is missing', async () => {
+    const { api, component } = await setup({
+      roles: [AppRole.Admin, AppRole.Productor],
+      ownerId: '',
+      productions: [ownProduction],
+    });
+
+    component.openCreateModal();
+    component.setCreateMode('SELF');
+    component.createForm.setValue({
+      name: 'Evento Bloqueado Sin Identidad',
+      scheduledAt: '2035-09-10T19:00',
+      location: 'Santiago',
+    });
+    component.submitCreate();
+
+    expect(api.createProduction).not.toHaveBeenCalled();
+    expect(component.operationError()).toContain('No se pudo verificar tu identidad autenticada');
   });
 
   it('EXTERNAL selector: searches eligible organizers, cancels stale responses, handles ENTRA_ORGANIZER, EXTERNAL_CONTACT, DISABLED, DEGRADED, pagination and NEW_EXTERNAL', async () => {
