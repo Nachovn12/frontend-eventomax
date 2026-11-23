@@ -149,4 +149,48 @@ describe('buildCrewTicketPrintHtml', () => {
     expect(html).toContain('crew-jazz-biobio');
     expect(html).toContain('OT-0012');
   });
+
+  it('prints real Entra organizerDisplayName and hides raw canonical UUID when unavailable', () => {
+    const rawCanonicalId = 'f191bdc8-7926-4722-9ec0-cba663701940:7d300514-1e39-4013-85e5-02efa3fd42df';
+    const ticket: CrewTicket = {
+      id: 20,
+      productionId: 10,
+      productionName: 'Evento Producción 10',
+      eventId: 'c3f152e9-8922-4c21-9c12-6389dcb02010',
+      status: 'EN_MONTAJE',
+      scheduledAt: '2030-11-24T19:00:00Z',
+      location: 'Centro Eventos Santiago',
+      instructions: 'Montaje estándar.',
+      createdAt: '2026-11-22T10:00:00Z',
+      updatedAt: '2026-11-22T10:00:00Z',
+    };
+
+    const htmlResolved = buildCrewTicketPrintHtml({
+      ticket,
+      crewName: 'Cuadrilla Alpha',
+      crewId: 'crew-01',
+      directive: 'Montaje estándar.',
+      statusLabel: 'En montaje',
+      reservations: [],
+      organizerId: rawCanonicalId,
+      organizerDisplayName: 'Ignacio Valeria',
+      organizerResolutionSource: 'ENTRA_GRAPH',
+    });
+    expect(htmlResolved).toContain('Ignacio Valeria');
+    expect(htmlResolved).not.toContain(rawCanonicalId);
+
+    const htmlUnresolved = buildCrewTicketPrintHtml({
+      ticket,
+      crewName: 'Cuadrilla Alpha',
+      crewId: 'crew-01',
+      directive: 'Montaje estándar.',
+      statusLabel: 'En montaje',
+      reservations: [],
+      organizerId: rawCanonicalId,
+      organizerDisplayName: null,
+      organizerResolutionSource: 'UNRESOLVED',
+    });
+    expect(htmlUnresolved).toContain('Organizador no disponible');
+    expect(htmlUnresolved).not.toContain(rawCanonicalId);
+  });
 });

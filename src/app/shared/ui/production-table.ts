@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ProductionViewModel } from '../../core/models/production.model';
+import {
+  ProductionViewModel,
+  formatOrganizerDisplayLabel,
+} from '../../core/models/production.model';
 import { StatusChip } from './status-chip';
 import { ButtonDirective } from './button.component';
 
@@ -53,12 +56,12 @@ import { ButtonDirective } from './button.component';
                     <strong class="event-name">{{ event.name }}</strong>
                     <div class="cell-meta-strip">
                       <span class="id-tag font-mono-num"><span class="id-hash">#</span>{{ event.id }}</span>
-                      <span class="tenant-badge font-mono-num">
+                      <span class="tenant-badge">
                         <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                           <circle cx="9" cy="7" r="4"></circle>
                         </svg>
-                        {{ event.organizerId }}
+                        {{ organizerLabel(event) }}
                       </span>
                     </div>
                   </div>
@@ -531,6 +534,14 @@ export class ProductionTable {
   readonly actionLabel = input('Gestionar');
   readonly detailLinks = input(false);
   readonly selectProduction = output<ProductionViewModel>();
+
+  organizerLabel(event: ProductionViewModel): string {
+    return formatOrganizerDisplayLabel(
+      event.organizerId,
+      event.organizerDisplayName,
+      event.organizerResolutionSource,
+    );
+  }
 
   onRowClick(event: ProductionViewModel): void {
     if (!this.selectable()) return;

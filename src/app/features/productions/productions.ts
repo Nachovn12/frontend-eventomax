@@ -36,6 +36,7 @@ import {
   CrewTicket,
   OrganizerContact,
   OrganizerContactRequest,
+  formatOrganizerDisplayLabel,
 } from '../../core/models/production.model';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { StatusChip } from '../../shared/ui/status-chip';
@@ -123,7 +124,7 @@ export class Productions implements OnInit, OnDestroy {
     const filtered = this.allProductions().filter(
       (item) =>
         (!this.selectedStatus() || item.status === this.selectedStatus()) &&
-        [String(item.id), item.name, item.location, item.organizerId].some((value) =>
+        [String(item.id), item.name, item.location, item.organizerId, item.organizerDisplayName ?? ''].some((value) =>
           value.toLocaleLowerCase('es').includes(query),
         ),
     );
@@ -223,6 +224,14 @@ export class Productions implements OnInit, OnDestroy {
 
   isTerminalStatus(status?: ProductionStatus | '' | null): boolean {
     return status === 'CERRADO' || status === 'CANCELADO';
+  }
+
+  getOrganizerLabel(production: Pick<Production, 'organizerId' | 'organizerDisplayName' | 'organizerResolutionSource'>): string {
+    return formatOrganizerDisplayLabel(
+      production.organizerId,
+      production.organizerDisplayName,
+      production.organizerResolutionSource,
+    );
   }
 
   readonly isSelectedTerminal = computed(() => {
@@ -1132,6 +1141,8 @@ export class Productions implements OnInit, OnDestroy {
       statusLabel: this.getReadableStatus(ticket.status),
       reservations: this.ticketReservations(),
       organizerId: prod?.organizerId ?? null,
+      organizerDisplayName: prod?.organizerDisplayName ?? null,
+      organizerResolutionSource: prod?.organizerResolutionSource ?? null,
       productionStatusLabel: prod ? this.getReadableStatus(prod.status) : null,
       actorOwnerId: typeof this.authz.ownerId === 'function' ? this.authz.ownerId() || null : null,
     });
