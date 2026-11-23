@@ -1167,9 +1167,37 @@
             </div>
             <h3 class="ticket-empty-title">Orden de cuadrilla no disponible</h3>
             <p class="ticket-empty-desc">{{ ticketError() }}</p>
+            <button
+              type="button"
+              emxButton
+              variant="secondary"
+              size="small"
+              class="btn-ticket-retry"
+              (click)="retryCrewTicket()"
+            >
+              Reintentar
+            </button>
           </div>
         } @else if (currentTicket(); as ticket) {
           @let crew = resolvedTicketCrew();
+
+          @if (ticketAuxiliaryError(); as auxErr) {
+            <div class="reservations-error-state" role="alert" aria-live="assertive">
+              <div class="field-error-banner">
+                <span>{{ auxErr }}</span>
+              </div>
+              <button
+                type="button"
+                emxButton
+                variant="secondary"
+                size="small"
+                class="btn-ticket-retry"
+                (click)="retryCrewTicket()"
+              >
+                Reintentar consulta
+              </button>
+            </div>
+          }
 
           <dl class="ticket-prop-list">
             <div class="ticket-prop-row">
@@ -1191,7 +1219,7 @@
                     <code class="ticket-crew-code">{{ crew.crewId }}</code>
                   }
                 } @else {
-                  <span class="ticket-prop-muted">Cuadrilla operativa general</span>
+                  <span class="ticket-prop-muted">Sin registro</span>
                 }
               </dd>
             </div>
@@ -1202,7 +1230,7 @@
                 <span>Fecha programada</span>
               </dt>
               <dd class="ticket-prop-value tabular-nums">
-                {{ ticket.scheduledAt | date:'dd MMM yyyy, HH:mm' }} h
+                {{ formatTicketScheduledAt(ticket.scheduledAt) }}
               </dd>
             </div>
 
@@ -1223,12 +1251,16 @@
                 <span>Registro de emisión</span>
               </dt>
               <dd class="ticket-prop-value tabular-nums">
-                {{ ticket.createdAt | date:'dd MMM yyyy, HH:mm' }} h
+                {{ formatTicketIssuedAt(ticket.createdAt) }}
               </dd>
             </div>
           </dl>
 
-          @if (ticketReservations().length > 0) {
+          @if (ticketReservationsLoading()) {
+            <p class="detail-empty-note" aria-live="polite">
+              Consultando equipamiento reservado en Catálogo…
+            </p>
+          } @else if (!ticketReservationsError() && ticketReservations().length > 0) {
             <section class="ticket-section" aria-label="Equipos para montaje">
               <div class="detail-section-header">
                 <h3>Equipos para montaje</h3>
@@ -1246,6 +1278,10 @@
                 }
               </ul>
             </section>
+          } @else if (!ticketReservationsError()) {
+            <p class="detail-empty-note">
+              Sin reservas de equipamiento registradas para esta producción.
+            </p>
           }
 
           <section class="ticket-section" aria-label="Directiva de terreno">
@@ -1284,13 +1320,21 @@
 
         <div class="ticket-footer-actions">
           @if (currentTicket()) {
-            <button type="button" emxButton variant="secondary" size="medium" class="btn-ticket-print" (click)="printCrewTicket()">
+            <button
+              type="button"
+              emxButton
+              variant="secondary"
+              size="medium"
+              class="btn-ticket-print"
+              [disabled]="!ticketPrintReady()"
+              (click)="printCrewTicket()"
+            >
               <svg class="ticket-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                 <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" />
                 <rect x="6" y="14" width="12" height="8" rx="1" />
               </svg>
-              <span>Imprimir</span>
+              <span>{{ ticketDataLoading() ? 'Cargando datos…' : 'Imprimir' }}</span>
             </button>
           }
           <button type="button" emxButton variant="secondary" size="medium" class="btn-ticket-close" (click)="closeTicketModal()"><span>Cerrar</span></button>

@@ -47,6 +47,8 @@ import { CatalogDataService } from '../catalog/catalog-data.service';
 import { Equipment, EquipmentReservationItem } from '../catalog/models/equipment.model';
 import { CatalogService } from '../catalog/models/catalog-service.model';
 import {
+  formatChileEventDateTime,
+  formatServerTimestampChile,
   removeExistingCrewTicketPrintFrame,
   triggerCrewTicketSinglePagePrint,
 } from './crew-ticket-print';
@@ -281,33 +283,57 @@ export class Productions implements OnInit, OnDestroy {
   readonly reservationInputError = signal('');
 
   // Ticket de cuadrilla
+  readonly ticketProductionId = signal<number | null>(null);
   readonly ticketLoading = signal<boolean>(false);
   readonly ticketError = signal<string | null>(null);
   readonly currentTicket = signal<CrewTicket | null>(null);
+  readonly ticketProduction = signal<Production | null>(null);
+  readonly ticketProductionLoading = signal<boolean>(false);
+  readonly ticketProductionError = signal<string | null>(null);
+  readonly ticketProductionQueriedAt = signal<string | null>(null);
+  readonly ticketReservationsLoading = signal<boolean>(false);
+  readonly ticketReservationsError = signal<string | null>(null);
   readonly showTicketModal = signal<boolean>(false);
   readonly ticketCopied = signal<boolean>(false);
   readonly ticketEquipmentReservations = signal<readonly EquipmentReservationItem[]>([]);
   private ticketCopyTimer: ReturnType<typeof setTimeout> | null = null;
+  private ticketRequestSeq = 0;
 
   readonly ticketReservations = computed(() => {
-    const fromTicket = this.ticketEquipmentReservations();
-    if (fromTicket.length > 0) return fromTicket;
-    const ticket = this.currentTicket();
-    const selected = this.detail();
-    return ticket && selected?.id === ticket.productionId ? this.productionReservations() : [];
+    if (this.ticketReservationsError()) return [];
+    return this.ticketEquipmentReservations();
   });
 
-  readonly resolvedTicketCrew = computed<{ crewName: string | null; crewId: string | null }>(() => {
+  readonly ticketDataLoading = computed(
+    () => this.ticketLoading() || this.ticketProductionLoading() || this.ticketReservationsLoading(),
+  );
+
+  readonly ticketAuxiliaryError = computed(
+    () => this.ticketProductionError() ?? this.ticketReservationsError(),
+  );
+
+  readonly ticketPrintReady = computed(
+    () =>
+      Boolean(this.currentTicket()) &&
+      Boolean(this.ticketProduction()) &&
+      !this.ticketLoading() &&
+      !this.ticketProductionLoading() &&
+      !this.ticketReservationsLoading() &&
+      !this.ticketError() &&
+      !this.ticketProductionError() &&
+      !this.ticketReservationsError(),
+  );
+
+  readonly ticketHistoricalCrew = computed<{ crewName: string | null; crewId: string | null }>(() => {
     const ticket = this.currentTicket();
     if (!ticket) return { crewName: null, crewId: null };
 
-    const selected = this.detail()?.id === ticket.productionId ? this.detail() : null;
-    let crewName = ticket.crewName?.trim() || selected?.crewName?.trim() || '';
-    let crewId = ticket.crewId?.trim() || selected?.crewId?.trim() || '';
+    let crewName = ticket.crewName?.trim() || '';
+    let crewId = ticket.crewId?.trim() || '';
 
     if (!crewName && !crewId && ticket.instructions) {
       const match = ticket.instructions.match(
-        /Cuadrilla asignada:\s*([^.()\n]+?)(?:\s*\(([^)]+)\))?\.(?:\s|$)/
+        /Cuadrilla asignada:\s*([^.()\n]+?)(?:\s*\(([^)]+)\))?\.(?:\s|$)/,
       );
       if (match) {
         crewName = match[1]?.trim() ?? '';
@@ -319,6 +345,23 @@ export class Productions implements OnInit, OnDestroy {
       crewName: crewName || null,
       crewId: crewId || null,
     };
+  });
+
+  readonly currentProductionCrew = computed<{ crewName: string | null; crewId: string | null }>(() => {
+    const prod = this.ticketProduction();
+    if (!prod) return { crewName: null, crewId: null };
+    return {
+      crewName: prod.crewName?.trim() || null,
+      crewId: prod.crewId?.trim() || null,
+    };
+  });
+
+  readonly resolvedTicketCrew = computed<{ crewName: string | null; crewId: string | null }>(() => {
+    const historical = this.ticketHistoricalCrew();
+    if (historical.crewName || historical.crewId) {
+      return historical;
+    }
+    return this.currentProductionCrew();
   });
 
   readonly resolvedTicketDirective = computed<string>(() => {
@@ -1054,17 +1097,63 @@ export class Productions implements OnInit, OnDestroy {
 
   viewCrewTicket(productionId: number, trigger?: HTMLElement): void {
     if (!this.canViewCrewTicket()) return;
-    this.ticketTriggerElement = trigger ?? (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    if (trigger) {
+      this.ticketTriggerElement = trigger;
+    } else if (!this.showTicketModal()) {
+      this.ticketTriggerElement =
+        typeof document !== 'undefined' && document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+    }
+
+    const requestSeq = ++this.ticketRequestSeq;
+    this.ticketProductionId.set(productionId);
     this.ticketLoading.set(true);
     this.ticketError.set(null);
     this.currentTicket.set(null);
+    this.ticketProduction.set(null);
+    this.ticketProductionLoading.set(true);
+    this.ticketProductionError.set(null);
+    this.ticketProductionQueriedAt.set(null);
+    this.ticketReservationsLoading.set(true);
+    this.ticketReservationsError.set(null);
     this.ticketEquipmentReservations.set([]);
     this.showTicketModal.set(true);
     this.syncBodyScrollLock();
 
+    this.dataService.getProduction(productionId).subscribe({
+      next: (prod) => {
+        if (requestSeq !== this.ticketRequestSeq) return;
+        this.ticketProduction.set(prod);
+        this.ticketProductionQueriedAt.set(new Date().toISOString());
+        this.ticketProductionLoading.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        if (requestSeq !== this.ticketRequestSeq) return;
+        this.ticketProductionLoading.set(false);
+        if (err.status === 403) {
+          this.ticketProductionError.set('No tienes permisos para consultar los datos actualizados de la producción.');
+        } else {
+          this.ticketProductionError.set(
+            'No se pudo obtener el estado actualizado de la producción. Reintenta antes de imprimir.',
+          );
+        }
+      },
+    });
+
     this.catalogDataService.getReservationsByProduction(productionId).subscribe({
-      next: (res) => this.ticketEquipmentReservations.set(res ?? []),
-      error: () => this.ticketEquipmentReservations.set([]),
+      next: (res) => {
+        if (requestSeq !== this.ticketRequestSeq) return;
+        this.ticketEquipmentReservations.set(res ?? []);
+        this.ticketReservationsLoading.set(false);
+      },
+      error: () => {
+        if (requestSeq !== this.ticketRequestSeq) return;
+        this.ticketReservationsLoading.set(false);
+        this.ticketReservationsError.set(
+          'No se pudo consultar el manifiesto de equipamiento en Catálogo. Reintenta antes de imprimir.',
+        );
+      },
     });
 
     setTimeout(() => {
@@ -1076,10 +1165,12 @@ export class Productions implements OnInit, OnDestroy {
 
     this.dataService.getCrewTicket(productionId).subscribe({
       next: (ticket) => {
+        if (requestSeq !== this.ticketRequestSeq) return;
         this.currentTicket.set(ticket);
         this.ticketLoading.set(false);
       },
       error: (err: HttpErrorResponse) => {
+        if (requestSeq !== this.ticketRequestSeq) return;
         this.ticketLoading.set(false);
         if (err.status === 404) {
           this.ticketError.set('No se ha emitido un ticket de cuadrilla para esta producción.');
@@ -1088,16 +1179,31 @@ export class Productions implements OnInit, OnDestroy {
         } else {
           this.ticketError.set('Error al recuperar el ticket de cuadrilla.');
         }
-      }
+      },
     });
   }
 
+  retryCrewTicket(): void {
+    const prodId = this.ticketProductionId();
+    if (prodId !== null) {
+      this.viewCrewTicket(prodId);
+    }
+  }
+
   closeTicketModal(): void {
+    this.ticketRequestSeq++;
     this.clearTicketCopyTimer();
     removeExistingCrewTicketPrintFrame();
     this.ticketCopied.set(false);
     this.showTicketModal.set(false);
+    this.ticketProductionId.set(null);
     this.currentTicket.set(null);
+    this.ticketProduction.set(null);
+    this.ticketProductionLoading.set(false);
+    this.ticketProductionError.set(null);
+    this.ticketProductionQueriedAt.set(null);
+    this.ticketReservationsLoading.set(false);
+    this.ticketReservationsError.set(null);
     this.ticketEquipmentReservations.set([]);
     this.ticketError.set(null);
     this.syncBodyScrollLock();
@@ -1125,25 +1231,38 @@ export class Productions implements OnInit, OnDestroy {
     }, 1800);
   }
 
+  formatTicketScheduledAt(iso: string | null | undefined): string {
+    return formatChileEventDateTime(iso).full;
+  }
+
+  formatTicketIssuedAt(iso: string | null | undefined): string {
+    return formatServerTimestampChile(iso).full;
+  }
+
   printCrewTicket(): void {
+    if (!this.ticketPrintReady()) return;
     const ticket = this.currentTicket();
-    if (!ticket) return;
-    const crew = this.resolvedTicketCrew();
-    const prod =
-      (this.detail()?.id === ticket.productionId ? this.detail() : null) ??
-      this.allProductions().find((p) => p.id === ticket.productionId) ??
-      null;
+    const prod = this.ticketProduction();
+    if (!ticket || !prod) return;
+
+    const historicalCrew = this.ticketHistoricalCrew();
+    const currentCrew = this.currentProductionCrew();
     triggerCrewTicketSinglePagePrint({
       ticket,
-      crewName: crew.crewName,
-      crewId: crew.crewId,
+      crewName: historicalCrew.crewName,
+      crewId: historicalCrew.crewId,
+      currentCrewName: currentCrew.crewName,
+      currentCrewId: currentCrew.crewId,
       directive: this.resolvedTicketDirective(),
       statusLabel: this.getReadableStatus(ticket.status),
-      reservations: this.ticketReservations(),
-      organizerId: prod?.organizerId ?? null,
-      organizerDisplayName: prod?.organizerDisplayName ?? null,
-      organizerResolutionSource: prod?.organizerResolutionSource ?? null,
-      productionStatusLabel: prod ? this.getReadableStatus(prod.status) : null,
+      reservations: this.ticketEquipmentReservations(),
+      organizerId: prod.organizerId ?? null,
+      organizerDisplayName: prod.organizerDisplayName ?? null,
+      organizerResolutionSource: prod.organizerResolutionSource ?? null,
+      productionStatusLabel: this.getReadableStatus(prod.status),
+      productionStatusCode: prod.status,
+      productionUpdatedAt: prod.updatedAt ?? null,
+      productionQueriedAt: this.ticketProductionQueriedAt(),
       actorOwnerId: typeof this.authz.ownerId === 'function' ? this.authz.ownerId() || null : null,
     });
   }
@@ -1155,8 +1274,8 @@ export class Productions implements OnInit, OnDestroy {
       return;
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') {
-      if (this.currentTicket()) {
-        event.preventDefault();
+      event.preventDefault();
+      if (this.ticketPrintReady()) {
         this.printCrewTicket();
       }
       return;
