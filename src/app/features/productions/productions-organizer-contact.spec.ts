@@ -453,4 +453,57 @@ describe('Productions SELF / EXTERNAL & organizer contact behavior (Etapa 4)', (
     expect(drawer.textContent).toContain('el organizador no tiene un contacto registrado');
     expect(drawer.textContent).not.toContain('en Organizadores');
   });
+
+  it('displays backend organizerDisplayName for another producer, never leaks viewer session name or raw UUID, and searches by displayName', async () => {
+    const producerBOwnerId = 'f191bdc8-7926-4722-9ec0-cba663701940:22222222-3333-4444-8555-666666666666';
+    const unresolvedEntraId = 'f191bdc8-7926-4722-9ec0-cba663701940:33333333-4444-4555-8666-777777777777';
+
+    const prodResolved: Production = {
+      ...ownProduction,
+      id: 21,
+      organizerId: producerBOwnerId,
+      organizerDisplayName: 'Valentina Rojas',
+      organizerResolutionSource: 'ENTRA_GRAPH',
+      name: 'Evento Productor B',
+    };
+    const prodUnresolved: Production = {
+      ...ownProduction,
+      id: 22,
+      organizerId: unresolvedEntraId,
+      name: 'Evento Legacy Sin DisplayName',
+    };
+
+    const { fixture, component } = await setup({
+      roles: [AppRole.Admin, AppRole.Productor],
+      ownerId: canonicalOwnerId,
+      userDisplayName: 'Ignacio Valeria',
+      productions: [prodResolved, prodUnresolved],
+    });
+
+    const pageText = fixture.nativeElement.textContent as string;
+    expect(pageText).toContain('Valentina Rojas');
+    expect(pageText).toContain('Organizador no disponible');
+    expect(pageText).not.toContain(producerBOwnerId);
+    expect(pageText).not.toContain(unresolvedEntraId);
+
+    // Selecting unresolved production owned by another UUID must NEVER fall back to viewer's name
+    component.selectProduction(prodUnresolved);
+    fixture.detectChanges();
+    const drawerUnresolved = fixture.nativeElement.querySelector('.detail-drawer') as HTMLElement;
+    expect(drawerUnresolved.textContent).toContain('Organizador no disponible');
+    expect(drawerUnresolved.textContent).not.toContain('Ignacio Valeria');
+    expect(drawerUnresolved.textContent).not.toContain(unresolvedEntraId);
+
+    // Selecting resolved production shows Productor B's real name
+    component.selectProduction(prodResolved);
+    fixture.detectChanges();
+    const drawerResolved = fixture.nativeElement.querySelector('.detail-drawer') as HTMLElement;
+    expect(drawerResolved.textContent).toContain('Valentina Rojas');
+    expect(drawerResolved.textContent).not.toContain(producerBOwnerId);
+
+    // Search filters by organizerDisplayName
+    component.search.setValue('Valentina');
+    fixture.detectChanges();
+    expect(component.rows().map((r) => r.id)).toEqual([21]);
+  });
 });

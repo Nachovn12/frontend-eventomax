@@ -1,4 +1,8 @@
-import { CrewTicket } from '../../core/models/production.model';
+import {
+  CrewTicket,
+  OrganizerResolutionSource,
+  formatOrganizerDisplayLabel,
+} from '../../core/models/production.model';
 import { EquipmentReservationItem } from '../catalog/models/equipment.model';
 
 export interface CrewTicketPrintData {
@@ -9,6 +13,8 @@ export interface CrewTicketPrintData {
   readonly statusLabel: string;
   readonly reservations: readonly EquipmentReservationItem[];
   readonly organizerId?: string | null;
+  readonly organizerDisplayName?: string | null;
+  readonly organizerResolutionSource?: OrganizerResolutionSource | null;
   readonly productionStatusLabel?: string | null;
   readonly actorOwnerId?: string | null;
 }
@@ -194,10 +200,15 @@ export function buildCrewTicketPrintHtml(data: CrewTicketPrintData): string {
     statusLabel,
     reservations,
     organizerId,
+    organizerDisplayName,
+    organizerResolutionSource,
     actorOwnerId,
   } = data;
 
   const orgInfo = organizerId ? KNOWN_ORGANIZERS[organizerId] : undefined;
+  const resolvedOrganizerLabel = organizerDisplayName?.trim()
+    ? organizerDisplayName.trim()
+    : formatOrganizerDisplayLabel(organizerId, organizerDisplayName, organizerResolutionSource);
 
   const folioShort = `OT-${String(ticket.id).padStart(4, '0')}`;
   const dteFolioNumber = String(ticket.id).padStart(10, '0');
@@ -856,9 +867,9 @@ export function buildCrewTicketPrintHtml(data: CrewTicketPrintData): string {
         <div class="meta-box-body">
           <table class="meta-grid-table">
             <tr>
-              <td class="grid-lbl">${orgInfo ? 'RUT Mandante' : 'RUT / ID Mandante'}</td>
+              <td class="grid-lbl">${orgInfo ? 'RUT Mandante' : 'Organizador / Mandante'}</td>
               <td class="grid-sep">:</td>
-              <td class="grid-val">${orgInfo ? `<strong>${escapeHtml(orgInfo.rut)}</strong>` : `<span class="tag-mono">${escapeHtml(organizerId || 'No informado')}</span>`}</td>
+              <td class="grid-val">${orgInfo ? `<strong>${escapeHtml(orgInfo.rut)}</strong>` : `<strong>${escapeHtml(resolvedOrganizerLabel)}</strong>`}</td>
             </tr>
             ${orgInfo ? `<tr>
               <td class="grid-lbl">Razón Social Mandante</td>

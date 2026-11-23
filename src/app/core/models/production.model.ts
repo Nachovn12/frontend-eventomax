@@ -6,9 +6,47 @@ export type ProductionStatus =
   | 'CERRADO'
   | 'CANCELADO';
 
+export type OrganizerResolutionSource = 'ENTRA_GRAPH' | 'EXTERNAL_CONTACT' | 'UNRESOLVED';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const CANONICAL_OWNER_ID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isTechnicalOrganizerIdentifier(value?: string | null): boolean {
+  const trimmed = value?.trim() ?? '';
+  if (!trimmed) return false;
+  return CANONICAL_OWNER_ID_REGEX.test(trimmed) || UUID_REGEX.test(trimmed);
+}
+
+/**
+ * Formats the primary organizer label strictly from backend-resolved data.
+ * Never displays raw UUID / tid:oid strings as primary label, never invents names,
+ * and never uses the viewing user's session name as fallback.
+ */
+export function formatOrganizerDisplayLabel(
+  organizerId?: string | null,
+  organizerDisplayName?: string | null,
+  resolutionSource?: OrganizerResolutionSource | null,
+): string {
+  const resolved = organizerDisplayName?.trim();
+  if (resolved) {
+    return resolved;
+  }
+  const rawId = organizerId?.trim() ?? '';
+  if (resolutionSource === 'EXTERNAL_CONTACT' || /^ext-/i.test(rawId)) {
+    return 'Cliente externo';
+  }
+  if (!rawId || isTechnicalOrganizerIdentifier(rawId)) {
+    return 'Organizador no disponible';
+  }
+  return rawId;
+}
+
 export interface Production {
   id: number;
   organizerId: string;
+  organizerDisplayName?: string | null;
+  organizerResolutionSource?: OrganizerResolutionSource | null;
   name: string;
   scheduledAt: string;
   location: string;
