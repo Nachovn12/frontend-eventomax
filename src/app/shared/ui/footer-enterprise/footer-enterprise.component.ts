@@ -116,7 +116,7 @@ export const EVENTOMAX_FOOTER_BOTTOM_LINKS: readonly FooterEnterpriseLink[] = [
         <!-- Tier 1: Brand lockup + subtle utility/social icons -->
         <div class="fe-top">
           <div class="fe-brand-col">
-            <a routerLink="/" class="fe-brand-lockup" aria-label="EventoMax Inicio">
+            <a routerLink="/portal" class="fe-brand-lockup" aria-label="EventoMax Inicio">
               <img
                 [src]="brandMarkUrl()"
                 alt=""
