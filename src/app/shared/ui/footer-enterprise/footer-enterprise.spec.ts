@@ -1,18 +1,24 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { FooterEnterpriseComponent } from './footer-enterprise.component';
+
+@Component({ standalone: true, template: '' })
+class DummyPortalComponent {}
 
 describe('FooterEnterpriseComponent (Ruixen UI 3-Tier Enterprise Footer)', () => {
   let component: FooterEnterpriseComponent;
   let fixture: ComponentFixture<FooterEnterpriseComponent>;
+  let router: Router;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FooterEnterpriseComponent],
-      providers: [provideRouter([])],
+      providers: [provideRouter([{ path: 'portal', component: DummyPortalComponent }])],
     }).compileComponents();
 
+    router = TestBed.inject(Router);
     fixture = TestBed.createComponent(FooterEnterpriseComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -71,5 +77,19 @@ describe('FooterEnterpriseComponent (Ruixen UI 3-Tier Enterprise Footer)', () =>
     firstAnchor.click();
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy.mock.calls[0][0].sectionId).toBe('simulador');
+  });
+
+  it('HOTFIX-01: points brand lockup explicitly to /portal via RouterLink instead of S3 root /', async () => {
+    const brandLockup = fixture.nativeElement.querySelector('a.fe-brand-lockup') as HTMLAnchorElement;
+    expect(brandLockup).toBeTruthy();
+    expect(brandLockup.getAttribute('href')).toBe('/portal');
+    expect(brandLockup.getAttribute('aria-label')).toBe('EventoMax Inicio');
+    expect(fixture.nativeElement.querySelectorAll('a[href="/"]').length).toBe(0);
+
+    const navigateByUrlSpy = vi.spyOn(router, 'navigateByUrl');
+    brandLockup.click();
+    await fixture.whenStable();
+    expect(navigateByUrlSpy).toHaveBeenCalled();
+    expect(router.url).toBe('/portal');
   });
 });
