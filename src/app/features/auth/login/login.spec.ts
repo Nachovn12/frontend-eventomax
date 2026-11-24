@@ -1,17 +1,21 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, signal } from '@angular/core';
+import { Router, provideRouter } from '@angular/router';
 import { Login } from './login';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MsalBroadcastService } from '@azure/msal-angular';
 import { InteractionStatus, EventMessage } from '@azure/msal-browser';
 import { BehaviorSubject, Subject } from 'rxjs';
 
+@Component({ standalone: true, template: '' })
+class DummyRouteComponent {}
+
 describe('Login Component', () => {
   let component: Login;
   let fixture: ComponentFixture<Login>;
   let authMock: any;
-  let routerMock: any;
+  let router: Router;
+  let routerNavigateSpy: ReturnType<typeof vi.spyOn>;
   let broadcastMock: any;
   let inProgressSubject: BehaviorSubject<InteractionStatus>;
   let msalSubject: Subject<EventMessage>;
@@ -31,18 +35,20 @@ describe('Login Component', () => {
       isAuthenticated: vi.fn().mockReturnValue(false),
     };
 
-    routerMock = {
-      navigate: vi.fn(),
-    };
-
     await TestBed.configureTestingModule({
       imports: [Login],
       providers: [
+        provideRouter([
+          { path: 'portal', component: DummyRouteComponent },
+          { path: 'dashboard', component: DummyRouteComponent },
+        ]),
         { provide: AuthService, useValue: authMock },
         { provide: MsalBroadcastService, useValue: broadcastMock },
-        { provide: Router, useValue: routerMock },
       ],
     }).compileComponents();
+
+    router = TestBed.inject(Router);
+    routerNavigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
     fixture = TestBed.createComponent(Login);
     component = fixture.componentInstance;
@@ -123,7 +129,7 @@ describe('Login Component', () => {
     inProgressSubject.next(InteractionStatus.None);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.login-microsoft-button').disabled).toBe(false);
-    expect(routerMock.navigate).not.toHaveBeenCalled();
+    expect(routerNavigateSpy).not.toHaveBeenCalled();
   });
 
   it('restores the normal CTA after a logout callback without accounts', () => {
@@ -135,7 +141,7 @@ describe('Login Component', () => {
     expect(button.disabled).toBe(false);
     expect(button.textContent).toContain('Iniciar sesión con Microsoft');
     expect(component.isLoading()).toBe(false);
-    expect(routerMock.navigate).not.toHaveBeenCalled();
+    expect(routerNavigateSpy).not.toHaveBeenCalled();
   });
 
   it('enables retry when redirect initialization rejects before emitting events', async () => {
@@ -148,12 +154,41 @@ describe('Login Component', () => {
   it('redirects to dashboard if already authenticated', () => {
     authMock.isAuthenticated.mockReturnValue(true);
     inProgressSubject.next(InteractionStatus.None);
-    expect(routerMock.navigate).toHaveBeenCalledWith(['/dashboard']);
+    expect(routerNavigateSpy).toHaveBeenCalledWith(['/dashboard']);
   });
 
   it('binds currentSlide to the dashboard preview presentation', () => {
     expect(component.currentSlide().image).toBe('/branding/eventomax/login/eventomax-login-produccion.jpg');
     expect(component.activeSlide()).toBe(0);
     expect(fixture.nativeElement.querySelectorAll('.b-slide .b-img').length).toBe(1);
+  });
+
+  it('HOTFIX-01: routes brand logo and back-to-home link to /portal via Angular RouterLink instead of S3 root /', async () => {
+    const brandLink = fixture.nativeElement.querySelector('a.a-brand-link') as HTMLAnchorElement;
+    const backLink = fixture.nativeElement.querySelector('a.a-btn-secondary') as HTMLAnchorElement;
+
+    expect(brandLink).toBeTruthy();
+    expect(backLink).toBeTruthy();
+    expect(brandLink.getAttribute('href')).toBe('/portal');
+    expect(backLink.getAttribute('href')).toBe('/portal');
+    expect(brandLink.getAttribute('aria-label')).toBe('Volver al inicio de EventoMax');
+    expect(backLink.textContent).toContain('Volver a la página de inicio');
+    expect(fixture.nativeElement.querySelectorAll('a[href="/"]').length).toBe(0);
+
+    const navigateByUrlSpy = vi.spyOn(router, 'navigateByUrl');
+
+    brandLink.click();
+    await fixture.whenStable();
+    expect(navigateByUrlSpy).toHaveBeenCalled();
+    expect(router.url).toBe('/portal');
+
+    navigateByUrlSpy.mockClear();
+    await router.navigateByUrl('/dashboard');
+    expect(router.url).toBe('/dashboard');
+
+    backLink.click();
+    await fixture.whenStable();
+    expect(navigateByUrlSpy).toHaveBeenCalled();
+    expect(router.url).toBe('/portal');
   });
 });
