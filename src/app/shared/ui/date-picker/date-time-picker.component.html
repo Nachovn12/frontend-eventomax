@@ -1,0 +1,227 @@
+<div class="emx-dtp-root">
+  <button
+    #triggerBtn
+    type="button"
+    class="emx-dtp-trigger"
+    [id]="inputId()"
+    [class.is-placeholder]="!displayValue()"
+    [class.is-open]="isOpen()"
+    [class.is-invalid]="invalid()"
+    [disabled]="disabled()"
+    [attr.aria-expanded]="isOpen()"
+    [attr.aria-haspopup]="'dialog'"
+    [attr.aria-controls]="isOpen() ? inputId() + '-popover' : null"
+    [attr.aria-invalid]="invalid()"
+    [attr.aria-describedby]="ariaDescribedBy()"
+    (click)="toggle()"
+    (keydown)="onTriggerKeydown($event)"
+  >
+    <svg lucideCalendarDays class="emx-dtp-trigger-icon" aria-hidden="true"></svg>
+    <span class="emx-dtp-trigger-text">
+      {{ displayValue() || placeholder() }}
+    </span>
+    <svg lucideChevronDown class="emx-dtp-trigger-chevron" aria-hidden="true"></svg>
+  </button>
+
+  @if (isOpen()) {
+    <div
+      #popoverEl
+      class="emx-dtp-popover"
+      [class.open-up]="openDirection() === 'up'"
+      [id]="inputId() + '-popover'"
+      [style]="popoverStyle()"
+      role="dialog"
+      aria-modal="false"
+      [attr.aria-labelledby]="inputId() + '-heading'"
+      (keydown)="onPopoverKeydown($event)"
+    >
+      <div class="emx-dtp-header">
+        <span class="emx-dtp-header-icon-wrap" aria-hidden="true">
+          <svg lucideCalendarDays class="emx-dtp-header-icon"></svg>
+        </span>
+        <div class="emx-dtp-header-copy">
+          <span class="emx-dtp-heading" [id]="inputId() + '-heading'">Fecha y hora</span>
+          <span class="emx-dtp-subheading">Programa tu producción</span>
+        </div>
+      </div>
+
+      <div class="emx-dtp-body">
+        <div class="emx-dtp-nav">
+          <button
+            type="button"
+            class="emx-dtp-nav-btn"
+            [disabled]="!canGoPrevMonth()"
+            aria-label="Mes anterior"
+            (click)="prevMonth()"
+          >
+            <svg lucideChevronLeft class="emx-dtp-nav-icon" aria-hidden="true"></svg>
+          </button>
+
+          <div class="emx-dtp-nav-selects">
+            <span class="emx-dtp-select-wrap">
+              <span class="emx-dtp-select-label" aria-hidden="true">{{ months[viewMonth() - 1] }}</span>
+              <select
+                class="emx-dtp-select emx-dtp-select--month"
+                aria-label="Mes"
+                [value]="viewMonth()"
+                (change)="onMonthSelect($any($event.target).value)"
+              >
+                @for (m of months; track m; let idx = $index) {
+                  <option [value]="idx + 1" [selected]="viewMonth() === idx + 1">{{ m }}</option>
+                }
+              </select>
+            </span>
+
+            <span class="emx-dtp-select-wrap">
+              <span class="emx-dtp-select-label" aria-hidden="true">{{ viewYear() }}</span>
+              <select
+                class="emx-dtp-select emx-dtp-select--year"
+                aria-label="Año"
+                [value]="viewYear()"
+                (change)="onYearSelect($any($event.target).value)"
+              >
+                @for (y of yearOptions(); track y) {
+                  <option [value]="y" [selected]="viewYear() === y">{{ y }}</option>
+                }
+              </select>
+            </span>
+
+            <svg lucideChevronDown class="emx-dtp-nav-chevron" aria-hidden="true"></svg>
+          </div>
+
+          <button
+            type="button"
+            class="emx-dtp-nav-btn"
+            aria-label="Mes siguiente"
+            (click)="nextMonth()"
+          >
+            <svg lucideChevronRight class="emx-dtp-nav-icon" aria-hidden="true"></svg>
+          </button>
+        </div>
+
+        <div class="emx-dtp-grid" role="grid" [attr.aria-label]="months[viewMonth() - 1] + ' ' + viewYear()">
+          <div class="emx-dtp-weekdays" role="row">
+            @for (dayName of weekDays; track dayName) {
+              <span class="emx-dtp-weekday" role="columnheader">{{ dayName }}</span>
+            }
+          </div>
+
+          <div class="emx-dtp-days" role="rowgroup">
+            @for (cell of calendarCells(); track cell.key) {
+              <button
+                type="button"
+                class="emx-dtp-day"
+                [attr.data-day-key]="cell.key"
+                [class.outside-month]="!cell.isCurrentMonth"
+                [class.is-today]="cell.isToday"
+                [class.is-selected]="cell.isSelected"
+                [disabled]="cell.isDisabled"
+                [attr.tabindex]="cell.isFocused && !cell.isDisabled ? 0 : -1"
+                [attr.aria-label]="cell.ariaLabel"
+                [attr.aria-pressed]="cell.isSelected"
+                [attr.aria-current]="cell.isToday ? 'date' : null"
+                (click)="selectDay(cell)"
+                (keydown)="onDayKeydown($event, cell)"
+              >
+                {{ cell.dayNumber }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="emx-dtp-time-section">
+          <div class="emx-dtp-time-label-col">
+            <div class="emx-dtp-time-label-row">
+              <svg lucideClock class="emx-dtp-time-icon" aria-hidden="true"></svg>
+              <span class="emx-dtp-time-label">Hora programada</span>
+            </div>
+            <span class="emx-dtp-time-format">Formato 24 h</span>
+          </div>
+
+          <div class="emx-dtp-time-inputs">
+            <div class="emx-dtp-time-field">
+              <label class="emx-dtp-time-sublabel" [for]="inputId() + '-hour'">Hora</label>
+              <input
+                [id]="inputId() + '-hour'"
+                type="text"
+                inputmode="numeric"
+                maxlength="2"
+                autocomplete="off"
+                class="emx-dtp-time-input"
+                [class.is-invalid]="!!draftEvaluation().error"
+                placeholder="HH"
+                aria-label="Hora (00 a 23)"
+                [value]="draftHour()"
+                (input)="onHourInput($any($event.target).value)"
+                (blur)="onHourBlur()"
+                (keydown)="onTimeKeydown($event, 'hour')"
+              />
+            </div>
+
+            <span class="emx-dtp-time-sep" aria-hidden="true">:</span>
+
+            <div class="emx-dtp-time-field">
+              <label class="emx-dtp-time-sublabel" [for]="inputId() + '-minute'">Minutos</label>
+              <input
+                [id]="inputId() + '-minute'"
+                type="text"
+                inputmode="numeric"
+                maxlength="2"
+                autocomplete="off"
+                class="emx-dtp-time-input"
+                [class.is-invalid]="!!draftEvaluation().error"
+                placeholder="MM"
+                aria-label="Minutos (00 a 59)"
+                [value]="draftMinute()"
+                (input)="onMinuteInput($any($event.target).value)"
+                (blur)="onMinuteBlur()"
+                (keydown)="onTimeKeydown($event, 'minute')"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="emx-dtp-tz-bar" role="note">
+          <svg lucideGlobe class="emx-dtp-tz-icon" aria-hidden="true"></svg>
+          <span>
+            Hora de Chile continental ·
+            <strong>{{ draftEvaluation().zoneInfo.parenLabel }}</strong>
+          </span>
+        </div>
+
+        @if (draftEvaluation().ambiguousNote) {
+          <p class="emx-dtp-dst-note" role="status">
+            {{ draftEvaluation().ambiguousNote }}
+          </p>
+        }
+
+        @if (draftEvaluation().error) {
+          <div class="emx-dtp-error" role="alert">
+            <svg lucideCircleAlert class="emx-dtp-error-icon" aria-hidden="true"></svg>
+            <span>{{ draftEvaluation().error }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="emx-dtp-footer">
+        <button type="button" class="emx-dtp-btn-today" (click)="selectToday()">
+          Hoy
+        </button>
+
+        <div class="emx-dtp-footer-actions">
+          <button type="button" class="emx-dtp-btn-cancel" (click)="cancel()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="emx-dtp-btn-apply"
+            [disabled]="!canApply()"
+            (click)="apply()"
+          >
+            Aplicar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
