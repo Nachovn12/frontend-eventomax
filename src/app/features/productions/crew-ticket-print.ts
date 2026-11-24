@@ -1,15 +1,36 @@
-import { CrewTicket } from '../../core/models/production.model';
+import {
+  CrewTicket,
+  OrganizerResolutionSource,
+  ProductionStatus,
+  formatOrganizerDisplayLabel,
+  isTechnicalOrganizerIdentifier,
+} from '../../core/models/production.model';
+import {
+  formatOperationalTimestampChile,
+  formatScheduledAtChile,
+  formatUtcIsoSeconds,
+  formatUtcReference,
+  parseServerTimestampAsUtc as parseServerTimestampAsUtcCore,
+} from '../../core/utils/chile-time';
 import { EquipmentReservationItem } from '../catalog/models/equipment.model';
+import { buildInternalTraceabilityQrSvg } from './crew-ticket-qr';
 
 export interface CrewTicketPrintData {
   readonly ticket: CrewTicket;
   readonly crewName: string | null;
   readonly crewId: string | null;
+  readonly currentCrewName?: string | null;
+  readonly currentCrewId?: string | null;
   readonly directive: string;
   readonly statusLabel: string;
   readonly reservations: readonly EquipmentReservationItem[];
   readonly organizerId?: string | null;
+  readonly organizerDisplayName?: string | null;
+  readonly organizerResolutionSource?: OrganizerResolutionSource | null;
   readonly productionStatusLabel?: string | null;
+  readonly productionStatusCode?: ProductionStatus | string | null;
+  readonly productionUpdatedAt?: string | null;
+  readonly productionQueriedAt?: string | null;
   readonly actorOwnerId?: string | null;
 }
 
@@ -29,216 +50,214 @@ function escapeHtml(raw: string | number | null | undefined): string {
     .replace(/'/g, '&#39;');
 }
 
-function formatEsDate(iso: string | undefined): string {
-  if (!iso) return '—';
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return escapeHtml(iso);
-  return (
-    new Intl.DateTimeFormat('es-CL', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(parsed) + ' h'
-  );
+/**
+ * Parses server audit/creation timestamps (`createdAt`, `updatedAt`, `queriedAt`) as UTC.
+ * Delegates to centralized `chile-time.ts` utility (`America/Santiago`, `es-CL`, 24h).
+ */
+export function parseServerTimestampAsUtc(iso: string | null | undefined): Date | null {
+  return parseServerTimestampAsUtcCore(iso);
 }
 
-function formatEsDateShort(iso: string | undefined): string {
-  if (!iso) return '—';
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return escapeHtml(iso);
-  return new Intl.DateTimeFormat('es-CL', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(parsed);
+export function formatServerTimestampChile(iso: string | null | undefined): {
+  readonly full: string;
+  readonly compact: string;
+  readonly tzLabel: string;
+} {
+  const formatted = formatOperationalTimestampChile(iso);
+  return {
+    full: formatted.ticketFull,
+    compact: formatted.compact,
+    tzLabel: formatted.commaTzLabel,
+  };
 }
 
-function formatUtcStamp(iso: string | undefined): string {
-  if (!iso) return '—';
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return escapeHtml(iso);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${parsed.getUTCFullYear()}-${pad(parsed.getUTCMonth() + 1)}-${pad(parsed.getUTCDate())} ${pad(parsed.getUTCHours())}:${pad(parsed.getUTCMinutes())}:${pad(parsed.getUTCSeconds())} UTC`;
+export function formatServerTimestampUtc(iso: string | null | undefined): string {
+  return formatUtcReference(iso);
 }
 
-function formatActorLabel(raw: string | null | undefined): string {
-  if (!raw) return 'Despacho Central Operaciones';
-  const trimmed = raw.trim();
-  if (trimmed.includes(':') || /^[0-9a-fA-F-]{32,36}$/.test(trimmed)) {
-    return 'Despacho Central Operaciones';
+function formatServerTimestampIsoUtc(iso: string | null | undefined): string {
+  return formatUtcIsoSeconds(iso);
+}
+
+/**
+ * Formats an event's `scheduledAt` in Chilean continental time (`America/Santiago`).
+ * Preserves naive wall-clock local times and converts offset-aware strings cleanly.
+ */
+export function formatChileEventDateTime(iso: string | null | undefined): {
+  readonly full: string;
+  readonly kpiMain: string;
+  readonly kpiSub: string;
+  readonly approxInstant: Date | null;
+} {
+  const formatted = formatScheduledAtChile(iso);
+  return {
+    full: formatted.ticketFull,
+    kpiMain: formatted.kpiMain,
+    kpiSub: formatted.kpiSub,
+    approxInstant: formatted.approxInstant,
+  };
+}
+
+function formatOrganizerIdCaption(
+  organizerId?: string | null,
+  resolutionSource?: OrganizerResolutionSource | null,
+): string {
+  const rawId = organizerId?.trim() ?? '';
+  if (!rawId) return 'No disponible';
+  if (resolutionSource === 'ENTRA_GRAPH') {
+    return 'ID interno protegido (directorio Entra ID)';
   }
-  return trimmed;
-}
-
-function deterministicHex(seed: string, length: number): string {
-  let h1 = 0x811c9dc5;
-  let h2 = 0x01000193;
-  for (let i = 0; i < seed.length; i++) {
-    const ch = seed.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 0x01000193) >>> 0;
-    h2 = Math.imul(h2 ^ ((ch << 5) | (ch >>> 3)), 0x85ebca6b) >>> 0;
+  if (resolutionSource === 'EXTERNAL_CONTACT') {
+    return 'ID interno protegido (contacto externo)';
   }
-  let out = '';
-  let s1 = h1;
-  let s2 = h2;
-  while (out.length < length) {
-    s1 = (Math.imul(s1, 1664525) + 1013904223) >>> 0;
-    s2 = (Math.imul(s2, 22695477) + 1) >>> 0;
-    out += (s1 ^ s2).toString(16).padStart(8, '0').toUpperCase();
+  if (isTechnicalOrganizerIdentifier(rawId)) {
+    return 'ID interno protegido (registro de producción)';
   }
-  return out.slice(0, length);
+  return rawId;
 }
 
-function buildPdf417Svg(seed: string): string {
-  const cols = 54;
-  const rows = 8;
-  const hex = deterministicHex(seed, cols * rows);
-  const rects: string[] = [];
-
-  // Standard PDF417 left start pattern
-  rects.push(`<rect x="0" y="0" width="5.5" height="38" fill="#031c43"/>`);
-  rects.push(`<rect x="7" y="0" width="1.2" height="38" fill="#031c43"/>`);
-  rects.push(`<rect x="9.5" y="0" width="1.2" height="38" fill="#031c43"/>`);
-  rects.push(`<rect x="12" y="0" width="1.2" height="38" fill="#031c43"/>`);
-  rects.push(`<rect x="14.5" y="0" width="2.4" height="38" fill="#031c43"/>`);
-
-  const dataStartX = 19;
-  const cellW = 3.1;
-  const rowH = 38 / rows;
-
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const v = parseInt(hex[r * cols + c] || '0', 16);
-      if (v % 3 !== 0 || ((r + c) % 5 === 0)) {
-        const w = v >= 11 ? cellW * 0.88 : v >= 6 ? cellW * 0.62 : cellW * 0.42;
-        const x = (dataStartX + c * cellW).toFixed(2);
-        const y = (r * rowH).toFixed(2);
-        rects.push(`<rect x="${x}" y="${y}" width="${w.toFixed(2)}" height="${(rowH + 0.15).toFixed(2)}" fill="#0f172a"/>`);
-      }
-    }
-  }
-
-  // Standard PDF417 right stop pattern
-  const stopX = dataStartX + cols * cellW + 2.5;
-  rects.push(`<rect x="${stopX.toFixed(2)}" y="0" width="5" height="38" fill="#031c43"/>`);
-  rects.push(`<rect x="${(stopX + 6.5).toFixed(2)}" y="0" width="1.2" height="38" fill="#031c43"/>`);
-  rects.push(`<rect x="${(stopX + 9).toFixed(2)}" y="0" width="2.4" height="38" fill="#031c43"/>`);
-  rects.push(`<rect x="${(stopX + 12.8).toFixed(2)}" y="0" width="1.2" height="38" fill="#031c43"/>`);
-  rects.push(`<rect x="${(stopX + 15.3).toFixed(2)}" y="0" width="2.2" height="38" fill="#031c43"/>`);
-
-  const totalW = Math.ceil(stopX + 18);
-  return `<svg class="pdf417-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} 38" preserveAspectRatio="none" aria-hidden="true">${rects.join('')}</svg>`;
+function isSameCrew(
+  nameA: string | null | undefined,
+  idA: string | null | undefined,
+  nameB: string | null | undefined,
+  idB: string | null | undefined,
+): boolean {
+  const nA = (nameA ?? '').trim().toLowerCase();
+  const iA = (idA ?? '').trim().toLowerCase();
+  const nB = (nameB ?? '').trim().toLowerCase();
+  const iB = (idB ?? '').trim().toLowerCase();
+  if (!nB && !iB) return true;
+  return nA === nB && iA === iB;
 }
 
-interface OrganizerRegistryEntry {
-  readonly corporateName: string;
-  readonly rut: string;
-  readonly giro: string;
-  readonly contactName: string;
+export function buildCrewTicketQrPayload(
+  ticket: Pick<CrewTicket, 'id' | 'productionId' | 'eventId' | 'createdAt'>,
+  historicalCrewId?: string | null,
+): string {
+  const folioShort = `OT-${String(ticket.id).padStart(4, '0')}`;
+  const cleanCrewId = historicalCrewId?.trim() || null;
+  const issuedIsoUtc = formatServerTimestampIsoUtc(ticket.createdAt);
+  return [
+    'EMX',
+    folioShort,
+    `PRD-${ticket.productionId}`,
+    ticket.eventId ? `EVT:${ticket.eventId}` : 'EVT:NO_ID',
+    cleanCrewId ? `CREW:${cleanCrewId}` : 'CREW:SIN_ID',
+    issuedIsoUtc,
+  ].join('|');
 }
-
-const KNOWN_ORGANIZERS: Record<string, OrganizerRegistryEntry> = {
-  'org-innovacion-biobio': {
-    corporateName: 'Corporación de Innovación y Desarrollo del Biobío',
-    rut: '76.842.190-5',
-    giro: 'Organización y promoción de eventos tecnológicos y ferias de innovación',
-    contactName: 'Camila Valenzuela Ríos',
-  },
-  'org-cultura-concepcion': {
-    corporateName: 'Corporación Cultural de Concepción',
-    rut: '65.014.280-3',
-    giro: 'Gestión cultural, difusión de las artes escénicas y festivales musicales',
-    contactName: 'Rodrigo Astudillo Peña',
-  },
-  'org-ag-productores-chile': {
-    corporateName: 'Asociación Gremial de Productores Técnicos de Chile',
-    rut: '72.190.430-8',
-    giro: 'Actividades de asociaciones de producción técnica de eventos',
-    contactName: 'Matías Fernández Soto',
-  },
-  'org-fundacion-filarmonica': {
-    corporateName: 'Fundación Orquesta Filarmónica de Chile',
-    rut: '71.954.210-4',
-    giro: 'Fundaciones y corporaciones de fomento artístico y musical sin fines de lucro',
-    contactName: 'Elena Morales Chadwick',
-  },
-  'org-cumbre-minera': {
-    corporateName: 'Corporación Minera y Energía de Chile',
-    rut: '76.432.890-1',
-    giro: 'Servicios de organización de cumbres, conferencias empresariales y foros mineros',
-    contactName: 'Ignacio Valeria Núñez',
-  },
-  'org-festivales-chile': {
-    corporateName: 'Federación Nacional de Festivales de Chile',
-    rut: '77.215.340-9',
-    giro: 'Producción ejecutiva y logística integral de festivales masivos al aire libre',
-    contactName: 'Sebastián Alarcón Vega',
-  },
-  'org-red-empresarial-chile': {
-    corporateName: 'Red de Empresas y Eventos Corporativos SpA',
-    rut: '76.982.410-2',
-    giro: 'Organización de galas corporativas, eventos de premiación y congresos de negocios',
-    contactName: 'Patricia Larraín Vial',
-  },
-};
 
 export function buildCrewTicketPrintHtml(data: CrewTicketPrintData): string {
   const {
     ticket,
     crewName,
     crewId,
+    currentCrewName,
+    currentCrewId,
     directive,
     statusLabel,
     reservations,
     organizerId,
-    actorOwnerId,
+    organizerDisplayName,
+    organizerResolutionSource,
+    productionStatusLabel,
+    productionStatusCode,
+    productionUpdatedAt,
+    productionQueriedAt,
   } = data;
 
-  const orgInfo = organizerId ? KNOWN_ORGANIZERS[organizerId] : undefined;
-
   const folioShort = `OT-${String(ticket.id).padStart(4, '0')}`;
-  const dteFolioNumber = String(ticket.id).padStart(10, '0');
   const docCode = `EMX-OT-PRD-${ticket.productionId}-${String(ticket.id).padStart(4, '0')}`;
   const docTitle = `Orden-Cuadrilla-Produccion-${ticket.productionId}-${folioShort}`;
 
-  const canonicalSeed = `${docCode}|${ticket.eventId}|${ticket.scheduledAt}|${ticket.location}`;
-  const sealHash = deterministicHex(canonicalSeed, 16);
-  const csvCode = `EMX-OT-${String(ticket.productionId).padStart(5, '0')}-${sealHash.slice(0, 4)}-${sealHash.slice(4, 8)}`;
-  const barcodeSvg = buildPdf417Svg(canonicalSeed);
+  const issuedCl = formatServerTimestampChile(ticket.createdAt);
+  const issuedUtc = formatServerTimestampUtc(ticket.createdAt);
+  const scheduled = formatChileEventDateTime(ticket.scheduledAt);
 
-  const totalUnits = reservations.reduce((acc, r) => acc + (r.quantity || 0), 0);
-  const visibleReservations = reservations.slice(0, 8);
-  const extraCount = Math.max(0, reservations.length - visibleReservations.length);
+  const emitStatusRaw = (statusLabel || ticket.status || 'Sin registro').trim().replace(/_/g, ' ');
+  const emitStatusDisplay = emitStatusRaw.toUpperCase();
+  const currentStatusDisplay = productionStatusLabel?.trim()
+    ? productionStatusLabel.trim().replace(/_/g, ' ').toUpperCase()
+    : 'NO DISPONIBLE';
+
+  let currentStatusContext = 'Sin consulta actualizada';
+  if (productionQueriedAt) {
+    const qCl = formatServerTimestampChile(productionQueriedAt);
+    currentStatusContext = `Consultado: ${qCl.compact}`;
+  } else if (productionUpdatedAt) {
+    const uCl = formatServerTimestampChile(productionUpdatedAt);
+    currentStatusContext = `Ref. al ${uCl.compact}`;
+  }
+
+  // Detect closure prior to scheduled event date (purely observational, never alters origin data)
+  const isClosedNow =
+    (productionStatusCode ?? '').toString().toUpperCase() === 'CERRADO' ||
+    currentStatusDisplay === 'CERRADO';
+  const refInstant =
+    parseServerTimestampAsUtc(productionUpdatedAt) ??
+    parseServerTimestampAsUtc(productionQueriedAt) ??
+    parseServerTimestampAsUtc(ticket.createdAt);
+  const closedBeforeScheduledDate =
+    isClosedNow &&
+    scheduled.approxInstant !== null &&
+    refInstant !== null &&
+    refInstant.getTime() < scheduled.approxInstant.getTime();
+
+  // Organizer: real data only, never raw canonical UUIDs, never fabricated names or RUTs
+  const rawOrganizerDisplay = formatOrganizerDisplayLabel(
+    organizerId,
+    organizerDisplayName,
+    organizerResolutionSource,
+  );
+  const organizerNameDisplay =
+    rawOrganizerDisplay === 'Organizador no disponible' ? 'No disponible' : rawOrganizerDisplay;
+  const organizerIdDisplay = formatOrganizerIdCaption(organizerId, organizerResolutionSource);
+
+  // Crew: separated name & ID, respecting historical ticket crew vs current production crew
+  const historicalCrewName = crewName?.trim() || null;
+  const historicalCrewId = crewId?.trim() || null;
+  const showCurrentCrewDiff =
+    Boolean(currentCrewName?.trim() || currentCrewId?.trim()) &&
+    !isSameCrew(historicalCrewName, historicalCrewId, currentCrewName, currentCrewId);
+
+  const directiveText = directive?.trim() || 'Sin instrucciones operativas registradas.';
+  const safeReservations = reservations ?? [];
+  const totalItems = safeReservations.length;
+  const totalUnits = safeReservations.reduce((acc, r) => acc + (r.quantity || 0), 0);
+  const itemsLabel = totalItems === 1 ? '1 ítem' : `${totalItems} ítems`;
+  const unitsLabel = totalUnits === 1 ? '1 unidad' : `${totalUnits} unidades`;
+  const kpiEquipmentValue =
+    totalItems > 0 ? `${itemsLabel} · ${unitsLabel}` : 'Sin reservas';
+
+  const qrPayload = buildCrewTicketQrPayload(ticket, historicalCrewId);
+  const qrSvg = buildInternalTraceabilityQrSvg(qrPayload, 54, '#031c43');
 
   const reservationsRows =
-    visibleReservations.length > 0
-      ? visibleReservations
+    safeReservations.length > 0
+      ? safeReservations
           .map((r, idx) => {
-            const eqCode = `EQ-${String(r.equipmentId).padStart(3, '0')}`;
-            const resCode = `RES-${String(r.reservationId).padStart(4, '0')}`;
+            const eqCode =
+              r.equipmentId !== null && r.equipmentId !== undefined
+                ? `EQ-${String(r.equipmentId).padStart(3, '0')}`
+                : 'Sin registro';
+            const resCode =
+              r.reservationId !== null && r.reservationId !== undefined
+                ? `#${r.reservationId} (RES-${String(r.reservationId).padStart(4, '0')})`
+                : 'Sin registro';
+            const qtyText = `${r.quantity} ${r.quantity === 1 ? 'unidad' : 'unidades'}`;
             return `<tr>
-              <td class="center mono">${idx + 1}</td>
-              <td class="center mono bold">${escapeHtml(eqCode)}</td>
-              <td class="center mono text-muted">${escapeHtml(resCode)}</td>
-              <td class="item-name"><strong>${escapeHtml(r.equipmentName)}</strong></td>
-              <td class="center mono bold">${escapeHtml(r.quantity)} u.</td>
-              <td class="center"><span class="badge-status">${escapeHtml(r.status)}</span></td>
-              <td class="center check-box"><span class="box-sq"></span> OK</td>
-              <td class="center check-box"><span class="box-sq"></span> OK</td>
-              <td class="center check-box"><span class="box-sq"></span> OK</td>
+              <td class="c mono">${idx + 1}</td>
+              <td class="c mono bold nw">${escapeHtml(eqCode)}</td>
+              <td class="eq-desc">${escapeHtml(r.equipmentName)}</td>
+              <td class="c mono nw">${escapeHtml(resCode)}</td>
+              <td class="c mono bold nw">${escapeHtml(qtyText)}</td>
+              <td class="c"><span class="status-pill">${escapeHtml(r.status)}</span></td>
+              <td class="muted">Sin observaciones</td>
             </tr>`;
           })
-          .join('') +
-        (extraCount > 0
-          ? `<tr>
-              <td colspan="9" class="extra-notice">+ ${extraCount} partida(s) técnica(s) adicional(es) en el manifiesto de la Producción #${escapeHtml(ticket.productionId)}.</td>
-            </tr>`
-          : '')
+          .join('\n')
       : `<tr>
-          <td colspan="9" class="empty-notice">Sin equipamiento individual registrado en el manifiesto de Producción #${escapeHtml(ticket.productionId)}.</td>
+          <td colspan="7" class="empty-row">Sin reservas de equipamiento registradas para la Producción #${escapeHtml(ticket.productionId)}.</td>
         </tr>`;
 
   return `<!DOCTYPE html>
@@ -249,815 +268,804 @@ export function buildCrewTicketPrintHtml(data: CrewTicketPrintData): string {
   <style>
     @page {
       size: A4 portrait;
-      margin: 8mm 12mm 8mm;
+      margin: 6mm 10mm 8.5mm 10mm;
+      @bottom-left {
+        content: "EventoMax · Orden de Trabajo Técnica ${escapeHtml(folioShort)} · Producción #${escapeHtml(ticket.productionId)}";
+        font-family: 'Segoe UI', 'Inter', 'Roboto', Arial, sans-serif;
+        font-size: 7.1pt;
+        color: #64748b;
+      }
+      @bottom-right {
+        content: "Página " counter(page) " de " counter(pages);
+        font-family: 'Segoe UI', 'Inter', 'Roboto', Arial, sans-serif;
+        font-size: 7.4pt;
+        font-weight: 700;
+        color: #031c43;
+      }
     }
+
     * {
       box-sizing: border-box;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
+
     html, body {
       margin: 0;
       padding: 0;
       background: #ffffff;
       color: #0f172a;
-      font-family: 'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-      font-size: 8.2pt;
-      line-height: 1.35;
-    }
-    .sheet {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      background: #ffffff;
+      font-family: 'Segoe UI', 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+      font-size: 8.4pt;
+      line-height: 1.3;
     }
 
-    /* ==========================================
-       1. ENCABEZADO DTE CHILENO (EMISOR + CAJETÍN ROJO SII)
-       ========================================== */
-    .dte-header {
+    .top-accent {
+      height: 3.5px;
+      background: linear-gradient(90deg, #024ffc 0%, #1d4ed8 60%, #031c43 100%);
+      border-radius: 2px;
+      margin-bottom: 4px;
+    }
+
+    .doc-flow {
       display: flex;
-      align-items: flex-start;
+      flex-direction: column;
+      gap: 5.5px;
+    }
+
+    /* 1. Encabezado corporativo minimalista */
+    .hero {
+      display: flex;
       justify-content: space-between;
-      gap: 16px;
-      padding-bottom: 6px;
+      align-items: flex-start;
+      gap: 14px;
+      padding-bottom: 4.5px;
+      border-bottom: 1px solid #e2e8f0;
+      break-inside: avoid;
     }
-    .dte-issuer {
-      flex: 1;
-      min-width: 0;
-    }
-    .issuer-logo-row {
+    .hero-left {
       display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 3px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.5px;
     }
     .emx-official-logo {
-      height: 26px;
+      height: 23px;
       width: auto;
       display: block;
     }
-    .issuer-slogan {
-      margin: 0 0 4px;
-      font-size: 6.5pt;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
+    .hero-title {
+      margin: 2px 0 0;
+      font-size: 14pt;
+      font-weight: 800;
+      color: #031c43;
+      letter-spacing: -0.015em;
+      line-height: 1.08;
+    }
+    .hero-sub {
+      margin: 0;
+      font-size: 8.2pt;
       color: #475569;
-    }
-    .issuer-meta-table {
-      border-collapse: collapse;
-      font-size: 6.8pt;
-      line-height: 1.35;
-      color: #1e293b;
-    }
-    .issuer-meta-table td {
-      padding: 0.5px 0;
-      vertical-align: top;
-    }
-    .meta-lbl {
-      width: 82px;
-      font-weight: 700;
-      color: #334155;
-    }
-    .meta-sep {
-      width: 10px;
-      text-align: center;
-      color: #64748b;
-    }
-    .meta-val {
       font-weight: 500;
-      color: #0f172a;
     }
-
-    /* El Icónico Cajetín Rojo Oficial SII */
-    .dte-cajetin-col {
-      width: 252px;
-      flex-shrink: 0;
+    .hero-right {
+      text-align: right;
       display: flex;
       flex-direction: column;
+      align-items: flex-end;
+      gap: 2.5px;
+      flex-shrink: 0;
+    }
+    .folio-pill {
+      display: inline-flex;
       align-items: center;
-    }
-    .cajetin-sii {
-      width: 100%;
-      border: 2.5px solid #d90429;
-      background: #ffffff;
-      padding: 5px 8px 4px;
-      text-align: center;
-      box-sizing: border-box;
-    }
-    .cajetin-rut {
-      margin: 0;
-      font-size: 10pt;
+      gap: 6px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 2.5px 9.5px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 9pt;
       font-weight: 800;
-      color: #d90429;
-      letter-spacing: 0.04em;
+      color: #024ffc;
     }
-    .cajetin-title {
-      margin: 2px 0 1px;
-      font-size: 11pt;
-      font-weight: 900;
-      color: #d90429;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      line-height: 1.15;
+    .hero-meta {
+      font-size: 8pt;
+      color: #334155;
+      line-height: 1.32;
     }
-    .cajetin-number {
-      margin: 1px 0 0;
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 12.5pt;
-      font-weight: 900;
-      color: #d90429;
-      letter-spacing: 0.04em;
-    }
-    .cajetin-sii-sub {
-      margin: 2.5px 0 0;
-      font-size: 7.2pt;
-      font-weight: 800;
-      color: #d90429;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      text-align: center;
+    .hero-meta strong {
+      color: #031c43;
     }
 
-    /* ==========================================
-       2. BANNER CENTRAL DE IDENTIFICACIÓN
-       ========================================== */
-    .dte-banner {
-      background: #ebf3fb;
-      border: 1px solid #c9dff7;
-      border-radius: 4px;
-      padding: 3.5px 8px;
-      text-align: center;
-    }
-    .dte-banner-title {
-      margin: 0;
-      font-size: 12pt;
-      font-weight: 900;
-      color: #1e5b9b;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      line-height: 1.15;
-    }
-    .dte-banner-sub {
-      margin: 1px 0 0;
-      font-size: 6.8pt;
-      font-weight: 600;
-      color: #475569;
-      letter-spacing: 0.02em;
-    }
-
-    /* ==========================================
-       3. BLOQUES DE METADATOS (CLIENTE & ORDEN)
-       ========================================== */
-    .dte-meta-grid {
+    /* 2. Cuatro tarjetas operativas KPI */
+    .kpi-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 7px;
+      grid-template-columns: 0.96fr 1.24fr 1.05fr 1.05fr;
+      gap: 6.5px;
+      break-inside: avoid;
     }
-    .meta-box {
-      border: 1px solid #cbd5e1;
-      background: #ffffff;
+    .kpi-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 4.5px 8px;
     }
-    .meta-box-head {
-      background: #e2edf8;
-      border-bottom: 1px solid #cbd5e1;
-      padding: 2.5px 7px;
-      font-size: 6.7pt;
+    .kpi-k {
+      font-size: 6.8pt;
       font-weight: 800;
-      color: #1e5b9b;
-      letter-spacing: 0.03em;
+      color: #475569;
       text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
-    .meta-box-body {
-      padding: 5px 8px;
+    .kpi-v {
+      margin-top: 2px;
+      font-size: 8.5pt;
+      font-weight: 800;
+      color: #031c43;
+      line-height: 1.15;
     }
-    .meta-grid-table {
+    .kpi-s {
+      margin-top: 1px;
+      font-size: 7.2pt;
+      color: #475569;
+      line-height: 1.18;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dot {
+      display: inline-block;
+      width: 6.5px;
+      height: 6.5px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: 1px;
+    }
+    .dot-blue { background: #024ffc; }
+    .dot-slate { background: #475569; }
+    .dot-amber { background: #d97706; }
+
+    /* 3. Tarjetas Evento + Cuadrilla */
+    .cards-2 {
+      display: grid;
+      grid-template-columns: 1.16fr 1fr;
+      gap: 7.5px;
+      break-inside: avoid;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 6px 9.5px;
+    }
+    .card-eyebrow {
+      font-size: 7.1pt;
+      font-weight: 800;
+      color: #024ffc;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 3px;
+    }
+    .card-heading {
+      font-size: 9.5pt;
+      font-weight: 800;
+      color: #031c43;
+      margin: 0 0 3.5px;
+      line-height: 1.18;
+    }
+    .kv-clean {
       width: 100%;
       border-collapse: collapse;
-      font-size: 7.2pt;
-      line-height: 1.38;
+      font-size: 8pt;
     }
-    .meta-grid-table td {
+    .kv-clean td {
       padding: 1.5px 0;
       vertical-align: top;
     }
-    .grid-lbl {
-      width: 105px;
-      font-weight: 600;
+    .kv-clean td.k {
+      width: 100px;
       color: #475569;
-      text-transform: capitalize;
+      font-weight: 600;
+      padding-right: 6px;
     }
-    .grid-sep {
-      width: 8px;
-      color: #64748b;
-      text-align: center;
-    }
-    .grid-val {
+    .kv-clean td.v {
       color: #0f172a;
+      font-weight: 500;
     }
-    .grid-val strong {
-      color: #031c43;
-    }
-    .tag-mono {
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 6.8pt;
+    .id-tag {
+      display: inline-block;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 8pt;
       background: #f1f5f9;
       border: 1px solid #cbd5e1;
-      padding: 0.5px 4px;
-      border-radius: 2px;
-      color: #334155;
-    }
-
-    /* ==========================================
-       4. TABLA DE ÍTEMS / MANIFIESTO DE EQUIPAMIENTO
-       ========================================== */
-    .dte-table {
-      width: 100%;
-      border-collapse: collapse;
-      border: 1px solid #cbd5e1;
-    }
-    .dte-table th {
-      background: #1e5b9b;
-      color: #ffffff;
-      border: 1px solid #1a4d84;
-      padding: 3.5px 6px;
-      font-size: 6.6pt;
+      color: #031c43;
+      padding: 0.5px 6.5px;
+      border-radius: 4px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      text-align: left;
     }
-    .dte-table td {
-      border: 1px solid #cbd5e1;
-      padding: 4px 6px;
-      font-size: 7.3pt;
-      color: #0f172a;
-      vertical-align: middle;
-    }
-    .dte-table th.center, .dte-table td.center {
-      text-align: center;
+    .muted {
+      color: #64748b;
+      font-style: italic;
     }
     .mono {
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 7.1pt;
-      font-variant-numeric: tabular-nums;
+      font-family: 'Consolas', 'Courier New', monospace;
     }
     .bold {
       font-weight: 700;
       color: #031c43;
     }
-    .text-muted {
-      color: #64748b;
+    .context-note {
+      margin-top: 3px;
+      padding: 2.5px 6.5px;
+      border-radius: 4px;
+      background: #f8fafc;
+      border-left: 2.5px solid #64748b;
+      font-size: 7.3pt;
+      color: #475569;
+      line-height: 1.24;
     }
-    .item-name {
-      font-weight: 600;
-      color: #0f172a;
+
+    /* 4. Instrucciones y observaciones */
+    .inst-strip {
+      background: #f8fafc;
+      border: 1px solid #dbeafe;
+      border-left: 4px solid #024ffc;
+      border-radius: 7px;
+      padding: 5px 10px;
+      display: grid;
+      grid-template-columns: 1.38fr 1fr;
+      gap: 11px;
+      align-items: start;
+      break-inside: avoid;
     }
-    .badge-status {
-      display: inline-block;
-      padding: 0.5px 4.5px;
-      background: #ecfdf5;
-      color: #047857;
-      border: 1px solid #a7f3d0;
-      border-radius: 2px;
-      font-size: 6.2pt;
+    .inst-k {
+      font-size: 7pt;
+      font-weight: 800;
+      color: #024ffc;
+      text-transform: uppercase;
+      letter-spacing: 0.055em;
+      margin-bottom: 1.5px;
+    }
+    .inst-v {
+      font-size: 8.5pt;
+      font-weight: 700;
+      color: #031c43;
+      margin: 0;
+      line-height: 1.24;
+    }
+    .inst-obs {
+      border-left: 1px solid #cbd5e1;
+      padding-left: 10px;
+      font-size: 8pt;
+      color: #334155;
+    }
+
+    /* 5. Manifiesto de equipamiento (paginación flexible sin recortar filas) */
+    .table-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      overflow: hidden;
+    }
+    .table-top {
+      padding: 4.5px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      break-after: avoid;
+    }
+    .table-title {
+      font-size: 7.6pt;
+      font-weight: 800;
+      color: #031c43;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .table-note {
+      font-size: 7.2pt;
+      color: #92400e;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      padding: 1px 7.5px;
+      border-radius: 999px;
       font-weight: 700;
     }
-    .check-box {
-      font-size: 6.5pt;
-      color: #334155;
-      white-space: nowrap;
-      width: 62px;
-    }
-    .box-sq {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border: 1.2px solid #475569;
-      background: #ffffff;
-      vertical-align: -1px;
-      margin-right: 2px;
-    }
-    .extra-notice, .empty-notice {
-      background: #f8fafc;
-      font-size: 6.8pt;
-      color: #475569;
-      text-align: center;
-      padding: 5px !important;
-      font-style: italic;
-    }
-
-    /* ==========================================
-       5. OBSERVACIONES & TOTALES (FORMATO FACTURA)
-       ========================================== */
-    .dte-obs-totals-grid {
-      display: grid;
-      grid-template-columns: 1.45fr 1fr;
-      gap: 7px;
-    }
-    .obs-box {
-      border: 1px solid #cbd5e1;
-      background: #ffffff;
-    }
-    .obs-box-head {
-      background: #e2edf8;
-      border-bottom: 1px solid #cbd5e1;
-      padding: 2.5px 7px;
-      font-size: 6.7pt;
-      font-weight: 800;
-      color: #1e5b9b;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-    }
-    .obs-box-body {
-      padding: 5px 8px;
-      font-size: 6.9pt;
-      line-height: 1.38;
-      color: #334155;
-    }
-    .obs-line {
-      margin-bottom: 3.5px;
-    }
-    .obs-protocols {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      font-size: 6.6pt;
-      color: #475569;
-      border-top: 1px dashed #cbd5e1;
-      padding-top: 3.5px;
-    }
-
-    /* Totales Cuadro Estilo Factura */
-    .totals-box {
-      border: 1px solid #cbd5e1;
-      background: #ffffff;
-    }
-    .totals-table {
+    table.modern {
       width: 100%;
       border-collapse: collapse;
-      font-size: 7.2pt;
+      font-size: 8pt;
     }
-    .totals-table td {
-      padding: 3px 8px;
-      border-bottom: 1px solid #f1f5f9;
+    table.modern thead {
+      display: table-header-group;
     }
-    .totals-lbl {
+    table.modern tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    table.modern th {
+      background: #f8fafc;
       color: #475569;
-      font-weight: 600;
+      font-size: 7pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 4px 6.5px;
+      text-align: left;
+      border-bottom: 1px solid #cbd5e1;
     }
-    .totals-val {
-      text-align: right;
+    table.modern td {
+      padding: 3.5px 6.5px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    table.modern tbody tr:last-child td {
+      border-bottom: none;
+    }
+    table.modern .c { text-align: center; }
+    table.modern .nw { white-space: nowrap; }
+    .eq-desc {
       font-weight: 700;
       color: #0f172a;
-      font-family: 'Courier New', Courier, monospace;
     }
-    .total-final-row td {
-      background: #1e5b9b !important;
-      color: #ffffff !important;
-      font-size: 7.8pt !important;
-      font-weight: 800 !important;
-      border-bottom: none !important;
-      padding: 4px 8px !important;
+    .status-pill {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      font-size: 7pt;
+      font-weight: 800;
     }
-    .total-final-row .totals-lbl {
-      color: #ffffff !important;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
+    .empty-row {
+      text-align: center;
+      color: #475569;
+      font-style: italic;
+      padding: 7px !important;
+      background: #f8fafc;
     }
-    .total-final-row .totals-val {
-      color: #ffffff !important;
-      font-size: 8.5pt !important;
+    .table-foot {
+      padding: 4px 10px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      font-size: 8pt;
+      color: #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      break-inside: avoid;
     }
 
-    /* ==========================================
-       6. ACTA DE CONFORMIDAD Y RECEPCIÓN (FIRMAS)
-       ========================================== */
-    .dte-signatures-section {
-      border: 1px solid #cbd5e1;
+    /* 6. Control de montaje y seguridad operativa */
+    .field-row {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 7.5px;
+      break-inside: avoid;
+    }
+    .chk-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .chk-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      padding: 2.5px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 8pt;
+      color: #0f172a;
+    }
+    .chk-list li:last-child {
+      border-bottom: none;
+    }
+    .box-c {
+      display: inline-block;
+      width: 9.5px;
+      height: 9.5px;
+      border: 1.3px solid #64748b;
+      border-radius: 2px;
+      vertical-align: -1.5px;
+      margin-right: 5px;
       background: #ffffff;
     }
-    .signatures-head {
-      background: #e2edf8;
-      border-bottom: 1px solid #cbd5e1;
-      padding: 2.5px 7px;
-      font-size: 6.7pt;
-      font-weight: 800;
-      color: #1e5b9b;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-    }
-    .signatures-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-    }
-    .sign-card {
-      padding: 5px 8px 4px;
-      border-right: 1px solid #cbd5e1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .sign-card:last-child {
-      border-right: none;
-    }
-    .sign-role-title {
-      margin: 0;
-      font-size: 6.7pt;
-      font-weight: 800;
-      color: #1e5b9b;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-    }
-    .sign-meta-lines {
-      margin: 2px 0 4px;
-      font-size: 6.4pt;
+    .pend-soft {
+      font-size: 6.9pt;
       color: #475569;
-      line-height: 1.3;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 0.5px 5.5px;
+      border-radius: 999px;
+      white-space: nowrap;
+      font-weight: 600;
     }
-    .sign-meta-lines div {
-      display: flex;
-      justify-content: space-between;
+    .sec-guide {
+      font-size: 7.3pt;
+      color: #475569;
+      background: #f8fafc;
+      border-left: 2.5px solid #94a3b8;
+      padding: 2px 6.5px;
+      margin: 0 0 3px;
+      border-radius: 0 3px 3px 0;
     }
-    .sign-meta-lines strong {
-      color: #0f172a;
-    }
-    .sign-draw-area {
-      height: 20px;
-    }
-    .sign-rule {
-      border-bottom: 1px solid #64748b;
-      margin-bottom: 2px;
-    }
-    .sign-caption {
-      margin: 0;
-      font-size: 6pt;
-      font-weight: 700;
+    .mini-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 10px;
+      margin-top: 4px;
+      padding-top: 4px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 8pt;
       color: #334155;
-      text-align: center;
-      text-transform: uppercase;
     }
-    .sign-rut-row {
-      margin: 1px 0 0;
-      font-size: 5.9pt;
-      color: #64748b;
-      text-align: center;
-      font-family: 'Courier New', Courier, monospace;
+    .mini-line {
+      border-bottom: 1px solid #94a3b8;
+      padding-bottom: 1.5px;
+      min-height: 14px;
+    }
+    .mini-line.full {
+      grid-column: 1 / -1;
+      min-height: 15px;
     }
 
-    /* ==========================================
-       7. TIMBRE ELECTRÓNICO SII & TRAZABILIDAD
-       ========================================== */
-    .dte-timbre-grid {
-      display: grid;
-      grid-template-columns: 1.15fr 1.65fr;
-      gap: 12px;
-      align-items: center;
-      border-top: 1px solid #cbd5e1;
-      padding-top: 4px;
-    }
-    .timbre-col {
+    /* 7. Cierre operacional: Conformidad + Trazabilidad agrupados para evitar páginas huérfanas */
+    .closing-block {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      text-align: center;
+      gap: 5.5px;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
-    .pdf417-svg {
-      width: 100%;
-      max-width: 175px;
-      height: 27px;
-      display: block;
+
+    /* 7a. Tres bloques de conformidad y firma manual */
+    .conf-section {
+      break-inside: avoid;
     }
-    .timbre-caption {
-      margin: 2px 0 0.5px;
-      font-size: 6.4pt;
+    .conf-section-lbl {
+      font-size: 7.1pt;
+      font-weight: 800;
+      color: #024ffc;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 3px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .conf-section-sub {
+      font-size: 7.1pt;
+      font-weight: 500;
+      color: #64748b;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .conf-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7.5px;
+    }
+    .conf-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 5px 9px;
+      background: #fcfcfd;
+      display: flex;
+      flex-direction: column;
+    }
+    .conf-t {
+      font-size: 8pt;
       font-weight: 800;
       color: #031c43;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
+      line-height: 1.15;
     }
-    .timbre-sub {
-      margin: 0;
-      font-size: 5.7pt;
+    .conf-s {
+      font-size: 7.1pt;
       color: #64748b;
-      line-height: 1.25;
+      margin-top: 1px;
     }
-    .info-col {
-      font-size: 6.3pt;
+    .conf-pad {
+      height: 22px;
+      border-bottom: 1px solid #64748b;
+      margin: 3px 0;
+    }
+    .conf-meta {
+      font-size: 7.4pt;
       color: #475569;
+      line-height: 1.42;
+    }
+
+    /* 8. Trazabilidad operativa interna (única zona con RabbitMQ y Event ID) */
+    .trace-wrap {
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      background: #f8fafc;
+      padding: 4.5px 9px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      break-inside: avoid;
+    }
+    .trace-text {
+      flex: 1;
+      font-size: 7.2pt;
+      color: #334155;
       line-height: 1.35;
     }
-    .info-title {
-      margin: 0 0 2px;
-      font-size: 6.7pt;
+    .trace-text strong {
+      color: #031c43;
+    }
+    .trace-eyebrow {
+      font-size: 6.8pt;
       font-weight: 800;
-      color: #1e5b9b;
+      color: #475569;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.06em;
+      margin-bottom: 1px;
     }
-    .info-kv {
-      font-family: 'Courier New', Courier, monospace;
-      color: #1e293b;
-      font-size: 6.2pt;
-    }
-
-    /* ==========================================
-       8. FOOTER
-       ========================================== */
-    .dte-footer {
-      border-top: 1px solid #cbd5e1;
-      padding-top: 2.5px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 6.2pt;
+    .trace-disclaimer {
+      margin-top: 1px;
+      font-size: 6.9pt;
       color: #64748b;
     }
-    .dte-footer strong {
-      color: #031c43;
+    .qr-box {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
+      padding: 2px;
+      background: #ffffff;
+    }
+    .qr-cap {
+      font-size: 5.9pt;
+      font-weight: 700;
+      color: #475569;
+      margin-top: 1px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
   </style>
 </head>
 <body>
-  <main class="sheet">
+  <div class="top-accent"></div>
 
-    <!-- 1. ENCABEZADO DTE CHILENO (EMISOR + CAJETÍN ROJO SII) -->
-    <header class="dte-header">
-      <div class="dte-issuer">
-        <div class="issuer-logo-row">
-          <svg
-            class="emx-official-logo"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="145 154 1606 328"
-            role="img"
-            aria-label="EventoMax SpA"
-          >
-            <path d="${EVENTOMAX_LOGO_BLUE_PATH}" fill="#024ffc" fill-rule="evenodd" stroke="#024ffc" stroke-width="0.25" stroke-linejoin="round"/>
-            <path d="${EVENTOMAX_LOGO_NAVY_PATH}" fill="#031c43" fill-rule="evenodd" stroke="#031c43" stroke-width="0.25" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <p class="issuer-slogan">EVENTOMAX SpA · SERVICIOS INTEGRALES DE PRODUCCIÓN TÉCNICA Y MONTAJE</p>
-        <table class="issuer-meta-table">
-          <tr>
-            <td class="meta-lbl">RUT Emisor</td>
-            <td class="meta-sep">:</td>
-            <td class="meta-val"><strong>77.892.410-K</strong></td>
-          </tr>
-          <tr>
-            <td class="meta-lbl">Razón Social</td>
-            <td class="meta-sep">:</td>
-            <td class="meta-val">EVENTOMAX SpA</td>
-          </tr>
-          <tr>
-            <td class="meta-lbl">Giro</td>
-            <td class="meta-sep">:</td>
-            <td class="meta-val">Servicios de producción técnica y montaje de eventos masivos</td>
-          </tr>
-          <tr>
-            <td class="meta-lbl">Dirección</td>
-            <td class="meta-sep">:</td>
-            <td class="meta-val">Av. Bernardo O'Higgins 450, Of. 802</td>
-          </tr>
-          <tr>
-            <td class="meta-lbl">Comuna / Ciudad</td>
-            <td class="meta-sep">:</td>
-            <td class="meta-val">Concepción, Región del Biobío</td>
-          </tr>
-          <tr>
-            <td class="meta-lbl">Contacto</td>
-            <td class="meta-sep">:</td>
-            <td class="meta-val">+56 41 299 5000 &nbsp;|&nbsp; operaciones@eventomax.cl</td>
-          </tr>
-        </table>
+  <main class="doc-flow">
+    <header class="hero">
+      <div class="hero-left">
+        <svg
+          class="emx-official-logo"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="145 154 1606 328"
+          role="img"
+          aria-label="EventoMax"
+        >
+          <path d="${EVENTOMAX_LOGO_BLUE_PATH}" fill="#024ffc" fill-rule="evenodd" />
+          <path d="${EVENTOMAX_LOGO_NAVY_PATH}" fill="#031c43" fill-rule="evenodd" />
+        </svg>
+        <h1 class="hero-title">Orden de Trabajo Técnica</h1>
+        <p class="hero-sub">Hoja de Ruta de Cuadrilla · Operaciones de Montaje</p>
       </div>
-
-      <div class="dte-cajetin-col">
-        <div class="cajetin-sii">
-          <p class="cajetin-rut">R.U.T.: 77.892.410-K</p>
-          <h1 class="cajetin-title">ORDEN DE TRABAJO TÉCNICA</h1>
-          <p class="cajetin-number">N° ${dteFolioNumber}</p>
+      <div class="hero-right">
+        <span class="folio-pill">${escapeHtml(folioShort)} · Producción #${escapeHtml(ticket.productionId)}</span>
+        <div class="hero-meta">
+          <div><strong>Emisión:</strong> ${escapeHtml(issuedCl.full)}</div>
+          <div><strong>Trazabilidad:</strong> <span class="mono">${escapeHtml(docCode)}</span></div>
         </div>
-        <p class="cajetin-sii-sub">S.I.I. - CONCEPCIÓN</p>
       </div>
     </header>
 
-    <!-- 2. BANNER CENTRAL -->
-    <div class="dte-banner">
-      <h2 class="dte-banner-title">ORDEN DE TRABAJO TÉCNICA</h2>
-      <p class="dte-banner-sub">Documento Operativo Electrónico · Hoja de Ruta y Despacho de Terreno</p>
-    </div>
-
-    <!-- 3. BLOQUES DE METADATOS (CLIENTE & ORDEN) -->
-    <section class="dte-meta-grid">
-      <div class="meta-box">
-        <div class="meta-box-head">INFORMACIÓN DEL CLIENTE Y EVENTO</div>
-        <div class="meta-box-body">
-          <table class="meta-grid-table">
-            <tr>
-              <td class="grid-lbl">${orgInfo ? 'RUT Mandante' : 'RUT / ID Mandante'}</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val">${orgInfo ? `<strong>${escapeHtml(orgInfo.rut)}</strong>` : `<span class="tag-mono">${escapeHtml(organizerId || 'No informado')}</span>`}</td>
-            </tr>
-            ${orgInfo ? `<tr>
-              <td class="grid-lbl">Razón Social Mandante</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val"><strong>${escapeHtml(orgInfo.corporateName)}</strong> <span class="tag-mono">${escapeHtml(organizerId)}</span></td>
-            </tr>
-            <tr>
-              <td class="grid-lbl">Contacto Mandante</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val">${escapeHtml(orgInfo.contactName)}</td>
-            </tr>` : ''}
-            <tr>
-              <td class="grid-lbl">Producción / Evento</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val"><strong>${escapeHtml(ticket.productionName)}</strong></td>
-            </tr>
-            <tr>
-              <td class="grid-lbl">Recinto / Ubicación</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val">${escapeHtml(ticket.location)}</td>
-            </tr>
-            <tr>
-              <td class="grid-lbl">Fecha Programada</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val"><strong>${formatEsDate(ticket.scheduledAt)}</strong></td>
-            </tr>
-            <tr>
-              <td class="grid-lbl">Directiva de Terreno</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val">${escapeHtml(directive)}</td>
-            </tr>
-          </table>
-        </div>
+    <section class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-k">Estado al Emitir Ticket</div>
+        <div class="kpi-v"><span class="dot dot-blue"></span>${escapeHtml(emitStatusDisplay)}</div>
+        <div class="kpi-s">Ticket #${escapeHtml(ticket.id)} (histórico)</div>
       </div>
-
-      <div class="meta-box">
-        <div class="meta-box-head">INFORMACIÓN DE LA ORDEN DE MONTAJE</div>
-        <div class="meta-box-body">
-          <table class="meta-grid-table">
-            <tr>
-              <td class="grid-lbl">Folio Orden (OT)</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val"><strong>${escapeHtml(folioShort)}</strong> (Ticket #${escapeHtml(ticket.id)})</td>
-            </tr>
-            <tr>
-              <td class="grid-lbl">Fecha de Emisión</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val">${formatEsDateShort(ticket.createdAt)}</td>
-            </tr>
-            <tr>
-              <td class="grid-lbl">Cuadrilla Asignada</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val"><strong>${escapeHtml(crewName || 'Cuadrilla Técnica Alfa')}</strong> <span class="tag-mono">${escapeHtml(crewId || 'crew-alfa-stgo')}</span></td>
-            </tr>
-            <tr>
-              <td class="grid-lbl">Estado Operativo</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val"><strong>${escapeHtml(statusLabel.toUpperCase())}</strong></td>
-            </tr>
-            <tr>
-              <td class="grid-lbl">Condición de Entrega</td>
-              <td class="grid-sep">:</td>
-              <td class="grid-val">Despacho In-Situ y Montaje en Recinto</td>
-            </tr>
-          </table>
-        </div>
+      <div class="kpi-card">
+        <div class="kpi-k">Estado Actual Producción</div>
+        <div class="kpi-v"><span class="dot dot-slate"></span>${escapeHtml(currentStatusDisplay)}</div>
+        <div class="kpi-s">${escapeHtml(currentStatusContext)}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-k">Fecha Programada</div>
+        <div class="kpi-v">${escapeHtml(scheduled.kpiMain)}</div>
+        <div class="kpi-s">${escapeHtml(scheduled.kpiSub)}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-k">Equipamiento Reservado</div>
+        <div class="kpi-v"><span class="dot dot-amber"></span>${escapeHtml(kpiEquipmentValue)}</div>
+        <div class="kpi-s">Despacho: Sin registro disponible</div>
       </div>
     </section>
 
-    <!-- 4. TABLA DE ÍTEMS / MANIFIESTO DE EQUIPAMIENTO TÉCNICO -->
-    <table class="dte-table">
-      <thead>
-        <tr>
-          <th class="center" style="width: 4%;">N°</th>
-          <th class="center" style="width: 10%;">Cód. Equipo</th>
-          <th class="center" style="width: 11%;">Cód. Reserva</th>
-          <th style="width: 37%;">Detalle / Equipamiento Técnico (Catálogo Oficial)</th>
-          <th class="center" style="width: 8%;">Cantidad</th>
-          <th class="center" style="width: 9%;">Estado</th>
-          <th class="center" style="width: 7%;">Bodega</th>
-          <th class="center" style="width: 7%;">Terreno</th>
-          <th class="center" style="width: 7%;">Retorno</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${reservationsRows}
-      </tbody>
-    </table>
-
-    <!-- 5. OBSERVACIONES & TOTALES (ESTILO FACTURA) -->
-    <section class="dte-obs-totals-grid">
-      <div class="obs-box">
-        <div class="obs-box-head">OBSERVACIONES Y PROTOCOLO DE SEGURIDAD</div>
-        <div class="obs-box-body">
-          <p class="obs-line"><strong>Hoja de Ruta:</strong> ${escapeHtml(ticket.instructions)}</p>
-          <div class="obs-protocols">
-            <span>• <strong>EPP Obligatorio:</strong> Uso mandatorio de calzado de seguridad, guantes y chaleco reflectante.</span>
-            <span>• <strong>Seguridad Eléctrica:</strong> Verificación de tableros con puesta a tierra y protección diferencial.</span>
-            <span>• <strong>Rigging & Estructuras:</strong> Sujeción certificada con cables de seguridad en motores y trusses.</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="totals-box">
-        <table class="totals-table">
+    <section class="cards-2">
+      <div class="card">
+        <p class="card-eyebrow">Información del Evento</p>
+        <h2 class="card-heading">${escapeHtml(ticket.productionName || `Producción #${ticket.productionId}`)}</h2>
+        <table class="kv-clean">
           <tr>
-            <td class="totals-lbl">Total Partidas Técnicas</td>
-            <td class="totals-val">${reservations.length} partidas</td>
+            <td class="k">Ubicación</td>
+            <td class="v">${escapeHtml(ticket.location || 'No disponible')}</td>
           </tr>
           <tr>
-            <td class="totals-lbl">Total Unidades Despachadas</td>
-            <td class="totals-val">${totalUnits} u.</td>
+            <td class="k">Organizador</td>
+            <td class="v"><strong>${escapeHtml(organizerNameDisplay)}</strong></td>
           </tr>
           <tr>
-            <td class="totals-lbl">Control Despacho Bodega</td>
-            <td class="totals-val">✓ Conforme</td>
-          </tr>
-          <tr class="total-final-row">
-            <td class="totals-lbl">Dotación Consolidada</td>
-            <td class="totals-val">${totalUnits} UDS.</td>
+            <td class="k">ID Organizador</td>
+            <td class="v muted">${escapeHtml(organizerIdDisplay)}</td>
           </tr>
         </table>
+        ${
+          closedBeforeScheduledDate
+            ? `<div class="context-note">Nota: producción cerrada antes de la fecha programada (datos de origen sin alteración).</div>`
+            : ''
+        }
+      </div>
+
+      <div class="card">
+        <p class="card-eyebrow">Asignación de Cuadrilla</p>
+        <h2 class="card-heading">${escapeHtml(historicalCrewName || 'Sin registro')}</h2>
+        <table class="kv-clean">
+          <tr>
+            <td class="k">ID Cuadrilla</td>
+            <td class="v">${historicalCrewId ? `<span class="id-tag">${escapeHtml(historicalCrewId)}</span>` : '<span class="muted">No disponible</span>'}</td>
+          </tr>
+          <tr>
+            <td class="k">Jefe de Cuadrilla</td>
+            <td class="v muted">Sin registro (completar en terreno)</td>
+          </tr>
+          <tr>
+            <td class="k">Producción</td>
+            <td class="v mono">#${escapeHtml(ticket.productionId)} · Folio ${escapeHtml(folioShort)}</td>
+          </tr>
+          <tr>
+            <td class="k">Fecha Programada</td>
+            <td class="v">${escapeHtml(scheduled.full)}</td>
+          </tr>
+        </table>
+        ${
+          showCurrentCrewDiff
+            ? `<div class="context-note">Cuadrilla vigente en producción: <strong>${escapeHtml(currentCrewName || 'Sin registro')}</strong>${currentCrewId ? ` (${escapeHtml(currentCrewId)})` : ''}.</div>`
+            : ''
+        }
       </div>
     </section>
 
-    <!-- 6. ACTA DE CONFORMIDAD Y RECEPCIÓN EN TERRENO (FIRMAS) -->
-    <section class="dte-signatures-section">
-      <div class="signatures-head">ACTA DE CONFORMIDAD Y RECEPCIÓN EN TERRENO</div>
-      <div class="signatures-grid">
-        <div class="sign-card">
-          <p class="sign-role-title">Despacho Logística &amp; Bodega</p>
-          <div class="sign-meta-lines">
-            <div><span>Despachador:</span> <strong>${escapeHtml(formatActorLabel(actorOwnerId))}</strong></div>
-            <div><span>Fecha Salida:</span> <strong>${formatEsDateShort(ticket.createdAt)}</strong></div>
-          </div>
-          <div class="sign-draw-area"></div>
-          <div class="sign-rule"></div>
-          <p class="sign-caption">Firma / Sello Despacho Bodega</p>
-          <div class="sign-rut-row">RUT: ____________________</div>
-        </div>
+    <section class="inst-strip">
+      <div>
+        <div class="inst-k">Instrucciones Operativas</div>
+        <p class="inst-v">${escapeHtml(directiveText)}</p>
+      </div>
+      <div class="inst-obs">
+        <div class="inst-k" style="color:#475569;">Observaciones de Montaje</div>
+        <div>Sin registro. Pendiente de completar en terreno si corresponde.</div>
+      </div>
+    </section>
 
-        <div class="sign-card">
-          <p class="sign-role-title">Jefatura Cuadrilla Técnica</p>
-          <div class="sign-meta-lines">
-            <div><span>Cuadrilla:</span> <strong>${escapeHtml(crewName || 'Cuadrilla Técnica')}</strong></div>
-            <div><span>Arribo Real:</span> <strong>[ ____ : ____ h ]</strong></div>
-          </div>
-          <div class="sign-draw-area"></div>
-          <div class="sign-rule"></div>
-          <p class="sign-caption">Firma Recepción Jefe Cuadrilla</p>
-          <div class="sign-rut-row">RUT: ____________________</div>
-        </div>
+    <section class="table-card">
+      <div class="table-top">
+        <span class="table-title">Manifiesto de Equipamiento (Catálogo)</span>
+        <span class="table-note">Inventario reservado · Despacho: Sin registro disponible</span>
+      </div>
+      <table class="modern">
+        <thead>
+          <tr>
+            <th class="c" style="width:5%;">Ítem</th>
+            <th class="c" style="width:10%;">ID Equipo</th>
+            <th style="width:33%;">Descripción del Equipamiento</th>
+            <th class="c" style="width:16%;">Reserva</th>
+            <th class="c" style="width:11%;">Cantidad</th>
+            <th class="c" style="width:11%;">Estado</th>
+            <th style="width:14%;">Observaciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${reservationsRows}
+        </tbody>
+      </table>
+      <div class="table-foot">
+        <span><strong>Total reservado:</strong> ${totalItems > 0 ? `${escapeHtml(itemsLabel)} (${escapeHtml(unitsLabel)})` : 'Sin reservas registradas'}</span>
+        <span><strong>Despacho:</strong> Sin registro disponible en el sistema</span>
+      </div>
+    </section>
 
-        <div class="sign-card">
-          <p class="sign-role-title">Supervisión Recinto / Mandante</p>
-          <div class="sign-meta-lines">
-            <div><span>${orgInfo ? 'Mandante:' : 'Recinto:'}</span> <strong>${escapeHtml(orgInfo ? orgInfo.contactName : ticket.location)}</strong></div>
-            <div><span>Término Real:</span> <strong>[ ____ : ____ h ]</strong></div>
-          </div>
-          <div class="sign-draw-area"></div>
-          <div class="sign-rule"></div>
-          <p class="sign-caption">Firma V°B° Entrega a Producción</p>
-          <div class="sign-rut-row">${orgInfo ? `RUT: ${escapeHtml(orgInfo.rut)}` : 'RUT / Nombre: ____________________'}</div>
+    <section class="field-row">
+      <div class="card">
+        <p class="card-eyebrow">Control de Montaje y Despacho</p>
+        <ul class="chk-list">
+          <li><span><span class="box-c"></span>Verificación de equipamiento</span><span class="pend-soft">Pendiente</span></li>
+          <li><span><span class="box-c"></span>Inspección física previa</span><span class="pend-soft">Pendiente</span></li>
+          <li><span><span class="box-c"></span>Entrega de materiales</span><span class="pend-soft">Pendiente</span></li>
+          <li><span><span class="box-c"></span>Recepción en terreno</span><span class="pend-soft">Pendiente</span></li>
+        </ul>
+        <div class="mini-inputs">
+          <div class="mini-line">Fecha/Hora recepción:</div>
+          <div class="mini-line">Resp. entrega:</div>
+          <div class="mini-line">Resp. recepción:</div>
+          <div class="mini-line">Incidencias:</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="card-eyebrow">Seguridad Operativa</p>
+        <div class="sec-guide">Directrices recomendadas. Marcar únicamente tras verificación real en terreno.</div>
+        <ul class="chk-list">
+          <li><span><span class="box-c"></span><strong>EPP requerido:</strong> calzado, guantes, chaleco</span><span class="pend-soft">Sin registro</span></li>
+          <li><span><span class="box-c"></span><strong>Verificación eléctrica:</strong> tierra y diferencial</span><span class="pend-soft">Sin registro</span></li>
+          <li><span><span class="box-c"></span><strong>Revisión de conexiones:</strong> energía y sonido</span><span class="pend-soft">Sin registro</span></li>
+          <li><span><span class="box-c"></span><strong>Condiciones del recinto:</strong> accesos y despeje</span><span class="pend-soft">Sin registro</span></li>
+        </ul>
+        <div class="mini-inputs" style="margin-top:5px;padding-top:5px;">
+          <div class="mini-line full">Observaciones de seguridad:</div>
         </div>
       </div>
     </section>
 
-    <!-- 7. TIMBRE ELECTRÓNICO SII & INFORMACIÓN ADICIONAL -->
-    <section class="dte-timbre-grid">
-      <div class="timbre-col">
-        ${barcodeSvg}
-        <p class="timbre-caption">TIMBRE OPERATIVO EVENTOMAX · FORMATO DTE SII</p>
-        <p class="timbre-sub">
-          Res. N° 80 de 2014 - Verifique documento: www.sii.cl<br/>
-          Trazabilidad Operativa CSV: ${escapeHtml(csvCode)}
-        </p>
-      </div>
+    <div class="closing-block">
+      <section class="conf-section">
+        <div class="conf-section-lbl">
+          <span>Conformidad y Custodia en Terreno</span>
+          <span class="conf-section-sub">Espacios en blanco para firma manual · Sin firma electrónica registrada</span>
+        </div>
+        <div class="conf-grid-3">
+          <div class="conf-card">
+            <div class="conf-t">Entrega / Despacho Bodega</div>
+            <div class="conf-s">Retiro físico de equipamiento</div>
+            <div class="conf-pad"></div>
+            <div class="conf-meta">Nombre: ___________________<br />Fecha/Hora: _______________</div>
+          </div>
+          <div class="conf-card">
+            <div class="conf-t">Responsable de Cuadrilla</div>
+            <div class="conf-s">${escapeHtml(historicalCrewName || 'Pendiente de completar en terreno')}</div>
+            <div class="conf-pad"></div>
+            <div class="conf-meta">Nombre: ___________________<br />Fecha/Hora: _______________</div>
+          </div>
+          <div class="conf-card">
+            <div class="conf-t">Recepción en Terreno / Producción</div>
+            <div class="conf-s">Conformidad de montaje</div>
+            <div class="conf-pad"></div>
+            <div class="conf-meta">Nombre: ___________________<br />Fecha/Hora: _______________</div>
+          </div>
+        </div>
+      </section>
 
-      <div class="info-col">
-        <h3 class="info-title">INFORMACIÓN ADICIONAL Y TRAZABILIDAD ELECTRÓNICA</h3>
-        <div>Documento emitido electrónicamente por el Sistema de Operaciones EventoMax conforme a la Ley N° 19.799.</div>
-        <div class="info-kv">Código Documento: ${escapeHtml(docCode)} &nbsp;|&nbsp; Broker: RabbitMQ Topic Exchange</div>
-        <div class="info-kv">RabbitMQ Event ID: ${escapeHtml(ticket.eventId)} &nbsp;|&nbsp; Emisión: ${formatUtcStamp(ticket.createdAt)}</div>
-        <div>Este documento es una representación impresa oficial de la Orden de Trabajo Técnica (OT) para montaje y logística en terreno.</div>
-      </div>
-    </section>
-
-    <!-- 8. FOOTER -->
-    <footer class="dte-footer">
-      <span>EventoMax Operaciones · Orden Oficial de Trabajo Técnico (Ley N° 19.799) · CSV ${escapeHtml(csvCode)}</span>
-      <strong>Página 1 de 1</strong>
-    </footer>
-
+      <section class="trace-wrap">
+        <div class="trace-text">
+          <div class="trace-eyebrow">Trazabilidad Operativa Interna</div>
+          <div><strong>Sistema Emisor:</strong> EventoMax · Cola q.cmd.crew (ms-eventomax-notify) &nbsp;|&nbsp; <strong>Código:</strong> <span class="mono">${escapeHtml(docCode)}</span></div>
+          <div><strong>Evento RabbitMQ:</strong> <span class="mono">${escapeHtml(ticket.eventId || 'No disponible')}</span> &nbsp;|&nbsp; <strong>Registro UTC:</strong> <span class="mono">${escapeHtml(issuedUtc)}</span></div>
+          <div class="trace-disclaimer">Documento operativo interno sin validez tributaria ni timbre SII. El código QR codifica metadatos de trazabilidad interna del ticket; no constituye validación criptográfica ni verificación en línea.</div>
+        </div>
+        <div class="qr-box">
+          ${qrSvg}
+          <span class="qr-cap">QR Interno</span>
+        </div>
+      </section>
+    </div>
   </main>
 </body>
 </html>`;
 }
 
 let savedDocumentTitle: string | null = null;
+let pendingPrintFrameId: number | null = null;
+
+function cancelPendingPrintFrame(): void {
+  if (pendingPrintFrameId !== null) {
+    if (typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(pendingPrintFrameId);
+    }
+    pendingPrintFrameId = null;
+  }
+}
 
 function restoreMainDocumentTitle(): void {
   if (typeof document !== 'undefined' && savedDocumentTitle !== null) {
@@ -1067,6 +1075,7 @@ function restoreMainDocumentTitle(): void {
 }
 
 export function removeExistingCrewTicketPrintFrame(): void {
+  cancelPendingPrintFrame();
   if (typeof document === 'undefined') return;
   restoreMainDocumentTitle();
   document
@@ -1074,7 +1083,7 @@ export function removeExistingCrewTicketPrintFrame(): void {
     .forEach((frame) => frame.remove());
 }
 
-export function triggerCrewTicketSinglePagePrint(data: CrewTicketPrintData): void {
+export function triggerCrewTicketPrint(data: CrewTicketPrintData): void {
   if (typeof document === 'undefined') return;
   removeExistingCrewTicketPrintFrame();
 
@@ -1110,6 +1119,11 @@ export function triggerCrewTicketSinglePagePrint(data: CrewTicketPrintData): voi
   doc.close();
 
   const invokePrint = (): void => {
+    pendingPrintFrameId = null;
+    if (!iframe.isConnected) {
+      restoreMainDocumentTitle();
+      return;
+    }
     savedDocumentTitle = document.title;
     document.title = docTitle;
     if (typeof window !== 'undefined') {
@@ -1129,8 +1143,11 @@ export function triggerCrewTicketSinglePagePrint(data: CrewTicketPrintData): voi
   };
 
   if (typeof requestAnimationFrame === 'function') {
-    requestAnimationFrame(() => invokePrint());
+    pendingPrintFrameId = requestAnimationFrame(() => invokePrint());
   } else {
     invokePrint();
   }
 }
+
+/** Backward-compatible alias for existing callers */
+export const triggerCrewTicketSinglePagePrint = triggerCrewTicketPrint;

@@ -24,17 +24,16 @@ import {
   LucidePackage,
   LucideCircleCheck,
   LucideCirclePause,
+  LucideClock,
   LucideSearch,
-  LucideChevronDown,
   LucidePackageOpen,
   LucideSearchX,
   LucideCircleAlert,
   LucideBoxes,
   LucideLayers,
+  LucidePencil,
+  LucidePlus,
   LucideX,
-  LucideUpload,
-  LucideTrash2,
-  LucideRefreshCw,
 } from '@lucide/angular';
 import { CatalogDataService } from './catalog-data.service';
 import { CatalogImageStorageService } from './services/catalog-image-storage.service';
@@ -47,6 +46,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
 import { ButtonDirective } from '../../shared/ui/button.component';
+import { CatalogSelectComponent, CatalogSelectOption } from './components/catalog-select/catalog-select.component';
+import { ClpRateInputComponent } from './components/clp-rate-input/clp-rate-input.component';
+import { CatalogImageDropzoneComponent } from './components/catalog-image-dropzone/catalog-image-dropzone.component';
 
 interface CatalogServicesState {
   readonly data: readonly CatalogService[];
@@ -67,23 +69,25 @@ interface EquipmentState {
     ReactiveFormsModule,
     CurrencyPipe,
     ButtonDirective,
+    CatalogSelectComponent,
+    ClpRateInputComponent,
+    CatalogImageDropzoneComponent,
     LucidePackage,
     LucideCircleCheck,
     LucideCirclePause,
+    LucideClock,
     LucideSearch,
-    LucideChevronDown,
     LucidePackageOpen,
     LucideSearchX,
     LucideCircleAlert,
     LucideBoxes,
     LucideLayers,
+    LucidePencil,
+    LucidePlus,
     LucideX,
-    LucideUpload,
-    LucideTrash2,
-    LucideRefreshCw,
   ],
   templateUrl: './catalog.html',
-  styleUrl: './catalog.css',
+  styleUrls: ['./catalog.css', './catalog-page.css', './catalog-modals.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Catalog implements OnDestroy {
@@ -93,12 +97,78 @@ export class Catalog implements OnDestroy {
 
   readonly serviceImageDraft = signal<string | null>(null);
   readonly equipmentImageDraft = signal<string | null>(null);
+  readonly imageProcessing = signal<boolean>(false);
   readonly imageProcessingError = signal<string | null>(null);
+
+  private lastModalTrigger: HTMLElement | null = null;
+
+  readonly statusFilterOptions: readonly CatalogSelectOption[] = [
+    { value: '', label: 'Todos los estados', icon: 'all', tone: 'neutral' },
+    { value: 'active', label: 'Activos', icon: 'active', tone: 'positive' },
+    { value: 'inactive', label: 'Inactivos', icon: 'inactive', tone: 'neutral' },
+  ];
+
+  readonly serviceSortOptions: readonly CatalogSelectOption[] = [
+    { value: 'id-asc', label: 'Ordenar: ID (#1 - #8)', icon: 'sort', tone: 'neutral' },
+    { value: 'name-asc', label: 'Ordenar: Nombre (A → Z)', icon: 'sort', tone: 'brand' },
+    { value: 'name-desc', label: 'Ordenar: Nombre (Z → A)', icon: 'sort', tone: 'brand' },
+    { value: 'rate-desc', label: 'Ordenar: Mayor tarifa ($)', icon: 'sort', tone: 'brand' },
+    { value: 'rate-asc', label: 'Ordenar: Menor tarifa ($)', icon: 'sort', tone: 'brand' },
+  ];
+
+  readonly equipmentSortOptions: readonly CatalogSelectOption[] = [
+    { value: 'id-asc', label: 'Ordenar: ID (#1 - #8)', icon: 'sort', tone: 'neutral' },
+    { value: 'name-asc', label: 'Ordenar: Nombre (A → Z)', icon: 'sort', tone: 'brand' },
+    { value: 'name-desc', label: 'Ordenar: Nombre (Z → A)', icon: 'sort', tone: 'brand' },
+    { value: 'avail-desc', label: 'Ordenar: Mayor disponibilidad', icon: 'sort', tone: 'brand' },
+    { value: 'avail-asc', label: 'Ordenar: Menor disponibilidad', icon: 'sort', tone: 'brand' },
+  ];
+
+  readonly serviceModalStatusOptions: readonly CatalogSelectOption[] = [
+    {
+      value: true,
+      label: 'Activo',
+      description: 'Disponible para cotización y contratación',
+      icon: 'active',
+      tone: 'positive',
+    },
+    {
+      value: false,
+      label: 'Inactivo',
+      description: 'Oculto en nuevas solicitudes de producción',
+      icon: 'inactive',
+      tone: 'neutral',
+    },
+  ];
+
+  readonly equipmentModalStatusOptions: readonly CatalogSelectOption[] = [
+    {
+      value: true,
+      label: 'Activo',
+      description: 'Habilitado en inventario operativo',
+      icon: 'active',
+      tone: 'positive',
+    },
+    {
+      value: false,
+      label: 'Inactivo',
+      description: 'Fuera de servicio o retirado del catálogo',
+      icon: 'inactive',
+      tone: 'neutral',
+    },
+  ];
 
   readonly activeTab = signal<'services' | 'equipment'>('services');
 
   setActiveTab(tab: 'services' | 'equipment'): void {
     this.activeTab.set(tab);
+  }
+
+  onTabKeydown(event: KeyboardEvent): void {
+    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      event.preventDefault();
+      this.setActiveTab(this.activeTab() === 'services' ? 'equipment' : 'services');
+    }
   }
 
   // --- Services state ---
@@ -137,6 +207,7 @@ export class Catalog implements OnDestroy {
   private readonly selectedStatus = toSignal(this.status.valueChanges, { initialValue: '' });
   private readonly selectedServiceSort = toSignal(this.serviceSort.valueChanges, { initialValue: 'id-asc' });
 
+  readonly searchHasValue = computed(() => this.query().trim().length > 0);
   readonly hasActiveFilters = computed(
     () => this.query().trim() !== '' || this.selectedStatus() !== '' || this.selectedServiceSort() !== 'id-asc',
   );
@@ -190,6 +261,7 @@ export class Catalog implements OnDestroy {
   readonly isEquipmentDragging = signal(false);
 
   private async handleServiceFile(file: File): Promise<void> {
+    this.imageProcessing.set(true);
     try {
       this.imageProcessingError.set(null);
       const dataUrl = await this.imageStorage.processImageFile(file);
@@ -197,6 +269,8 @@ export class Catalog implements OnDestroy {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al procesar la imagen.';
       this.imageProcessingError.set(msg);
+    } finally {
+      this.imageProcessing.set(false);
     }
   }
 
@@ -246,8 +320,57 @@ export class Catalog implements OnDestroy {
     }
   }
 
-  openCreate(): void {
+  private captureModalTrigger(trigger?: HTMLElement | null): void {
+    if (trigger) {
+      this.lastModalTrigger = trigger;
+    } else if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      this.lastModalTrigger = document.activeElement;
+    }
+  }
+
+  private restoreModalTrigger(): void {
+    const target = this.lastModalTrigger;
+    this.lastModalTrigger = null;
+    if (target && typeof target.focus === 'function') {
+      setTimeout(() => target.focus(), 0);
+    }
+  }
+
+  private focusModalFirstField(selector: string): void {
+    if (typeof document === 'undefined') return;
+    setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(selector);
+      el?.focus();
+    }, 0);
+  }
+
+  onModalKeydown(event: KeyboardEvent, dialogEl: HTMLElement): void {
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(
+      dialogEl.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((el) => el.offsetParent !== null || el.getClientRects().length > 0);
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+
+    if (event.shiftKey) {
+      if (!active || active === first || !dialogEl.contains(active)) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else if (active === last || !dialogEl.contains(active)) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  openCreate(trigger?: HTMLElement): void {
     if (!this.canManage()) return;
+    this.captureModalTrigger(trigger);
     this.editingService.set(null);
     this.serviceImageDraft.set(null);
     this.imageProcessingError.set(null);
@@ -256,10 +379,12 @@ export class Catalog implements OnDestroy {
     this.saveMessage.set('');
     this.showEditor.set(true);
     this.syncBodyScrollLock();
+    this.focusModalFirstField('#service-modal-name');
   }
 
-  openEdit(item: CatalogService): void {
+  openEdit(item: CatalogService, trigger?: HTMLElement): void {
     if (!this.canManage()) return;
+    this.captureModalTrigger(trigger);
     this.editingService.set(item);
     this.serviceImageDraft.set(item.imageUrl || this.imageStorage.getImage('service', item.id) || null);
     this.imageProcessingError.set(null);
@@ -273,6 +398,7 @@ export class Catalog implements OnDestroy {
     this.saveMessage.set('');
     this.showEditor.set(true);
     this.syncBodyScrollLock();
+    this.focusModalFirstField('#service-modal-name');
   }
 
   closeEditor(): void {
@@ -282,6 +408,7 @@ export class Catalog implements OnDestroy {
     this.serviceImageDraft.set(null);
     this.imageProcessingError.set(null);
     this.syncBodyScrollLock();
+    this.restoreModalTrigger();
   }
 
   submitService(): void {
@@ -351,6 +478,10 @@ export class Catalog implements OnDestroy {
     return 'No se pudo guardar el servicio. Intenta nuevamente.';
   }
 
+  clearSearch(): void {
+    this.search.setValue('');
+  }
+
   clearFilters(): void {
     this.search.setValue('');
     this.status.setValue('');
@@ -399,6 +530,7 @@ export class Catalog implements OnDestroy {
   private readonly selectedEquipmentStatus = toSignal(this.equipmentStatus.valueChanges, { initialValue: '' });
   private readonly selectedEquipmentSort = toSignal(this.equipmentSort.valueChanges, { initialValue: 'id-asc' });
 
+  readonly equipmentSearchHasValue = computed(() => this.equipmentQuery().trim().length > 0);
   readonly hasActiveEquipmentFilters = computed(
     () => this.equipmentQuery().trim() !== '' || this.selectedEquipmentStatus() !== '' || this.selectedEquipmentSort() !== 'id-asc',
   );
@@ -501,6 +633,7 @@ export class Catalog implements OnDestroy {
   }
 
   private async handleEquipmentFile(file: File): Promise<void> {
+    this.imageProcessing.set(true);
     try {
       this.imageProcessingError.set(null);
       const dataUrl = await this.imageStorage.processImageFile(file);
@@ -508,6 +641,8 @@ export class Catalog implements OnDestroy {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al procesar la imagen.';
       this.imageProcessingError.set(msg);
+    } finally {
+      this.imageProcessing.set(false);
     }
   }
 
@@ -545,8 +680,9 @@ export class Catalog implements OnDestroy {
     this.equipmentImageDraft.set(null);
   }
 
-  openCreateEquipment(): void {
+  openCreateEquipment(trigger?: HTMLElement): void {
     if (!this.canManage()) return;
+    this.captureModalTrigger(trigger);
     this.editingEquipment.set(null);
     this.equipmentImageDraft.set(null);
     this.imageProcessingError.set(null);
@@ -563,10 +699,12 @@ export class Catalog implements OnDestroy {
     this.saveEquipmentMessage.set('');
     this.showEquipmentEditor.set(true);
     this.syncBodyScrollLock();
+    this.focusModalFirstField('#equip-modal-name');
   }
 
-  openEditEquipment(item: Equipment): void {
+  openEditEquipment(item: Equipment, trigger?: HTMLElement): void {
     if (!this.canManage()) return;
+    this.captureModalTrigger(trigger);
     this.editingEquipment.set(item);
     this.equipmentImageDraft.set(item.imageUrl || this.imageStorage.getImage('equipment', item.id) || null);
     this.imageProcessingError.set(null);
@@ -583,6 +721,7 @@ export class Catalog implements OnDestroy {
     this.saveEquipmentMessage.set('');
     this.showEquipmentEditor.set(true);
     this.syncBodyScrollLock();
+    this.focusModalFirstField('#equip-modal-name');
   }
 
   closeEquipmentEditor(): void {
@@ -593,6 +732,7 @@ export class Catalog implements OnDestroy {
     this.imageProcessingError.set(null);
     this.configureEquipmentFormMode(false);
     this.syncBodyScrollLock();
+    this.restoreModalTrigger();
   }
 
   submitEquipment(): void {
@@ -736,6 +876,10 @@ export class Catalog implements OnDestroy {
     if (error.status === 404) return 'El equipo ya no existe. Actualiza el listado.';
     if (error.status === 409) return 'Conflicto de concurrencia al actualizar el inventario. Reintenta la operación.';
     return 'No se pudo guardar el equipo. Intenta nuevamente.';
+  }
+
+  clearEquipmentSearch(): void {
+    this.equipmentSearch.setValue('');
   }
 
   clearEquipmentFilters(): void {

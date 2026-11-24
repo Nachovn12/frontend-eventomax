@@ -75,6 +75,9 @@ describe('Reports EP2 (EMX-105)', () => {
     expect(fixture.nativeElement.textContent).toContain('Solo eventos ProductionStatusChanged');
     expect(fixture.nativeElement.textContent).toContain('CONFIRMADO');
     expect(fixture.nativeElement.querySelectorAll('.report-bar-row')).toHaveLength(2);
+    // Report period timestamps rendered in Chile standard (October = CLST, UTC-3) with UTC tooltip
+    expect(fixture.nativeElement.textContent).toContain('14/10/2026 · 08:00 CLST (UTC-3)');
+    expect(fixture.nativeElement.textContent).toContain('15/10/2026 · 08:00 CLST (UTC-3)');
   });
 
   it('requests the selected reporting period', async () => {
@@ -178,5 +181,55 @@ describe('Reports EP2 (EMX-105)', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  // =========================================================================
+  // UI/UX-08 — Refinamiento integral de Reportes y Analítica
+  // =========================================================================
+
+  it('UI/UX-08: renders polling copy, es-CL decimal montage time, honest terminal ratio and tied top services', async () => {
+    const tiedServices: ReportTopServicesResponse = {
+      ...topServicesResponse,
+      items: [
+        { serviceId: 1, serviceName: 'Sonido Profesional Line Array', hireCount: 3 },
+        { serviceId: 4, serviceName: 'Streaming y Circuito Cerrado 4K', hireCount: 3 },
+      ],
+    };
+    const reportWithDecimal: ReportKpisResponse = {
+      ...response,
+      metrics: {
+        ...response.metrics,
+        averageMontageTimeMinutes: 3.14,
+        closedCount: 2,
+        cancelledCount: 0,
+      },
+    };
+    const api = {
+      getKpis: vi.fn(() => of(reportWithDecimal)),
+      getTopServices: vi.fn(() => of(tiedServices)),
+    };
+    await TestBed.configureTestingModule({
+      imports: [Reports],
+      providers: [
+        { provide: ReportsDataService, useValue: api },
+        { provide: KafkaAdminDataService, useValue: { isAvailable: false } },
+        { provide: AuthorizationService, useValue: { hasRole: () => true, hasScope: () => true } },
+        { provide: LOCALE_ID, useValue: 'es-CL' },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(Reports);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Sincronización automática · 30 s');
+    expect(text).not.toContain('Tiempo real · 30s');
+    expect(text).toContain('3,1 min');
+    expect(text).toContain('Transiciones a Cerrado');
+    expect(text).toContain('Transiciones a Cancelado');
+    expect(text).toContain('Cierres sobre terminales:');
+    expect(text).not.toContain('Tasa operativa:');
+    expect(text).toContain('Empate en primer lugar: 2 servicios (3 contrataciones)');
+    expect(text).not.toContain('Líder de demanda:');
   });
 });

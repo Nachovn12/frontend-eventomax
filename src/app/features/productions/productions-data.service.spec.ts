@@ -83,6 +83,22 @@ describe('ProductionsDataService', () => {
     req.flush({ id: 7, ...body, status: 'SOLICITADO' });
   });
 
+  it('creates a SELF production with organizerMode and canonical organizerId using POST', () => {
+    const body = {
+      organizerMode: 'SELF' as const,
+      organizerId: '00000000-0000-0000-0000-000000000001:00000000-0000-0000-0000-000000000002',
+      name: 'Evento Propio SELF',
+      scheduledAt: '2026-12-20T18:00:00',
+      location: 'Santiago',
+    };
+    service.createProduction(body).subscribe();
+    const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(body);
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ id: 8, ...body, status: 'SOLICITADO' });
+  });
+
   it('updates status with the backend contract via PUT', () => {
     service.updateStatus(7, { status: 'EN_MONTAJE' }).subscribe();
     const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions/7/status`);
@@ -133,5 +149,66 @@ describe('ProductionsDataService', () => {
     const req = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/productions/42/quote-pdf`);
     expect(req.request.method).toBe('GET');
     req.flush(mockBlob);
+  });
+
+  it('fetches organizer contact via GET /api/organizers/{organizerId}/contact without manual Authorization header', () => {
+    const ownerId = 'f191bdc8-7926-4722-9ec0-cba663701940:11111111-2222-3333-4444-555555555555';
+    const mockContact = {
+      id: 1,
+      organizerId: ownerId,
+      email: 'ig.valeria@duocuc.cl',
+      contactName: 'Ignacio Valeria',
+      phone: '+56912345678',
+      active: true,
+    };
+
+    service.getOrganizerContact(ownerId).subscribe((res) => {
+      expect(res).toEqual(mockContact);
+    });
+
+    const req = httpTestingController.expectOne(
+      `${environment.apiGatewayUrl}/api/organizers/${encodeURIComponent(ownerId)}/contact`
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush(mockContact);
+  });
+
+  it('upserts organizer contact via PUT /api/organizers/{organizerId}/contact without manual Authorization header', () => {
+    const body = {
+      email: 'ig.valeria@duocuc.cl',
+      contactName: 'Ignacio Valeria',
+      phone: '+56912345678',
+    };
+
+    service.upsertOrganizerContact('org-demo-ignacio-valeria', body).subscribe((res) => {
+      expect(res.email).toBe('ig.valeria@duocuc.cl');
+    });
+
+    const req = httpTestingController.expectOne(
+      `${environment.apiGatewayUrl}/api/organizers/org-demo-ignacio-valeria/contact`
+    );
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(body);
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ id: 1, organizerId: 'org-demo-ignacio-valeria', ...body, active: true });
+  });
+
+  it('propagates 404 and 403 errors from organizer contact endpoints', () => {
+    let status404 = 0;
+    service.getOrganizerContact('org-missing').subscribe({
+      error: (err) => (status404 = err.status),
+    });
+    const req404 = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/organizers/org-missing/contact`);
+    req404.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+    expect(status404).toBe(404);
+
+    let status403 = 0;
+    service.upsertOrganizerContact('org-other', { email: 'a@b.cl' }).subscribe({
+      error: (err) => (status403 = err.status),
+    });
+    const req403 = httpTestingController.expectOne(`${environment.apiGatewayUrl}/api/organizers/org-other/contact`);
+    req403.flush({ message: 'Forbidden' }, { status: 403, statusText: 'Forbidden' });
+    expect(status403).toBe(403);
   });
 });

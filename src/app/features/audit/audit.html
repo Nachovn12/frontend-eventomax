@@ -1,76 +1,108 @@
 <div class="page-content audit-page">
   <header class="page-header audit-header">
     <div class="header-titles">
-      <p class="eyebrow">Trazabilidad y control</p>
+      <div class="audit-eyebrow-row">
+        <p class="eyebrow">Trazabilidad y control</p>
+        @if (canView()) {
+          <span class="audit-sync-pill" title="Actualización automática cada 30 segundos">
+            <span class="audit-sync-dot" aria-hidden="true"></span>
+            Sincronización automática · 30 s
+          </span>
+        }
+      </div>
       <h1 class="page-title">Auditoría y trazabilidad</h1>
-      <p class="page-description">Identidad activa: <strong>{{ displayRole() }}</strong>. Historial inmutable de eventos operacionales del sistema.</p>
+      <p class="page-description">
+        Identidad activa: <strong>{{ displayRole() }}</strong>. Historial de solo lectura de eventos operacionales registrados.
+      </p>
     </div>
   </header>
 
   @if (canView()) {
-    <!-- 1. Tarjetas KPI de Gobernanza y Métricas de Auditoría -->
+    <!-- 1. Tarjetas de Indicadores de Gobernanza -->
     <div class="audit-metrics-row" aria-label="Resumen de auditoría">
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+      <article class="metric-card au-kpi-card">
         <div class="metric-top">
-          <span>Eventos en página</span>
-          <svg lucideActivity class="metric-icon" strokeWidth="1.75" aria-hidden="true" />
+          <span class="au-kpi-label"><span class="au-kpi-dot blue" aria-hidden="true"></span>Eventos en página</span>
+          <span class="au-kpi-icon blue" aria-hidden="true">
+            <svg lucideActivity class="metric-icon" strokeWidth="1.85" />
+          </span>
         </div>
-        <strong class="metric-value">{{ totalEventsCount() }}</strong>
-        <small>Eventos capturados en la vista actual</small>
-        <div class="kpi-meter">
-          <div class="kpi-meter-fill blue" style="width: 100%"></div>
+        <div class="au-kpi-value-row">
+          <strong class="metric-value font-mono-num">{{ totalEventsCount() }}</strong>
+          <span class="au-kpi-pill blue font-mono-num">Máx. {{ pageSize }} / pág.</span>
         </div>
+        <small>Registros visibles en página {{ page() + 1 }}</small>
       </article>
 
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+      <article class="metric-card au-kpi-card">
         <div class="metric-top">
-          <span>Actores observados</span>
-          <svg lucideUser class="metric-icon amber" strokeWidth="1.75" aria-hidden="true" />
+          <span class="au-kpi-label"><span class="au-kpi-dot amber" aria-hidden="true"></span>Actores observados</span>
+          <span class="au-kpi-icon amber" aria-hidden="true">
+            <svg lucideUser class="metric-icon amber" strokeWidth="1.85" />
+          </span>
         </div>
-        <strong class="metric-value">{{ uniqueActorsCount() }}</strong>
-        <small>Identidades operacionales activas</small>
-        <div class="kpi-meter">
-          <div class="kpi-meter-fill amber" style="width: 80%"></div>
+        <div class="au-kpi-value-row">
+          <strong class="metric-value font-mono-num">{{ uniqueActorsCount() }}</strong>
         </div>
+        <small>Identidades distintas en esta página</small>
       </article>
 
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+      <article class="metric-card au-kpi-card">
         <div class="metric-top">
-          <span>Trazabilidad distribuida</span>
-          <svg lucideShieldCheck class="metric-icon green" strokeWidth="1.75" aria-hidden="true" />
+          <span class="au-kpi-label"><span class="au-kpi-dot green" aria-hidden="true"></span>Trazabilidad distribuida</span>
+          <span class="au-kpi-icon green" aria-hidden="true">
+            <svg lucideShieldCheck class="metric-icon green" strokeWidth="1.85" />
+          </span>
         </div>
-        <strong class="metric-value">{{ traceIntegrityPercent() }}%</strong>
-        <small>Eventos con Trace ID correlacionados</small>
-        <div class="kpi-meter">
-          <div class="kpi-meter-fill green" style="width: 100%"></div>
+        <div class="au-kpi-value-row">
+          <strong class="metric-value font-mono-num">
+            @if (totalEventsCount() > 0) {
+              {{ traceIntegrityPercent() }}%
+            } @else {
+              —
+            }
+          </strong>
+          @if (totalEventsCount() > 0) {
+            <span class="au-kpi-pill green font-mono-num">{{ tracedEventsCount() }}/{{ totalEventsCount() }}</span>
+          } @else {
+            <span class="au-kpi-pill neutral">Sin eventos</span>
+          }
         </div>
+        <small>Eventos en página con Event ID y Trace ID</small>
+        @if (totalEventsCount() > 0) {
+          <div class="kpi-meter" aria-hidden="true">
+            <div class="kpi-meter-fill green" [style.width.%]="traceIntegrityPercent()"></div>
+          </div>
+        }
       </article>
 
-      <article class="metric-card smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+      <article class="metric-card au-kpi-card">
         <div class="metric-top">
-          <span>Integridad del log</span>
-          <svg lucideLayers class="metric-icon purple" strokeWidth="1.75" aria-hidden="true" />
+          <span class="au-kpi-label"><span class="au-kpi-dot purple" aria-hidden="true"></span>Integridad del registro</span>
+          <span class="au-kpi-icon purple" aria-hidden="true">
+            <svg lucideLock class="metric-icon purple" strokeWidth="1.85" />
+          </span>
         </div>
-        <strong class="metric-value">Inmutable</strong>
-        <small>Consumo Kafka sin mutación de registros</small>
-        <div class="kpi-meter">
-          <div class="kpi-meter-fill purple" style="width: 100%"></div>
+        <div class="au-kpi-value-row">
+          <strong class="metric-value au-kpi-text-val">Solo lectura</strong>
+          <span class="au-kpi-pill purple">Sin mutación</span>
         </div>
+        <small>API de consulta sin edición ni eliminación</small>
       </article>
     </div>
 
     <!-- 2. Panel Principal de Línea de Tiempo -->
-    <section class="panel audit-panel smooth-shadow-ring-xs" aria-labelledby="audit-title">
+    <section class="panel audit-panel" aria-labelledby="audit-title">
       <div class="panel-heading">
         <div class="heading-content">
           <h2 id="audit-title">Línea de tiempo</h2>
-          <p>Registro inmutable de trazabilidad y auditoría de eventos del sistema en tiempo real.</p>
+          <p>Registro cronológico de solo lectura en horario chileno (America/Santiago) con actualización cada 30 s.</p>
         </div>
         <button
           type="button"
           emxButton
           variant="secondary"
-          size="medium"
+          size="small"
           class="btn-refresh"
           [class.is-refreshing]="isLoading()"
           [disabled]="isLoading()"
@@ -82,33 +114,30 @@
             lucideRefreshCw
             class="btn-icon"
             [class.spin]="isLoading()"
-            strokeWidth="1.75"
+            strokeWidth="1.85"
             aria-hidden="true"
           />
           <span>Actualizar</span>
         </button>
       </div>
 
-      <!-- Barra de Filtros Estilo Toolbar -->
+      <!-- Barra de Filtros Corporativa -->
       <form class="audit-filters" [formGroup]="filtersForm" (ngSubmit)="applyFilters()" aria-label="Filtros de auditoría">
         <div class="filter-field">
           <label for="filter-actor">Usuario o actor</label>
           <div class="input-with-icon">
-            <svg lucideUser class="field-icon" strokeWidth="1.75" aria-hidden="true" />
+            <svg lucideUser class="field-icon" strokeWidth="1.8" aria-hidden="true" />
             <input id="filter-actor" formControlName="actor" placeholder="Identificador exacto o email" />
           </div>
         </div>
 
         <div class="filter-field">
           <label for="filter-type">Tipo de evento</label>
-          <div class="input-with-icon">
-            <svg lucideLayers class="field-icon" strokeWidth="1.75" aria-hidden="true" />
-            <select id="filter-type" formControlName="type">
-              <option value="">Todos los tipos</option>
-              <option value="ProductionCreated">ProductionCreated</option>
-              <option value="ProductionStatusChanged">ProductionStatusChanged</option>
-            </select>
-          </div>
+          <emx-audit-event-type-select
+            inputId="filter-type"
+            ariaLabel="Tipo de evento"
+            formControlName="type"
+          />
         </div>
 
         <div class="filter-field audit-date-picker-group">
@@ -127,10 +156,13 @@
 
         <div class="audit-buttons">
           <button type="submit" emxButton variant="primary" size="medium" class="btn-filter-submit">
-            <svg lucideFilter class="btn-icon" strokeWidth="1.75" aria-hidden="true" />
-            <span>Filtrar</span>
+            <svg lucideFilter class="btn-icon" strokeWidth="1.85" aria-hidden="true" />
+            <span>Aplicar filtros</span>
           </button>
-          <button type="button" emxButton variant="ghost" size="medium" (click)="clearFilters()"><span>Limpiar</span></button>
+          <button type="button" emxButton variant="ghost" size="medium" class="btn-filter-clear" (click)="clearFilters()">
+            <svg lucideRotateCcw class="btn-icon" strokeWidth="1.85" aria-hidden="true" />
+            <span>Limpiar filtros</span>
+          </button>
         </div>
       </form>
 
@@ -144,8 +176,8 @@
             @for (row of [1, 2, 3, 4, 5]; track row) {
               <li class="audit-event audit-event-skeleton">
                 <div class="audit-time-col">
-                  <div class="skeleton skeleton-pill" style="width: 72px; height: 20px;"></div>
-                  <div class="skeleton skeleton-text short" style="width: 48px; height: 11px; margin-top: 4px;"></div>
+                  <div class="skeleton skeleton-pill" style="width: 78px; height: 18px;"></div>
+                  <div class="skeleton skeleton-text short" style="width: 112px; height: 12px; margin-top: 6px;"></div>
                 </div>
 
                 <div class="audit-node-col" aria-hidden="true">
@@ -153,216 +185,416 @@
                   <div class="skeleton skeleton-node-circle"></div>
                 </div>
 
-                <div class="audit-event-body smooth-shadow-ring-xs">
+                <div class="audit-event-body">
                   <div class="event-card-header">
-                    <div class="skeleton skeleton-pill" style="width: 140px; height: 22px;"></div>
-                    <div class="skeleton skeleton-pill" style="width: 110px; height: 22px;"></div>
+                    <div class="skeleton skeleton-pill" style="width: 170px; height: 24px;"></div>
+                    <div class="skeleton skeleton-pill" style="width: 160px; height: 28px;"></div>
                   </div>
-                  <div class="skeleton skeleton-text" style="width: 70%; height: 14px; margin: 12px 0 6px;"></div>
-                  <div class="skeleton skeleton-text short" style="width: 45%; height: 11px; margin: 0;"></div>
+                  <div class="skeleton skeleton-text" style="width: 66%; height: 15px; margin: 14px 0 8px;"></div>
+                  <div class="skeleton skeleton-text short" style="width: 42%; height: 12px; margin: 0;"></div>
                 </div>
               </li>
             }
           </ol>
         </div>
       } @else if (errorCode() !== null) {
-        <div class="audit-feedback" role="alert">
+        <div class="audit-feedback audit-error-state" role="alert">
+          <span class="feedback-icon-tile error" aria-hidden="true">
+            <svg lucideCircleAlert strokeWidth="1.8" />
+          </span>
           <strong>No se pudo consultar el timeline</strong>
           <p>{{ errorText(errorCode()) }}</p>
-          <button type="button" emxButton variant="secondary" size="medium" (click)="retry()">Reintentar</button>
+          <button type="button" emxButton variant="secondary" size="small" (click)="retry()">Reintentar</button>
         </div>
       } @else if (items().length === 0) {
         <div class="audit-feedback audit-empty-state" role="status">
-          <svg lucideCircleAlert class="empty-icon" strokeWidth="1.5" aria-hidden="true" />
-          <p>No hay eventos para los filtros seleccionados en esta página.</p>
+          <span class="feedback-icon-tile neutral" aria-hidden="true">
+            <svg lucideCircleAlert class="empty-icon" strokeWidth="1.65" />
+          </span>
+          @if (hasActiveFilters()) {
+            <strong>Sin coincidencias en esta página</strong>
+            <p>No hay eventos para los filtros seleccionados en esta página.</p>
+            <button type="button" emxButton variant="secondary" size="small" (click)="clearFilters()">Limpiar filtros</button>
+          } @else {
+            <strong>Sin eventos registrados</strong>
+            <p>No hay eventos registrados en esta página.</p>
+          }
         </div>
       } @else {
-        <!-- Línea de Tiempo Visual Continua -->
-        <ol class="audit-timeline emx-content-fade-in" aria-label="Eventos ordenados por fecha descendente">
-          @for (item of items(); track item.eventId) {
-            <li class="audit-event">
-              <!-- Columna 1: Marca de tiempo -->
-              <div class="audit-time-col">
-                <span class="audit-date-badge">{{ timestampUtc(item.timestamp) | date:'dd MMM yyyy' }}</span>
-                <span class="audit-time-text">{{ timestampUtc(item.timestamp) | date:'HH:mm:ss' }} UTC</span>
+        <!-- Línea de Tiempo Agrupada por Día en America/Santiago -->
+        <div class="audit-timeline-groups emx-content-fade-in">
+          @for (group of timelineGroups(); track group.dateKey) {
+            <section class="audit-day-group" [attr.aria-label]="'Eventos del ' + group.heading">
+              <div class="audit-day-divider">
+                <span class="day-divider-pill">
+                  <svg lucideCalendarDays class="day-divider-icon" strokeWidth="1.85" aria-hidden="true" />
+                  <span class="day-divider-title">{{ group.heading }}</span>
+                  <span class="day-divider-date font-mono-num">{{ group.dateEsCl }}</span>
+                </span>
+                <span class="day-divider-line" aria-hidden="true"></span>
+                <span class="day-divider-count font-mono-num">
+                  {{ group.entries.length }} {{ group.entries.length === 1 ? 'evento en página' : 'eventos en página' }}
+                </span>
               </div>
 
-              <!-- Conector Visual Timeline -->
-              <div class="audit-node-col" aria-hidden="true">
-                <div class="timeline-line"></div>
-                <div class="timeline-node" [class.node-created]="item.type === 'ProductionCreated'" [class.node-status]="item.type === 'ProductionStatusChanged'">
-                  @if (item.type === 'ProductionCreated') {
-                    <svg lucideCircleCheck class="node-icon" strokeWidth="2" />
-                  } @else {
-                    <svg lucideActivity class="node-icon" strokeWidth="2" />
-                  }
-                </div>
-              </div>
-
-              <!-- Columna 2: Tarjeta del Evento -->
-              <div class="audit-event-body smooth-shadow-ring-xs">
-                <!-- Cabecera del Evento -->
-                <div class="event-card-header">
-                  <div class="event-badges">
-                    <span class="event-type-badge" [class.badge-created]="item.type === 'ProductionCreated'" [class.badge-status]="item.type === 'ProductionStatusChanged'">
-                      {{ item.type }}
-                    </span>
-                    <span class="event-type-human">
-                      {{ formatEventType(item.type) }}
-                    </span>
-                  </div>
-
-                  <div class="actor-badge" [title]="'Actor: ' + (item.actor || 'No informado')">
-                    <span class="actor-avatar" aria-hidden="true">{{ (item.actor || 'S').charAt(0).toUpperCase() }}</span>
-                    <span class="actor-name">Actor: {{ item.actor || 'No informado' }}</span>
-                  </div>
-                </div>
-
-                <!-- Resumen Operacional Decodificado (si está disponible) -->
-                @if (parseDetails(item.details); as details) {
-                  <div class="event-operational-summary">
-                    @if (details.productionName) {
-                      <div class="summary-row-main">
-                        <span class="production-label">Producción #{{ details.productionId }}:</span>
-                        <strong class="production-name">{{ details.productionName }}</strong>
-                      </div>
-                    }
-
-                    <!-- Visualización de Transición de Estados -->
-                    @if (item.type === 'ProductionStatusChanged' && details.previousStatus && details.newStatus) {
-                      <div class="transition-visual-flow">
-                        <span class="state-chip" [attr.data-status]="details.previousStatus">
-                          <span class="state-dot" aria-hidden="true"></span>
-                          {{ formatStatus(details.previousStatus) }}
-                        </span>
-                        <svg lucideArrowRight class="transition-arrow" strokeWidth="2" aria-hidden="true" />
-                        <span class="state-chip" [attr.data-status]="details.newStatus">
-                          <span class="state-dot" aria-hidden="true"></span>
-                          {{ formatStatus(details.newStatus) }}
-                        </span>
-                      </div>
-                    } @else if (item.type === 'ProductionCreated') {
-                      <div class="transition-visual-flow">
-                        <span class="label-muted">Estado inicial:</span>
-                        <span class="state-chip" [attr.data-status]="details.status || 'SOLICITADO'">
-                          <span class="state-dot" aria-hidden="true"></span>
-                          {{ formatStatus(details.status || 'SOLICITADO') }}
-                        </span>
-                      </div>
-                    }
-
-                    <!-- Metadatos de Producción -->
-                    <div class="summary-meta-grid">
-                      @if (details.location) {
-                        <div class="meta-item">
-                          <span class="meta-label">Lugar:</span>
-                          <span class="meta-value">{{ details.location }}</span>
-                        </div>
-                      }
-                      @if (details.crewName) {
-                        <div class="meta-item">
-                          <span class="meta-label">Cuadrilla:</span>
-                          <span class="meta-value">{{ details.crewName }}</span>
-                        </div>
-                      }
+              <ol class="audit-timeline" aria-label="Eventos ordenados por fecha descendente">
+                @for (entry of group.entries; track entry.item.eventId) {
+                  @let item = entry.item;
+                  @let ts = entry.ts;
+                  <li class="audit-event">
+                    <!-- Columna 1: Marca de tiempo (Chile continental + tooltip UTC original) -->
+                    <div class="audit-time-col" [title]="'Timestamp UTC original: ' + ts.utcIso">
+                      <span class="audit-date-badge font-mono-num">{{ ts.date }}</span>
+                      <span class="audit-time-text font-mono-num">{{ ts.time }} {{ ts.tzLabel }}</span>
+                      <span class="sr-only">{{ ts.combined }}</span>
                     </div>
-                  </div>
-                }
 
-                <!-- Tags Técnicos de Trazabilidad -->
-                <div class="audit-tech-tags">
-                  <div class="tech-tag" (click)="copyText(item.eventId, 'id-' + item.eventId)" title="Click para copiar Event ID">
-                    <span class="tech-tag-label">ID:</span>
-                    <span class="tech-tag-val">{{ item.eventId }}</span>
-                    <button type="button" class="btn-copy-tag" [attr.aria-label]="'Copiar Event ID ' + item.eventId">
-                      @if (isCopied('id-' + item.eventId)) {
-                        <svg lucideCheck class="copy-icon copied" strokeWidth="2" aria-hidden="true" />
-                      } @else {
-                        <svg lucideCopy class="copy-icon" strokeWidth="2" aria-hidden="true" />
-                      }
-                    </button>
-                  </div>
-
-                  @if (item.source) {
-                    <div class="tech-tag" [title]="'Servicio origen: ' + item.source">
-                      <span class="tech-tag-label">Origen:</span>
-                      <span class="tech-tag-val">{{ item.source }}</span>
-                    </div>
-                  }
-
-                  @if (item.traceId) {
-                    <div class="tech-tag" (click)="copyText(item.traceId, 'tr-' + item.eventId)" title="Click para copiar Trace ID">
-                      <span class="tech-tag-label">Trace ID:</span>
-                      <span class="tech-tag-val">{{ item.traceId }}</span>
-                      <button type="button" class="btn-copy-tag" [attr.aria-label]="'Copiar Trace ID ' + item.traceId">
-                        @if (isCopied('tr-' + item.eventId)) {
-                          <svg lucideCheck class="copy-icon copied" strokeWidth="2" aria-hidden="true" />
-                        } @else {
-                          <svg lucideCopy class="copy-icon" strokeWidth="2" aria-hidden="true" />
-                        }
-                      </button>
-                    </div>
-                  }
-
-                  @if (item.correlationId) {
-                    <div class="tech-tag" (click)="copyText(item.correlationId, 'cr-' + item.eventId)" title="Click para copiar Correlation ID">
-                      <span class="tech-tag-label">Correlation ID:</span>
-                      <span class="tech-tag-val">{{ item.correlationId }}</span>
-                      <button type="button" class="btn-copy-tag" [attr.aria-label]="'Copiar Correlation ID ' + item.correlationId">
-                        @if (isCopied('cr-' + item.eventId)) {
-                          <svg lucideCheck class="copy-icon copied" strokeWidth="2" aria-hidden="true" />
-                        } @else {
-                          <svg lucideCopy class="copy-icon" strokeWidth="2" aria-hidden="true" />
-                        }
-                      </button>
-                    </div>
-                  }
-                </div>
-
-                <!-- Inspección Desplegable del Payload JSON -->
-                @if (item.details) {
-                  <details class="audit-details-accordion">
-                    <summary class="audit-details-summary">
-                      <span class="summary-title">
-                        <svg lucideChevronDown class="accordion-chevron" strokeWidth="2" aria-hidden="true" />
-                        Ver detalles del evento
-                      </span>
-                      <button
-                        type="button"
-                        emxButton
-                        variant="secondary"
-                        size="xs"
-                        class="btn-copy-json"
-                        (click)="copyText(item.details, 'json-' + item.eventId, $event)"
+                    <!-- Conector Visual Timeline -->
+                    <div class="audit-node-col" aria-hidden="true">
+                      <div class="timeline-line"></div>
+                      <div
+                        class="timeline-node"
+                        [class.node-created]="item.type === 'ProductionCreated'"
+                        [class.node-status]="item.type === 'ProductionStatusChanged'"
                       >
-                        @if (isCopied('json-' + item.eventId)) {
-                          <svg lucideCheck class="copy-icon copied" strokeWidth="2" aria-hidden="true" />
-                          <span>¡Copiado!</span>
+                        @if (item.type === 'ProductionCreated') {
+                          <svg lucideCircleCheck class="node-icon" strokeWidth="2" />
                         } @else {
-                          <svg lucideCopy class="copy-icon" strokeWidth="2" aria-hidden="true" />
-                          <span>Copiar JSON</span>
+                          <svg lucideActivity class="node-icon" strokeWidth="2" />
                         }
-                      </button>
-                    </summary>
-                    <pre class="audit-json">{{ formatJson(item.details) }}</pre>
-                  </details>
+                      </div>
+                    </div>
+
+                    <!-- Columna 2: Tarjeta de Dos Niveles (Operativo + Detalles Técnicos) -->
+                    <div class="audit-event-body">
+                      <!-- Nivel 1: Cabecera Operativa y Actor del Evento -->
+                      <div class="event-card-header">
+                        <div class="event-badges">
+                          <span
+                            class="event-type-human-pill"
+                            [class.is-created]="item.type === 'ProductionCreated'"
+                            [class.is-status]="item.type === 'ProductionStatusChanged'"
+                          >
+                            {{ formatEventType(item.type) }}
+                          </span>
+                          <span class="event-type-badge" [class.badge-created]="item.type === 'ProductionCreated'" [class.badge-status]="item.type === 'ProductionStatusChanged'">
+                            {{ item.type }}
+                          </span>
+                        </div>
+
+                        <div class="actor-badge" [title]="'Actor del evento: ' + formatActorLabel(item)">
+                          <span class="actor-avatar" aria-hidden="true">{{ actorInitial(item) }}</span>
+                          <span class="actor-text-group">
+                            <span class="actor-kicker">Actor del evento</span>
+                            <span class="actor-name"><span class="sr-only">Actor: </span>{{ formatActorLabel(item) }}</span>
+                            @if (formatActorEmail(item); as email) {
+                              <span class="actor-email">{{ email }}</span>
+                            }
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Nivel 1: Resumen Operacional Histórico -->
+                      @if (parseDetails(item.details); as details) {
+                        <div class="event-operational-summary">
+                          @if (details.productionName || details.productionId !== undefined) {
+                            <div class="summary-row-main">
+                              @if (details.productionId !== undefined) {
+                                <span class="production-id-chip font-mono-num">Producción #{{ details.productionId }}</span>
+                              }
+                              @if (details.productionName) {
+                                <strong class="production-name">{{ details.productionName }}</strong>
+                              }
+                            </div>
+                          }
+
+                          <!-- Transición Histórica o Estado Inicial -->
+                          @if (item.type === 'ProductionStatusChanged' && details.previousStatus && details.newStatus) {
+                            <div class="transition-visual-flow">
+                              <span class="state-chip" [attr.data-status]="details.previousStatus">
+                                <span class="state-dot" aria-hidden="true"></span>
+                                {{ formatStatus(details.previousStatus) }}
+                              </span>
+                              <svg lucideArrowRight class="transition-arrow" strokeWidth="2" aria-hidden="true" />
+                              <span class="state-chip" [attr.data-status]="details.newStatus">
+                                <span class="state-dot" aria-hidden="true"></span>
+                                {{ formatStatus(details.newStatus) }}
+                              </span>
+                            </div>
+                          } @else if (item.type === 'ProductionCreated') {
+                            <div class="transition-visual-flow">
+                              <span class="label-muted">Estado inicial:</span>
+                              <span class="state-chip" [attr.data-status]="details.status || 'SOLICITADO'">
+                                <span class="state-dot" aria-hidden="true"></span>
+                                {{ formatStatus(details.status || 'SOLICITADO') }}
+                              </span>
+                            </div>
+                          }
+
+                          @if (details.location || details.crewName) {
+                            <div class="summary-meta-grid">
+                              @if (details.location) {
+                                <div class="meta-item">
+                                  <svg lucideMapPin class="meta-icon" strokeWidth="1.8" aria-hidden="true" />
+                                  <span class="meta-label">Ubicación:</span>
+                                  <span class="meta-value">{{ details.location }}</span>
+                                </div>
+                              }
+                              @if (details.crewName) {
+                                <div class="meta-item">
+                                  <svg lucideUsers class="meta-icon" strokeWidth="1.8" aria-hidden="true" />
+                                  <span class="meta-label">Cuadrilla técnica:</span>
+                                  <span class="meta-value">{{ details.crewName }}</span>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+
+                      <!-- Nivel 2: Detalles Técnicos Desplegables (WAI-ARIA Disclosure — OBS-04 Preservado) -->
+                      @if (hasExpandableDetails(item)) {
+                        @let isExpanded = isDetailsExpanded(item.eventId);
+                        @let panelId = detailsPanelId(item.eventId);
+                        <div class="audit-details-accordion" [class.is-open]="isExpanded">
+                          <div class="audit-details-header">
+                            <button
+                              type="button"
+                              class="audit-details-summary"
+                              [attr.aria-expanded]="isExpanded"
+                              [attr.aria-controls]="panelId"
+                              (click)="toggleDetails(item.eventId)"
+                            >
+                              <span class="summary-title">
+                                <svg lucideChevronDown class="accordion-chevron" strokeWidth="2" aria-hidden="true" />
+                                {{ isExpanded ? 'Ocultar detalles técnicos' : 'Ver detalles técnicos' }}
+                              </span>
+                            </button>
+
+                            @if (item.details) {
+                              <button
+                                type="button"
+                                emxButton
+                                variant="secondary"
+                                size="xs"
+                                class="btn-copy-json"
+                                [attr.aria-label]="'Copiar JSON del evento ' + item.eventId"
+                                (click)="copyText(item.details, 'json-' + item.eventId)"
+                              >
+                                @if (isCopied('json-' + item.eventId)) {
+                                  <svg lucideCheck class="copy-icon copied" strokeWidth="2" aria-hidden="true" />
+                                  <span>¡Copiado!</span>
+                                } @else {
+                                  <svg lucideCopy class="copy-icon" strokeWidth="2" aria-hidden="true" />
+                                  <span>Copiar JSON</span>
+                                }
+                              </button>
+                            }
+                          </div>
+
+                          <div [id]="panelId" class="audit-details-content" [hidden]="!isExpanded">
+                            <!-- Categoría 1: Trazabilidad -->
+                            <section class="tech-section" aria-label="Trazabilidad técnica">
+                              <div class="tech-section-head">
+                                <svg lucideGitCommitHorizontal class="tech-section-icon" strokeWidth="1.9" aria-hidden="true" />
+                                <h4>Trazabilidad</h4>
+                              </div>
+                              <div class="tech-kv-grid">
+                                <div class="tech-kv-card">
+                                  <div class="tech-kv-meta">
+                                    <span class="audit-actor-tech-label">Event ID</span>
+                                    <code class="tech-mono-value" [title]="item.eventId">{{ item.eventId }}</code>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    class="tech-inline-copy"
+                                    [class.is-copied]="isCopied('id-' + item.eventId)"
+                                    [attr.aria-label]="'Copiar Event ID ' + item.eventId"
+                                    (click)="copyText(item.eventId, 'id-' + item.eventId, $event)"
+                                  >
+                                    @if (isCopied('id-' + item.eventId)) {
+                                      <svg lucideCheck class="copy-icon copied" strokeWidth="2.1" aria-hidden="true" />
+                                    } @else {
+                                      <svg lucideCopy class="copy-icon" strokeWidth="1.9" aria-hidden="true" />
+                                    }
+                                  </button>
+                                </div>
+
+                                <div class="tech-kv-card">
+                                  <div class="tech-kv-meta">
+                                    <span class="audit-actor-tech-label">Trace ID</span>
+                                    @if (item.traceId) {
+                                      <code class="tech-mono-value" [title]="item.traceId">{{ item.traceId }}</code>
+                                    } @else {
+                                      <span class="tech-empty-val">No informado</span>
+                                    }
+                                  </div>
+                                  @if (item.traceId) {
+                                    <button
+                                      type="button"
+                                      class="tech-inline-copy"
+                                      [class.is-copied]="isCopied('tr-' + item.eventId)"
+                                      [attr.aria-label]="'Copiar Trace ID ' + item.traceId"
+                                      (click)="copyText(item.traceId, 'tr-' + item.eventId, $event)"
+                                    >
+                                      @if (isCopied('tr-' + item.eventId)) {
+                                        <svg lucideCheck class="copy-icon copied" strokeWidth="2.1" aria-hidden="true" />
+                                      } @else {
+                                        <svg lucideCopy class="copy-icon" strokeWidth="1.9" aria-hidden="true" />
+                                      }
+                                    </button>
+                                  }
+                                </div>
+
+                                <div class="tech-kv-card">
+                                  <div class="tech-kv-meta">
+                                    <span class="audit-actor-tech-label">Correlation ID</span>
+                                    @if (item.correlationId) {
+                                      <code class="tech-mono-value" [title]="item.correlationId">{{ item.correlationId }}</code>
+                                    } @else {
+                                      <span class="tech-empty-val">No informado</span>
+                                    }
+                                  </div>
+                                  @if (item.correlationId) {
+                                    <button
+                                      type="button"
+                                      class="tech-inline-copy"
+                                      [class.is-copied]="isCopied('cr-' + item.eventId)"
+                                      [attr.aria-label]="'Copiar Correlation ID ' + item.correlationId"
+                                      (click)="copyText(item.correlationId, 'cr-' + item.eventId, $event)"
+                                    >
+                                      @if (isCopied('cr-' + item.eventId)) {
+                                        <svg lucideCheck class="copy-icon copied" strokeWidth="2.1" aria-hidden="true" />
+                                      } @else {
+                                        <svg lucideCopy class="copy-icon" strokeWidth="1.9" aria-hidden="true" />
+                                      }
+                                    </button>
+                                  }
+                                </div>
+
+                                <div class="tech-kv-card">
+                                  <div class="tech-kv-meta">
+                                    <span class="audit-actor-tech-label">Tipo técnico de evento</span>
+                                    <code class="tech-mono-value">{{ item.type }}</code>
+                                  </div>
+                                </div>
+
+                                <div class="tech-kv-card">
+                                  <div class="tech-kv-meta">
+                                    <span class="audit-actor-tech-label">Microservicio de origen</span>
+                                    @if (item.source) {
+                                      <code class="tech-mono-value">{{ item.source }}</code>
+                                    } @else {
+                                      <span class="tech-empty-val">No informado</span>
+                                    }
+                                  </div>
+                                </div>
+
+                                <div class="tech-kv-card audit-utc-tech-row">
+                                  <div class="tech-kv-meta">
+                                    <span class="audit-actor-tech-label">Timestamp UTC original (servidor)</span>
+                                    <code class="audit-utc-tech-value tech-mono-value">{{ ts.utcIso }}</code>
+                                  </div>
+                                </div>
+                              </div>
+                            </section>
+
+                            <!-- Categoría 2: Identidad -->
+                            @if (item.actor || formatResolutionSource(item) || formatActorEmail(item)) {
+                              <section class="tech-section" aria-label="Identidad del actor">
+                                <div class="tech-section-head">
+                                  <svg lucideFingerprint class="tech-section-icon" strokeWidth="1.9" aria-hidden="true" />
+                                  <h4>Identidad</h4>
+                                </div>
+                                <div class="tech-identity-grid">
+                                  @if (item.actor) {
+                                    <div class="audit-actor-tech-row">
+                                      <div class="audit-actor-tech-meta">
+                                        <span class="audit-actor-tech-label">Identificador técnico del actor</span>
+                                        <code class="audit-actor-tech-value">{{ item.actor }}</code>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        emxButton
+                                        variant="secondary"
+                                        size="xs"
+                                        class="btn-copy-actor-id"
+                                        [attr.aria-label]="'Copiar identificador técnico del actor ' + item.actor"
+                                        (click)="copyText(item.actor, 'actor-' + item.eventId, $event)"
+                                      >
+                                        @if (isCopied('actor-' + item.eventId)) {
+                                          <svg lucideCheck class="copy-icon copied" strokeWidth="2" aria-hidden="true" />
+                                          <span>¡Copiado!</span>
+                                        } @else {
+                                          <svg lucideCopy class="copy-icon" strokeWidth="2" aria-hidden="true" />
+                                          <span>Copiar ID</span>
+                                        }
+                                      </button>
+                                    </div>
+                                  }
+
+                                  @if (formatResolutionSource(item); as sourceLabel) {
+                                    <div class="audit-actor-source-row">
+                                      <span class="audit-actor-tech-label">Fuente de resolución</span>
+                                      <span class="audit-actor-source-value">{{ sourceLabel }}</span>
+                                    </div>
+                                  }
+                                </div>
+                              </section>
+                            }
+
+                            <!-- Categoría 3: Payload JSON -->
+                            @if (item.details) {
+                              <section class="tech-section" aria-label="Payload JSON del evento">
+                                <emx-audit-json-viewer [payload]="item.details" [eventId]="item.eventId" />
+                              </section>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </li>
                 }
-              </div>
-            </li>
+              </ol>
+            </section>
           }
-        </ol>
+        </div>
       }
 
       @if (errorCode() === null && !isLoading()) {
         <nav class="audit-pagination" aria-label="Paginación de auditoría">
-          <button type="button" emxButton variant="secondary" size="small" [disabled]="page() === 0" (click)="previousPage()">Anterior</button>
-          <span class="pagination-info">Página {{ page() + 1 }} · {{ items().length }} registros en esta página</span>
-          <button type="button" emxButton variant="secondary" size="small" [disabled]="!canAdvance()" (click)="nextPage()">Siguiente</button>
+          <button
+            type="button"
+            emxButton
+            variant="secondary"
+            size="small"
+            class="pg-btn"
+            [disabled]="page() === 0"
+            (click)="previousPage()"
+          >
+            <svg lucideChevronLeft class="btn-icon" strokeWidth="2" aria-hidden="true" />
+            <span>Anterior</span>
+          </button>
+          <span class="pagination-info font-mono-num">
+            Página {{ page() + 1 }} · {{ items().length }} registros en esta página
+          </span>
+          <button
+            type="button"
+            emxButton
+            variant="secondary"
+            size="small"
+            class="pg-btn"
+            [disabled]="!canAdvance()"
+            (click)="nextPage()"
+          >
+            <span>Siguiente</span>
+            <svg lucideChevronRight class="btn-icon" strokeWidth="2" aria-hidden="true" />
+          </button>
         </nav>
       }
     </section>
   } @else {
-    <section class="panel audit-feedback" role="alert">
+    <section class="panel audit-feedback audit-restricted" role="alert">
       Acceso restringido. El timeline requiere rol Admin/Auditor y scope access_as_user.
     </section>
   }

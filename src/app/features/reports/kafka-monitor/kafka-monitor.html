@@ -1,17 +1,20 @@
 @if (isAvailable) {
-  <section class="report-section-card kafka-monitor-panel smooth-shadow-ring-xs" aria-labelledby="kafka-monitor-heading">
+  <section class="report-section-card kafka-monitor-panel" aria-labelledby="kafka-monitor-heading">
     <div class="kafka-monitor-header">
       <div class="section-card-header">
         <div class="kafka-title-row">
           <h3 id="kafka-monitor-heading">Supervisión Apache Kafka y Consumer Lag</h3>
-          <span class="live-poll-badge" title="Actualización automática cada 30 segundos">
+          <span class="live-poll-badge" title="Consulta automática cada 30 segundos vía kafka-admin">
             <span class="live-dot" aria-hidden="true"></span>
-            Streaming · 30s
+            Sincronización automática · 30 s
           </span>
-          <span class="cluster-topo-badge">3 Brokers · KRaft</span>
+          <span class="cluster-topo-badge" title="Parámetro de topología configurada del clúster">
+            <svg lucideServer class="topo-icon" strokeWidth="1.9" aria-hidden="true"></svg>
+            Topología configurada: 3 Brokers · ZooKeeper
+          </span>
         </div>
         <p class="section-card-desc">
-          Estado en vivo de tópicos, particiones, réplicas, offsets comprometidos y lag vía <code>kafka-admin</code>.
+          Estado observado de tópicos, particiones, réplicas, offsets comprometidos y lag vía <code>kafka-admin</code>.
         </p>
       </div>
       <button
@@ -23,7 +26,7 @@
         (click)="refresh()"
         aria-label="Actualizar telemetría Kafka"
       >
-        <svg lucideRefreshCw class="btn-icon" [class.spin]="isLoading()" strokeWidth="1.75" aria-hidden="true" />
+        <svg lucideRefreshCw class="btn-icon" [class.spin]="isLoading()" strokeWidth="1.85" aria-hidden="true" />
         <span>Refrescar clúster</span>
       </button>
     </div>
@@ -39,44 +42,79 @@
         }
       </div>
     } @else {
-      <!-- Resumen Ejecutivo del Clúster Kafka (4 KPIs) -->
+      <!-- 4 Indicadores Técnicos Kafka -->
       <div class="kafka-kpi-strip" aria-label="Resumen de métricas del clúster Kafka">
         <div class="kafka-kpi-card">
-          <span class="kafka-kpi-label">Tópicos de dominio</span>
-          <div class="kafka-kpi-main">
-            <strong>{{ topics().length }}</strong>
-            <span class="kafka-kpi-pill blue">{{ totalClusterPartitions() }} particiones</span>
+          <div class="kafka-kpi-head">
+            <span class="kafka-kpi-label">Tópicos de dominio</span>
+            <span class="kafka-kpi-icon blue" aria-hidden="true"><svg lucideDatabase strokeWidth="1.9" /></span>
           </div>
-          <small> Eventos y colas DLT/Retry</small>
+          <div class="kafka-kpi-main">
+            <strong class="font-mono-num">{{ topics().length }}</strong>
+            <span class="kafka-kpi-pill blue font-mono-num">{{ totalClusterPartitions() }} particiones</span>
+          </div>
+          <small>Eventos de dominio y colas DLT/Retry</small>
         </div>
 
         <div class="kafka-kpi-card">
-          <span class="kafka-kpi-label">Factor de replicación</span>
-          <div class="kafka-kpi-main">
-            <strong>RF {{ topicDetail()?.replicationFactor ?? 3 }}</strong>
-            <span class="kafka-kpi-pill green">ISR mín. {{ topicDetail()?.configs?.['min.insync.replicas'] ?? 2 }}</span>
+          <div class="kafka-kpi-head">
+            <span class="kafka-kpi-label">Factor de replicación</span>
+            <span class="kafka-kpi-icon green" aria-hidden="true"><svg lucideShieldCheck strokeWidth="1.9" /></span>
           </div>
-          <small>Alta disponibilidad multi-broker</small>
+          <div class="kafka-kpi-main">
+            @if (topicDetail(); as td) {
+              <strong class="font-mono-num">RF {{ td.replicationFactor }}</strong>
+              @if (td.configs['min.insync.replicas']) {
+                <span class="kafka-kpi-pill green font-mono-num">ISR mín. {{ td.configs['min.insync.replicas'] }}</span>
+              }
+            } @else {
+              <strong class="val-unavailable">No disponible</strong>
+            }
+          </div>
+          <small>Configuración del tópico seleccionado</small>
         </div>
 
         <div class="kafka-kpi-card">
-          <span class="kafka-kpi-label">Consumer Groups</span>
-          <div class="kafka-kpi-main">
-            <strong>{{ groups().length }}</strong>
-            <span class="kafka-kpi-pill green">{{ stableGroupsCount() }}/{{ groups().length }} STABLE</span>
+          <div class="kafka-kpi-head">
+            <span class="kafka-kpi-label">Consumer Groups</span>
+            <span class="kafka-kpi-icon blue" aria-hidden="true"><svg lucideUsers strokeWidth="1.9" /></span>
           </div>
-          <small>Consumidores activos en clúster</small>
-        </div>
-
-        <div class="kafka-kpi-card">
-          <span class="kafka-kpi-label">Lag del grupo activo</span>
           <div class="kafka-kpi-main">
-            <strong>{{ groupDetail()?.totalLag ?? 0 }}</strong>
-            <span class="kafka-kpi-pill" [class.green]="(groupDetail()?.totalLag ?? 0) === 0" [class.amber]="(groupDetail()?.totalLag ?? 0) > 0">
-              {{ (groupDetail()?.totalLag ?? 0) === 0 ? 'Al día' : 'En cola' }}
+            <strong class="font-mono-num">{{ groups().length }}</strong>
+            <span
+              class="kafka-kpi-pill font-mono-num"
+              [class.green]="groups().length > 0 && stableGroupsCount() === groups().length"
+              [class.amber]="groups().length > 0 && stableGroupsCount() < groups().length"
+            >
+              {{ stableGroupsCount() }}/{{ groups().length }} STABLE
             </span>
           </div>
-          <small>Grupo: {{ selectedGroupId() || 'report-group' }}</small>
+          <small>Grupos registrados en el clúster</small>
+        </div>
+
+        <div class="kafka-kpi-card">
+          <div class="kafka-kpi-head">
+            <span class="kafka-kpi-label">Lag del grupo seleccionado</span>
+            <span class="kafka-kpi-icon" [class.green]="hasRealTotalLag() && groupDetail()!.totalLag === 0" [class.amber]="hasRealTotalLag() && groupDetail()!.totalLag > 0" [class.neutral]="!hasRealTotalLag()" aria-hidden="true">
+              <svg lucideGauge strokeWidth="1.9" />
+            </span>
+          </div>
+          <div class="kafka-kpi-main">
+            @if (hasRealTotalLag()) {
+              <strong class="font-mono-num">{{ groupDetail()!.totalLag }}</strong>
+              <span
+                class="kafka-kpi-pill"
+                [class.green]="groupDetail()!.totalLag === 0"
+                [class.amber]="groupDetail()!.totalLag > 0"
+              >
+                {{ groupDetail()!.totalLag === 0 ? 'Al día' : 'En cola' }}
+              </span>
+            } @else {
+              <strong class="val-unavailable">No disponible</strong>
+              <span class="kafka-kpi-pill">Sin lectura</span>
+            }
+          </div>
+          <small>Grupo: <code class="inline-code-xs">{{ selectedGroupId() || '—' }}</code></small>
         </div>
       </div>
 
@@ -85,56 +123,56 @@
         <div class="kafka-subcard">
           <div class="kafka-subcard-header">
             <div class="kafka-subcard-title">
-              <span class="subcard-icon-box">
-                <svg lucideDatabase class="subcard-icon" strokeWidth="1.75" aria-hidden="true" />
+              <span class="subcard-icon-box" aria-hidden="true">
+                <svg lucideDatabase class="subcard-icon" strokeWidth="1.85" />
               </span>
               <div>
                 <h4>Tópicos de dominio ({{ topics().length }})</h4>
-                <p class="subcard-subtitle">Distribución de líderes y réplicas en sincronía</p>
+                <p class="subcard-subtitle">Distribución de líderes, réplicas e ISR observado</p>
               </div>
             </div>
-            @if (selectedTopicName(); as activeTopic) {
-              <code class="active-selection-badge">{{ activeTopic }}</code>
-            }
           </div>
 
-          <div class="kafka-chip-list" role="tablist" aria-label="Tópicos Kafka">
-            @for (topic of topics(); track topic.name) {
-              <button
-                type="button"
-                class="kafka-chip"
-                [class.is-selected]="selectedTopicName() === topic.name"
-                (click)="selectTopic(topic.name)"
-              >
-                <span class="chip-name">{{ topic.name }}</span>
-                <span class="chip-meta">{{ topic.partitionsCount }}P</span>
-              </button>
-            }
+          <div class="kafka-selector-wrap">
+            <label for="kafka-topic-selector" class="sr-only">Seleccionar tópico Kafka</label>
+            <emx-kafka-entity-selector
+              inputId="kafka-topic-selector"
+              ariaLabel="Seleccionar tópico Kafka"
+              kind="topic"
+              placeholder="Sin tópicos disponibles"
+              [options]="topicSelectorOptions()"
+              [selectedId]="selectedTopicName()"
+              (selectionChange)="selectTopic($event)"
+            />
           </div>
 
           @if (topicDetail(); as detail) {
             <div class="kafka-detail-box">
               <div class="detail-kv-row">
                 <div class="kv-metric-card">
-                  <span class="kv-label">Particiones: </span><strong class="kv-val">{{ detail.partitionsCount }}</strong>
+                  <span class="kv-label">Particiones</span>
+                  <strong class="kv-val font-mono-num">{{ detail.partitionsCount }}</strong>
                 </div>
                 <div class="kv-metric-card">
-                  <span class="kv-label">Réplicas (RF): </span><strong class="kv-val">{{ detail.replicationFactor }}</strong>
+                  <span class="kv-label">Réplicas (RF)</span>
+                  <strong class="kv-val font-mono-num">{{ detail.replicationFactor }}</strong>
                 </div>
                 @if (detail.configs['cleanup.policy']) {
                   <div class="kv-metric-card">
-                    <span class="kv-label">Política: </span><code class="kv-code">{{ detail.configs['cleanup.policy'] }}</code>
+                    <span class="kv-label">Política (config.)</span>
+                    <code class="kv-code">{{ detail.configs['cleanup.policy'] }}</code>
                   </div>
                 }
                 @if (detail.configs['min.insync.replicas']) {
                   <div class="kv-metric-card">
-                    <span class="kv-label">min.insync.replicas: </span><strong class="kv-val">{{ detail.configs['min.insync.replicas'] }}</strong>
+                    <span class="kv-label">min.insync.replicas: </span>
+                    <strong class="kv-val font-mono-num">{{ detail.configs['min.insync.replicas'] }}</strong>
                   </div>
                 }
               </div>
 
               @if (detail.partitions.length > 0) {
-                <div class="kafka-table-wrap">
+                <div class="kafka-table-wrap" role="region" aria-label="Tabla de particiones del tópico" tabindex="0">
                   <table class="data-table kafka-mini-table">
                     <thead>
                       <tr>
@@ -148,13 +186,17 @@
                     <tbody>
                       @for (p of detail.partitions; track p.partition) {
                         <tr>
-                          <td><span class="part-badge">#{{ p.partition }}</span></td>
-                          <td><span class="broker-pill">Broker {{ p.leader }}</span></td>
+                          <td><span class="part-badge font-mono-num">#{{ p.partition }}</span></td>
+                          <td><span class="broker-pill font-mono-num">Broker {{ p.leader }}</span></td>
                           <td><code class="replica-code">[{{ p.replicas.join(', ') }}]</code></td>
                           <td><code class="isr-code">[{{ p.isr.join(', ') }}]</code></td>
                           <td class="td-right">
-                            <span class="isr-health-pill" [class.healthy]="p.isr.length >= p.replicas.length">
-                              {{ p.isr.length >= p.replicas.length ? 'ISR OK' : 'Degradado' }}
+                            <span
+                              class="isr-health-pill"
+                              [class.healthy]="p.replicas.length > 0 && p.isr.length >= p.replicas.length"
+                              [class.degraded]="p.replicas.length === 0 || p.isr.length < p.replicas.length"
+                            >
+                              {{ p.replicas.length > 0 && p.isr.length >= p.replicas.length ? 'ISR OK' : 'Degradado' }}
                             </span>
                           </td>
                         </tr>
@@ -166,7 +208,12 @@
 
               <div class="kafka-card-footer">
                 <span class="footer-kv"><strong>Tópico: </strong><code>{{ detail.name }}</code></span>
-                <span class="footer-kv"><strong>Salud ISR: </strong><span>{{ detail.partitions.length }}/{{ detail.partitionsCount }} particiones sincronizadas</span></span>
+                <span class="footer-kv">
+                  <strong>Salud ISR: </strong>
+                  <span class="font-mono-num" [class.isr-warn-text]="healthyPartitionsCount() < detail.partitionsCount">
+                    {{ healthyPartitionsCount() }}/{{ detail.partitionsCount }} particiones sincronizadas
+                  </span>
+                </span>
               </div>
             </div>
           }
@@ -176,8 +223,8 @@
         <div class="kafka-subcard">
           <div class="kafka-subcard-header">
             <div class="kafka-subcard-title">
-              <span class="subcard-icon-box">
-                <svg lucideLayers class="subcard-icon" strokeWidth="1.75" aria-hidden="true" />
+              <span class="subcard-icon-box" aria-hidden="true">
+                <svg lucideLayers class="subcard-icon" strokeWidth="1.85" />
               </span>
               <div>
                 <h4>Consumer Groups y Lag ({{ groups().length }})</h4>
@@ -189,58 +236,63 @@
                 class="group-state-pill"
                 [class.state-stable]="gd.state === 'STABLE'"
                 [class.state-dead]="gd.state === 'DEAD' || gd.state === 'EMPTY'"
+                [class.state-warn]="gd.state !== 'STABLE' && gd.state !== 'DEAD' && gd.state !== 'EMPTY'"
               >
                 {{ gd.state }}
               </span>
             }
           </div>
 
-          <div class="kafka-chip-list" role="tablist" aria-label="Consumer Groups Kafka">
-            @for (grp of groups(); track grp.groupId) {
-              <button
-                type="button"
-                class="kafka-chip"
-                [class.is-selected]="selectedGroupId() === grp.groupId"
-                (click)="selectGroup(grp.groupId)"
-              >
-                <span class="chip-name">{{ grp.groupId }}</span>
-                <span
-                  class="group-state-pill"
-                  [class.state-stable]="grp.state === 'STABLE'"
-                  [class.state-dead]="grp.state === 'DEAD' || grp.state === 'EMPTY'"
-                >
-                  {{ grp.state }}
-                </span>
-              </button>
-            }
+          <div class="kafka-selector-wrap">
+            <label for="kafka-group-selector" class="sr-only">Seleccionar Consumer Group</label>
+            <emx-kafka-entity-selector
+              inputId="kafka-group-selector"
+              ariaLabel="Seleccionar Consumer Group"
+              kind="group"
+              placeholder="Sin Consumer Groups registrados"
+              [options]="groupSelectorOptions()"
+              [selectedId]="selectedGroupId()"
+              (selectionChange)="selectGroup($event)"
+            />
           </div>
 
           @if (groupDetail(); as gDetail) {
             <div class="kafka-detail-box">
               <div class="detail-kv-row">
                 <div class="kv-metric-card">
-                  <span class="kv-label">Estado:</span> <strong class="kv-val state-text-ok">{{ gDetail.state }}</strong>
+                  <span class="kv-label">Estado</span>
+                  <strong
+                    class="kv-val"
+                    [class.state-text-ok]="gDetail.state === 'STABLE'"
+                    [class.state-text-bad]="gDetail.state === 'DEAD' || gDetail.state === 'EMPTY'"
+                    [class.state-text-warn]="gDetail.state !== 'STABLE' && gDetail.state !== 'DEAD' && gDetail.state !== 'EMPTY'"
+                  >
+                    {{ gDetail.state }}
+                  </strong>
                 </div>
                 <div class="kv-metric-card">
-                  <span class="kv-label">Coordinador:</span> <strong class="kv-val">Broker {{ gDetail.coordinatorId }}</strong>
+                  <span class="kv-label">Coordinador</span>
+                  <strong class="kv-val font-mono-num">Broker {{ gDetail.coordinatorId }}</strong>
                 </div>
                 <div class="kv-metric-card">
-                  <span class="kv-label">Miembros:</span> <strong class="kv-val">{{ (gDetail.members || []).length }}</strong>
+                  <span class="kv-label">Miembros</span>
+                  <strong class="kv-val font-mono-num">{{ (gDetail.members || []).length }}</strong>
                 </div>
                 <div class="kv-metric-card highlight-lag">
-                  <span class="kv-label">Lag total: </span><strong class="kv-val lag-total">{{ gDetail.totalLag ?? 0 }}</strong>
+                  <span class="kv-label">Lag total: </span>
+                  <strong class="kv-val lag-total font-mono-num">{{ hasRealTotalLag() ? gDetail.totalLag : 'No disponible' }}</strong>
                 </div>
               </div>
 
               @if (effectivePartitionOffsets().length > 0) {
-                <div class="kafka-table-wrap">
-                  <table class="data-table kafka-mini-table">
+                <div class="kafka-table-wrap" role="region" aria-label="Tabla de offsets y lag" tabindex="0">
+                  <table class="data-table kafka-mini-table offsets-table">
                     <thead>
                       <tr>
                         <th scope="col">Tópico</th>
                         <th scope="col">Part.</th>
-                        <th scope="col">Offset actual</th>
-                        <th scope="col">End offset</th>
+                        <th scope="col" class="th-right">Offset actual</th>
+                        <th scope="col" class="th-right">End offset</th>
                         <th scope="col" class="th-right">Lag</th>
                       </tr>
                     </thead>
@@ -248,11 +300,21 @@
                       @for (po of effectivePartitionOffsets(); track po.topic + '-' + po.partition) {
                         <tr>
                           <td><code class="topic-cell-code">{{ po.topic }}</code></td>
-                          <td><span class="part-badge">#{{ po.partition }}</span></td>
-                          <td>{{ po.currentOffset }}</td>
-                          <td>{{ po.endOffset }}</td>
+                          <td><span class="part-badge font-mono-num">#{{ po.partition }}</span></td>
+                          <td class="td-right font-mono-num">
+                            {{ po.currentOffset !== null ? po.currentOffset : 'Sin offset' }}
+                          </td>
+                          <td class="td-right font-mono-num">
+                            {{ po.endOffset !== null ? po.endOffset : '—' }}
+                          </td>
                           <td class="td-right">
-                            <span class="lag-pill" [class.has-lag]="po.lag > 0">{{ po.lag }}</span>
+                            @if (po.lag !== null) {
+                              <span class="lag-pill font-mono-num" [class.has-lag]="po.lag > 0" [class.zero-lag]="po.lag === 0">
+                                {{ po.lag }}
+                              </span>
+                            } @else {
+                              <span class="lag-pill unknown-lag">No disponible</span>
+                            }
                           </td>
                         </tr>
                       }

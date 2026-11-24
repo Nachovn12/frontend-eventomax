@@ -1,0 +1,80 @@
+<div class="sts-root">
+  <button
+    #triggerBtn
+    type="button"
+    class="sts-trigger"
+    [id]="inputId()"
+    [class.is-open]="isOpen()"
+    [disabled]="disabled() || options().length === 0"
+    role="combobox"
+    aria-haspopup="listbox"
+    [attr.aria-expanded]="isOpen()"
+    [attr.aria-controls]="isOpen() ? inputId() + '-listbox' : null"
+    [attr.aria-activedescendant]="isOpen() && options()[activeIndex()] ? inputId() + '-opt-' + options()[activeIndex()].status : null"
+    (click)="toggle()"
+    (keydown)="onTriggerKeydown($event)"
+  >
+    @if (selectedMeta(); as meta) {
+      <span class="sts-icon-badge" [class]="'tone-' + meta.tone" aria-hidden="true">
+        @switch (meta.icon) {
+          @case ('check') { <svg lucideCircleCheck class="sts-icon"></svg> }
+          @case ('wrench') { <svg lucideWrench class="sts-icon"></svg> }
+          @case ('play') { <svg lucidePlay class="sts-icon"></svg> }
+          @case ('close') { <svg lucideCircleCheck class="sts-icon"></svg> }
+          @case ('ban') { <svg lucideBan class="sts-icon"></svg> }
+          @default { <svg lucideClock3 class="sts-icon"></svg> }
+        }
+      </span>
+      <span class="sts-trigger-label">{{ meta.label }}</span>
+    } @else {
+      <span class="sts-trigger-placeholder">Seleccionar estado destino</span>
+    }
+    <svg lucideChevronDown class="sts-chevron" aria-hidden="true"></svg>
+  </button>
+
+  @if (isOpen()) {
+    <div
+      class="sts-popover"
+      [id]="inputId() + '-listbox'"
+      role="listbox"
+      aria-label="Estados disponibles para transición"
+      (keydown)="onListboxKeydown($event)"
+    >
+      @for (opt of options(); track opt.status; let idx = $index) {
+        <button
+          type="button"
+          role="option"
+          class="sts-option"
+          [id]="inputId() + '-opt-' + opt.status"
+          [attr.data-status-option]="opt.status"
+          [class.is-selected]="value() === opt.status"
+          [class.is-active]="activeIndex() === idx"
+          [class.tone-negative]="opt.tone === 'negative'"
+          [attr.aria-selected]="value() === opt.status"
+          (mouseenter)="activeIndex.set(idx)"
+          (click)="selectOption(opt.status)"
+        >
+          <span class="sts-icon-badge" [class]="'tone-' + opt.tone" aria-hidden="true">
+            @switch (opt.icon) {
+              @case ('check') { <svg lucideCircleCheck class="sts-icon"></svg> }
+              @case ('wrench') { <svg lucideWrench class="sts-icon"></svg> }
+              @case ('play') { <svg lucidePlay class="sts-icon"></svg> }
+              @case ('close') { <svg lucideCircleCheck class="sts-icon"></svg> }
+              @case ('ban') { <svg lucideBan class="sts-icon"></svg> }
+              @default { <svg lucideClock3 class="sts-icon"></svg> }
+            }
+          </span>
+          <span class="sts-option-copy">
+            <span class="sts-option-title">{{ opt.label }}</span>
+            <span class="sts-option-desc">{{ opt.description }}</span>
+          </span>
+          @if (value() === opt.status) {
+            <span class="sts-check-mark" aria-hidden="true">
+              <svg lucideCheck class="sts-check-icon"></svg>
+            </span>
+          }
+        </button>
+      }
+    </div>
+  }
+</div>

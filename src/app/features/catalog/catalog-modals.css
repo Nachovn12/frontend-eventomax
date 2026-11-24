@@ -1,0 +1,228 @@
+/* ==========================================================================
+   UI/UX-07 — Modales corporativos de Catálogo (Servicios y Equipos)
+   Coherente con Nueva producción y Panel Operativo (Light & Dark).
+   ========================================================================== */
+
+.catalog-page .cat-modal {
+  border-radius: 16px !important;
+  border: 1px solid var(--cat-bdr) !important;
+  background: var(--cat-bg) !important;
+  width: min(560px, calc(100vw - 28px));
+  max-height: min(92dvh, 840px);
+}
+
+.catalog-page .cat-modal .catalog-modal-header {
+  padding: 18px 22px 15px;
+  background: var(--cat-surf) !important;
+  border-bottom: 1px solid var(--cat-bdr-soft) !important;
+}
+
+.catalog-page .cat-modal .catalog-modal-eyebrow {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--cat-acc) !important;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  margin: 0 0 3px;
+}
+
+.catalog-page .cat-modal .catalog-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--cat-fg) !important;
+}
+
+.catalog-page .cat-modal .catalog-modal-subtitle {
+  font-size: 12.5px;
+  color: var(--cat-muted) !important;
+  margin: 3px 0 0;
+}
+
+.catalog-page .cat-modal .catalog-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--cat-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.catalog-page .cat-modal .catalog-modal-close:hover:not(:disabled) {
+  background: var(--cat-hover);
+  color: var(--cat-fg);
+}
+
+.catalog-page .cat-modal .catalog-modal-close:focus-visible {
+  outline: 2px solid var(--cat-acc);
+  outline-offset: 2px;
+}
+
+.catalog-page .cat-modal .catalog-modal-body {
+  padding: 18px 22px !important;
+  gap: 15px !important;
+  background: var(--cat-bg) !important;
+}
+
+.catalog-page .cat-modal-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--cat-neg-bg);
+  border: 1px solid var(--cat-neg-bdr);
+  color: var(--cat-neg);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.catalog-page .cat-modal-alert-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.catalog-page .cat-modal .field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.catalog-page .cat-modal .field-char-count {
+  font-size: 11px;
+  color: var(--cat-muted);
+}
+
+.catalog-page .cat-modal .form-field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cat-sub);
+}
+
+.catalog-page .cat-modal .catalog-modal-form input:not([type="radio"]):not([type="file"]):not(.clp-native-input) {
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--cat-bdr-h) !important;
+  background: var(--cat-bg) !important;
+  color: var(--cat-fg) !important;
+  font-size: 13.5px !important;
+}
+
+.catalog-page .cat-modal .catalog-modal-form textarea {
+  height: auto !important;
+  min-height: 78px !important;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--cat-bdr-h) !important;
+  background: var(--cat-bg) !important;
+  color: var(--cat-fg) !important;
+  font-size: 13.5px !important;
+  line-height: 1.45 !important;
+  resize: vertical !important;
+}
+
+.catalog-page .cat-modal .catalog-modal-form input:focus-visible,
+.catalog-page .cat-modal .catalog-modal-form textarea:focus-visible {
+  outline: none !important;
+  border-color: var(--cat-acc) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
+}
+
+.catalog-page .cat-modal .modal-input-readonly {
+  background: var(--cat-surf) !important;
+  border-color: var(--cat-bdr) !important;
+  color: var(--cat-muted) !important;
+  font-weight: 500 !important;
+}
+
+/* Equipment Stock Mode Radio Cards */
+.catalog-page .cat-modal .ep2-catalog-stock-choice {
+  margin: 0 !important;
+  padding: 12px !important;
+  border-radius: 11px !important;
+  border: 1px solid var(--cat-bdr) !important;
+  background: var(--cat-surf) !important;
+}
+
+.catalog-page .cat-modal .ep2-catalog-stock-choice legend {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--cat-sub) !important;
+  padding: 0 6px !important;
+}
+
+.catalog-page .cat-modal .stock-radio-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.catalog-page .cat-modal .stock-radio-card {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 9px !important;
+  padding: 10px 11px !important;
+  border-radius: 9px;
+  border: 1px solid var(--cat-bdr);
+  background: var(--cat-bg);
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.catalog-page .cat-modal .stock-radio-card:hover {
+  border-color: var(--cat-bdr-h);
+}
+
+.catalog-page .cat-modal .stock-radio-card.is-checked {
+  border-color: var(--cat-acc);
+  background: var(--cat-acc-bg);
+}
+
+.catalog-page .cat-modal .stock-radio-card input[type="radio"] {
+  margin-top: 2px !important;
+  flex-shrink: 0;
+}
+
+.catalog-page .cat-modal .stock-radio-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.catalog-page .cat-modal .stock-radio-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--cat-fg);
+  line-height: 1.3;
+}
+
+.catalog-page .cat-modal .stock-radio-desc {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--cat-muted);
+  line-height: 1.3;
+}
+
+.catalog-page .cat-modal .catalog-modal-footer {
+  padding: 14px 22px;
+  background: var(--cat-surf) !important;
+  border-top: 1px solid var(--cat-bdr-soft) !important;
+}
+
+@media (max-width: 540px) {
+  .catalog-page .cat-modal .stock-radio-grid {
+    grid-template-columns: 1fr;
+  }
+}

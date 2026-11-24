@@ -1,0 +1,495 @@
+/* ==========================================================================
+   UI/UX-08 — Supervisión Apache Kafka y Consumer Lag (Light & Dark Tokens)
+   ========================================================================== */
+
+.kafka-monitor-panel {
+  --km-fg: #0F172A;
+  --km-sub: #334155;
+  --km-muted: #64748B;
+  --km-bg: #FFFFFF;
+  --km-surf: #F8FAFC;
+  --km-hover: #F1F5F9;
+  --km-bdr: #E2E8F0;
+  --km-bdr-soft: #F1F5F9;
+  --km-acc: #2563EB;
+  --km-acc-bg: rgba(37, 99, 235, 0.08);
+  --km-acc-bdr: rgba(37, 99, 235, 0.22);
+  --km-pos: #047857;
+  --km-pos-bg: rgba(16, 185, 129, 0.11);
+  --km-pos-bdr: rgba(16, 185, 129, 0.28);
+  --km-warn: #B45309;
+  --km-warn-bg: rgba(245, 158, 11, 0.12);
+  --km-warn-bdr: rgba(245, 158, 11, 0.28);
+  --km-neg: #B91C1C;
+  --km-neg-bg: rgba(220, 38, 38, 0.1);
+  --km-neg-bdr: rgba(220, 38, 38, 0.26);
+
+  margin-top: 0;
+  background: var(--km-bg) !important;
+  border: 1px solid var(--km-bdr) !important;
+  border-radius: 13px !important;
+  padding: 20px 22px !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.kafka-monitor-panel .kafka-monitor-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.kafka-monitor-panel .kafka-monitor-header .section-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+  flex: 1 1 320px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border-bottom: none;
+}
+
+:host-context([data-theme="dark"]) .kafka-monitor-panel,
+:host-context(.dark) .kafka-monitor-panel {
+  --km-fg: #F8FAFC;
+  --km-sub: #E2E8F0;
+  --km-muted: #94A3B8;
+  --km-bg: #16171F;
+  --km-surf: #121319;
+  --km-hover: #1D1F2B;
+  --km-bdr: rgba(255, 255, 255, 0.09);
+  --km-bdr-soft: rgba(255, 255, 255, 0.05);
+  --km-acc: #3B82F6;
+  --km-acc-bg: rgba(59, 130, 246, 0.14);
+  --km-acc-bdr: rgba(96, 165, 250, 0.28);
+  --km-pos: #34D399;
+  --km-pos-bg: rgba(16, 185, 129, 0.15);
+  --km-pos-bdr: rgba(52, 211, 153, 0.3);
+  --km-warn: #FBBF24;
+  --km-warn-bg: rgba(245, 158, 11, 0.15);
+  --km-warn-bdr: rgba(251, 191, 36, 0.3);
+  --km-neg: #F87171;
+  --km-neg-bg: rgba(239, 68, 68, 0.15);
+  --km-neg-bdr: rgba(248, 113, 113, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+.kafka-monitor-panel .font-mono-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.kafka-monitor-panel .section-card-header h3 {
+  color: var(--km-fg);
+}
+
+.kafka-monitor-panel .section-card-desc {
+  color: var(--km-muted);
+}
+
+.kafka-monitor-panel .section-card-desc code,
+.kafka-monitor-panel .inline-code-xs {
+  background: var(--km-hover);
+  color: var(--km-sub);
+  border: 1px solid var(--km-bdr);
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+}
+
+.kafka-monitor-panel .live-poll-badge {
+  background: var(--km-pos-bg);
+  color: var(--km-pos);
+  border-color: var(--km-pos-bdr);
+}
+
+.kafka-monitor-panel .live-dot {
+  background: var(--km-pos);
+}
+
+.kafka-monitor-panel .cluster-topo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--km-surf);
+  color: var(--km-muted);
+  border-color: var(--km-bdr);
+}
+
+.kafka-monitor-panel .topo-icon {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+/* 4 Compact Kafka KPI Cards */
+.kafka-monitor-panel .kafka-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.kafka-monitor-panel .kafka-kpi-card {
+  background: var(--km-surf);
+  border: 1px solid var(--km-bdr);
+  border-radius: 11px;
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.kafka-monitor-panel .kafka-kpi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kafka-monitor-panel .kafka-kpi-label {
+  color: var(--km-muted);
+  font-size: 12px;
+}
+
+.kafka-monitor-panel .kafka-kpi-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kafka-monitor-panel .kafka-kpi-icon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.kafka-monitor-panel .kafka-kpi-icon.blue { background: var(--km-acc-bg); color: var(--km-acc); }
+.kafka-monitor-panel .kafka-kpi-icon.green { background: var(--km-pos-bg); color: var(--km-pos); }
+.kafka-monitor-panel .kafka-kpi-icon.amber { background: var(--km-warn-bg); color: var(--km-warn); }
+.kafka-monitor-panel .kafka-kpi-icon.neutral { background: var(--km-hover); color: var(--km-muted); }
+
+.kafka-monitor-panel .kafka-kpi-main strong {
+  color: var(--km-fg);
+  font-size: 22px;
+}
+
+.kafka-monitor-panel .kafka-kpi-main strong.val-unavailable {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--km-muted);
+}
+
+.kafka-monitor-panel .kafka-kpi-pill {
+  background: var(--km-hover);
+  color: var(--km-muted);
+}
+
+.kafka-monitor-panel .kafka-kpi-pill.blue { background: var(--km-acc-bg); color: var(--km-acc); }
+.kafka-monitor-panel .kafka-kpi-pill.green { background: var(--km-pos-bg); color: var(--km-pos); }
+.kafka-monitor-panel .kafka-kpi-pill.amber { background: var(--km-warn-bg); color: var(--km-warn); }
+
+.kafka-monitor-panel .kafka-kpi-card small {
+  color: var(--km-muted);
+}
+
+/* Subcards (Topics & Consumer Groups) */
+.kafka-monitor-panel .kafka-monitor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  min-width: 0;
+}
+
+.kafka-monitor-panel .kafka-subcard {
+  background: var(--km-bg);
+  border: 1px solid var(--km-bdr);
+  border-radius: 12px;
+  padding: 16px 18px;
+  overflow: visible;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.kafka-monitor-panel .kafka-detail-box {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.kafka-monitor-panel .kafka-subcard-header {
+  border-bottom-color: var(--km-bdr-soft);
+}
+
+.kafka-monitor-panel .subcard-icon-box {
+  background: var(--km-acc-bg);
+  border-color: var(--km-acc-bdr);
+}
+
+.kafka-monitor-panel .subcard-icon {
+  color: var(--km-acc);
+}
+
+.kafka-monitor-panel .kafka-subcard-title h4 {
+  color: var(--km-fg);
+}
+
+.kafka-monitor-panel .subcard-subtitle {
+  color: var(--km-muted);
+}
+
+.kafka-monitor-panel .kafka-selector-wrap {
+  margin-bottom: 12px;
+}
+
+/* KV Strip & Tables */
+.kafka-monitor-panel .detail-kv-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.kafka-monitor-panel .kv-metric-card {
+  background: var(--km-surf);
+  border: 1px solid var(--km-bdr);
+  border-radius: 9px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.kafka-monitor-panel .kv-metric-card.highlight-lag {
+  background: var(--km-acc-bg);
+  border-color: var(--km-acc-bdr);
+}
+
+.kafka-monitor-panel .kv-label {
+  font-size: 11px;
+  color: var(--km-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kafka-monitor-panel .kv-val,
+.kafka-monitor-panel .kv-code {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--km-fg);
+}
+
+.kafka-monitor-panel .kv-val.state-text-ok { color: var(--km-pos); }
+.kafka-monitor-panel .kv-val.state-text-warn { color: var(--km-warn); }
+.kafka-monitor-panel .kv-val.state-text-bad { color: var(--km-neg); }
+
+.kafka-monitor-panel .kafka-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--km-bdr);
+  border-radius: 10px;
+  background: var(--km-bg);
+}
+
+.kafka-monitor-panel .kafka-mini-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.kafka-monitor-panel .kafka-mini-table th {
+  background: var(--km-surf);
+  color: var(--km-muted);
+  border-bottom: 1px solid var(--km-bdr);
+  padding: 8px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.kafka-monitor-panel .kafka-mini-table th.th-right,
+.kafka-monitor-panel .kafka-mini-table td.td-right {
+  text-align: right;
+}
+
+.kafka-monitor-panel .kafka-mini-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--km-bdr-soft);
+  color: var(--km-fg);
+  font-size: 12.5px;
+  vertical-align: middle;
+}
+
+.kafka-monitor-panel .kafka-mini-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.kafka-monitor-panel .part-badge,
+.kafka-monitor-panel .broker-pill,
+.kafka-monitor-panel .replica-code,
+.kafka-monitor-panel .isr-code,
+.kafka-monitor-panel .topic-cell-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+}
+
+.kafka-monitor-panel .part-badge {
+  color: var(--km-muted);
+  font-weight: 600;
+}
+
+.kafka-monitor-panel .broker-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--km-acc-bg);
+  color: var(--km-acc);
+  font-weight: 600;
+}
+
+.kafka-monitor-panel .replica-code,
+.kafka-monitor-panel .isr-code,
+.kafka-monitor-panel .topic-cell-code {
+  color: var(--km-sub);
+  background: transparent;
+}
+
+.kafka-monitor-panel .isr-health-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.kafka-monitor-panel .isr-health-pill.healthy {
+  background: var(--km-pos-bg);
+  color: var(--km-pos);
+  border: 1px solid var(--km-pos-bdr);
+}
+
+.kafka-monitor-panel .isr-health-pill.degraded {
+  background: var(--km-neg-bg);
+  color: var(--km-neg);
+  border: 1px solid var(--km-neg-bdr);
+}
+
+.kafka-monitor-panel .isr-warn-text {
+  color: var(--km-neg);
+  font-weight: 600;
+}
+
+.kafka-monitor-panel .group-state-pill.state-stable {
+  background: var(--km-pos-bg);
+  color: var(--km-pos);
+  border: 1px solid var(--km-pos-bdr);
+}
+
+.kafka-monitor-panel .group-state-pill.state-warn {
+  background: var(--km-warn-bg);
+  color: var(--km-warn);
+  border: 1px solid var(--km-warn-bdr);
+}
+
+.kafka-monitor-panel .group-state-pill.state-dead {
+  background: var(--km-neg-bg);
+  color: var(--km-neg);
+  border: 1px solid var(--km-neg-bdr);
+}
+
+.kafka-monitor-panel .lag-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.kafka-monitor-panel .lag-pill.zero-lag {
+  background: var(--km-pos-bg);
+  color: var(--km-pos);
+}
+
+.kafka-monitor-panel .lag-pill.has-lag {
+  background: var(--km-warn-bg);
+  color: var(--km-warn);
+  border: 1px solid var(--km-warn-bdr);
+}
+
+.kafka-monitor-panel .lag-pill.unknown-lag {
+  background: var(--km-hover);
+  color: var(--km-muted);
+  border: 1px solid var(--km-bdr);
+  font-weight: 500;
+}
+
+.kafka-monitor-panel .kafka-card-footer {
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: var(--km-surf);
+  border: 1px solid var(--km-bdr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 14px;
+  font-size: 11.5px;
+  color: var(--km-muted);
+}
+
+.kafka-monitor-panel .kafka-card-footer strong {
+  color: var(--km-sub);
+}
+
+.kafka-monitor-panel .kafka-card-footer code {
+  background: var(--km-bg);
+  border: 1px solid var(--km-bdr);
+  color: var(--km-fg);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 11px;
+}
+
+@media (max-width: 1080px) {
+  .kafka-monitor-panel .kafka-kpi-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .kafka-monitor-panel .kafka-monitor-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .kafka-monitor-panel {
+    padding: 15px 16px !important;
+  }
+  .kafka-monitor-panel .kafka-kpi-strip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .kafka-monitor-panel .detail-kv-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .kafka-monitor-panel .kafka-subcard {
+    padding: 14px 14px;
+  }
+}

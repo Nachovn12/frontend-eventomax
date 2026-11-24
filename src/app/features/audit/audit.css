@@ -339,7 +339,7 @@
 
 .audit-event {
   display: grid;
-  grid-template-columns: 140px 32px minmax(0, 1fr);
+  grid-template-columns: 164px 32px minmax(0, 1fr);
   gap: 16px;
   position: relative;
 }
@@ -498,6 +498,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  max-width: 100%;
+  min-width: 0;
   padding: 3px 10px 3px 4px;
   background: #F8FAFC;
   border: 1px solid #E2E8F0;
@@ -510,6 +512,7 @@
 .actor-avatar {
   width: 22px;
   height: 22px;
+  flex-shrink: 0;
   border-radius: 50%;
   background: #2563EB;
   color: #FFFFFF;
@@ -518,6 +521,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.actor-text-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.actor-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.actor-email {
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748B;
+  overflow-wrap: anywhere;
 }
 
 /* Resumen Operacional Destacado */
@@ -689,27 +711,51 @@
   color: #059669;
 }
 
-/* Accordion de Payload JSON */
+/* Accordion de Payload JSON (WAI-ARIA Disclosure) */
 .audit-details-accordion {
   margin-top: 12px;
   border-top: 1px solid #F1F5F9;
   padding-top: 10px;
 }
 
-.audit-details-summary {
+.audit-details-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.audit-details-summary {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 6px;
   cursor: pointer;
   user-select: none;
+  font: inherit;
   font-size: 12.5px;
   font-weight: 600;
   color: #2563EB;
-  list-style: none;
+  text-align: left;
+  transition: color 140ms ease, background-color 140ms ease;
 }
 
-.audit-details-summary::-webkit-details-marker {
-  display: none;
+.audit-details-summary:hover {
+  color: #1D4ED8;
+}
+
+.audit-details-summary:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+
+:host-context([data-theme="dark"]) .audit-details-summary:focus-visible,
+:host-context(.dark) .audit-details-summary:focus-visible {
+  outline-color: #38BDF8;
 }
 
 .summary-title {
@@ -724,12 +770,94 @@
   transition: transform 180ms ease;
 }
 
-.audit-details-accordion[open] .accordion-chevron {
+.audit-details-accordion.is-open .accordion-chevron {
   transform: rotate(180deg);
+}
+
+.audit-details-content[hidden] {
+  display: none;
 }
 
 .btn-copy-json {
   flex-shrink: 0;
+}
+
+.audit-actor-tech-row {
+  margin-top: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+}
+
+.audit-actor-tech-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.audit-actor-tech-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748B;
+}
+
+.audit-actor-tech-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  color: #0F172A;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.btn-copy-actor-id {
+  flex-shrink: 0;
+}
+
+.audit-actor-source-row {
+  margin-top: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+}
+
+.audit-actor-source-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: #334155;
+}
+
+:host-context([data-theme="dark"]) .audit-actor-tech-row,
+:host-context(.dark) .audit-actor-tech-row,
+:host-context([data-theme="dark"]) .audit-actor-source-row,
+:host-context(.dark) .audit-actor-source-row {
+  background: #121319;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+:host-context([data-theme="dark"]) .audit-actor-tech-label,
+:host-context(.dark) .audit-actor-tech-label,
+:host-context([data-theme="dark"]) .actor-email,
+:host-context(.dark) .actor-email {
+  color: #94A3B8;
+}
+
+:host-context([data-theme="dark"]) .audit-actor-tech-value,
+:host-context(.dark) .audit-actor-tech-value,
+:host-context([data-theme="dark"]) .audit-actor-source-value,
+:host-context(.dark) .audit-actor-source-value {
+  color: #E2E8F0;
 }
 
 .audit-json {

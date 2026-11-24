@@ -5,6 +5,7 @@ import localeEsCL from '@angular/common/locales/es-CL';
 import { Subject, of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Catalog } from './catalog';
+import { parseClpRateInput } from './components/clp-rate-input/clp-rate-input.component';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
 import { CatalogDataService } from './catalog-data.service';
@@ -75,9 +76,12 @@ describe('Catalog', () => {
   }
 
   function selectStatus(value: string): void {
-    const select = element.querySelector<HTMLSelectElement>('#catalog-status')!;
-    select.value = value;
-    select.dispatchEvent(new Event('change'));
+    const trigger = element.querySelector<HTMLButtonElement>('#catalog-status')!;
+    trigger.click();
+    fixture.detectChanges();
+    const key = value || 'ALL';
+    const opt = element.querySelector<HTMLButtonElement>(`#catalog-status-opt-${key}`)!;
+    opt.click();
     fixture.detectChanges();
   }
 
@@ -137,7 +141,8 @@ describe('Catalog', () => {
     expect(element.querySelector('.panel-footer')?.textContent).toContain(
       '0 de 0 servicios visibles',
     );
-    expect(element.querySelector('button')).toBeNull();
+    expect(element.querySelector('.btn-catalog-create')).toBeNull();
+    expect(element.textContent).not.toContain('Nuevo servicio');
     expect(element.querySelector('input')).toBeNull();
   });
 
@@ -153,7 +158,8 @@ describe('Catalog', () => {
     expect(element.textContent).not.toMatch(
       /Servicios en operación|Servicios no disponibles|Registros actualizados/,
     );
-    expect(element.querySelector('button')).toBeNull();
+    expect(element.querySelector('.btn-catalog-create')).toBeNull();
+    expect(element.querySelector('.ep2-catalog-table-action')).toBeNull();
     expect(element.querySelector('emx-icon')).toBeNull();
   });
 
@@ -200,7 +206,8 @@ describe('Catalog', () => {
     fixture.detectChanges();
     expect(element.querySelectorAll('tbody tr')).toHaveLength(2);
     expect(element.querySelector<HTMLInputElement>('#catalog-search')!.value).toBe('');
-    expect(element.querySelector<HTMLSelectElement>('#catalog-status')!.value).toBe('');
+    expect(fixture.componentInstance.status.value).toBe('');
+    expect(element.querySelector('#catalog-status')?.textContent).toContain('Todos los estados');
     expect(document.activeElement).toBe(element.querySelector('#catalog-search'));
     expect(element.querySelector('.catalog-clear')).toBeNull();
   });
@@ -245,7 +252,7 @@ describe('Catalog', () => {
     expect(element.textContent).toContain('Inventario de Equipos');
     expect(element.querySelectorAll('tbody tr')).toHaveLength(2);
     expect(element.textContent).toContain('Parlante Line Array');
-    expect(element.textContent).toContain('AGOTADO');
+    expect(element.textContent).toContain('Agotado');
   });
 
   describe('Equipment update and management', () => {
@@ -279,7 +286,8 @@ describe('Catalog', () => {
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(element.querySelector('.ep2-catalog-editor')).toBeTruthy();
+      expect(element.querySelector('.ep2-catalog-editor')).toBeNull();
+      expect(element.querySelector('.btn-catalog-create')?.textContent).toContain('Nuevo equipo');
       const editButtons = Array.from(element.querySelectorAll<HTMLButtonElement>('.ep2-catalog-table-action'))
         .filter((btn) => btn.textContent?.includes('Editar equipo'));
       expect(editButtons).toHaveLength(2);
@@ -595,6 +603,149 @@ describe('Catalog', () => {
         initialAvailableQty: 10,
       });
       expect(fixture.componentInstance.showEquipmentEditor()).toBe(false);
+    });
+  });
+
+  // =========================================================================
+  // UI/UX-07 — Refinamiento integral del Catálogo de EventoMax
+  // =========================================================================
+
+  describe('UI/UX-07 refinements', () => {
+    it('updates contextual header title and description when switching between Servicios and Equipos', async () => {
+      await receive();
+      expect(element.querySelector('h1')?.textContent?.trim()).toBe('Catálogo de servicios');
+      expect(element.querySelector('.page-description')?.textContent).toContain(
+        'Consulta y administra los servicios técnicos y sus tarifas vigentes.',
+      );
+
+      const tabsNav = element.querySelector<HTMLElement>('.catalog-tabs')!;
+      tabsNav.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.activeTab()).toBe('equipment');
+      expect(element.querySelector('h1')?.textContent?.trim()).toBe('Equipos e inventario');
+      expect(element.querySelector('.page-description')?.textContent).toContain(
+        'Consulta el equipamiento y su disponibilidad operativa.',
+      );
+    });
+
+    it('integrates Nuevo servicio in table header without redundant admin card and preserves Admin RBAC', async () => {
+      authzMock.hasRole.mockImplementation((role) => role === AppRole.Admin);
+      authzMock.hasScope.mockImplementation((scope) => scope === 'access_as_user');
+      await receive();
+
+      expect(element.querySelector('.ep2-catalog-editor')).toBeNull();
+      const createBtn = element.querySelector<HTMLButtonElement>('.catalog-panel-heading .btn-catalog-create');
+      expect(createBtn).not.toBeNull();
+      expect(createBtn?.textContent).toContain('Nuevo servicio');
+    });
+
+    it('provides inline search clear button and corporate sort dropdown without extra HTTP requests', async () => {
+      await receive();
+      expect(element.querySelector('.catalog-search-clear')).toBeNull();
+
+      search('Audio');
+      const clearBtn = element.querySelector<HTMLButtonElement>('.catalog-search-clear');
+      expect(clearBtn).not.toBeNull();
+      expect(clearBtn?.getAttribute('aria-label')).toBe('Limpiar búsqueda');
+      clearBtn!.click();
+      fixture.detectChanges();
+      expect(fixture.componentInstance.search.value).toBe('');
+      expect(element.querySelectorAll('tbody tr')).toHaveLength(2);
+
+      // Corporate sort dropdown
+      const sortTrigger = element.querySelector<HTMLButtonElement>('#catalog-sort')!;
+      sortTrigger.click();
+      fixture.detectChanges();
+      element.querySelector<HTMLButtonElement>('#catalog-sort-opt-rate-asc')!.click();
+      fixture.detectChanges();
+      expect(fixture.componentInstance.rows()[0].rate).toBe(50000);
+      expect(dataServiceMock.getServices).toHaveBeenCalledTimes(1);
+    });
+
+    it('formats service tariff in CLP while preserving exact numeric payload and textarea description', async () => {
+      expect(parseClpRateInput('$850.000 CLP')).toBe(850000);
+      expect(parseClpRateInput('1.234,56')).toBe(1234.56);
+      expect(parseClpRateInput('26000.25')).toBe(26000.25);
+      expect(parseClpRateInput('')).toBe(0);
+
+      authzMock.hasRole.mockImplementation((role) => role === AppRole.Admin);
+      authzMock.hasScope.mockImplementation((scope) => scope === 'access_as_user');
+      dataServiceMock.createService.mockReturnValue(of({ id: 9, name: 'Audio Pro', description: 'Multilinea', rate: 850000, active: true }));
+      await receive();
+
+      fixture.componentInstance.openCreate();
+      fixture.detectChanges();
+
+      const descField = element.querySelector<HTMLTextAreaElement>('#service-modal-desc');
+      expect(descField?.tagName).toBe('TEXTAREA');
+      expect(descField?.getAttribute('rows')).toBe('3');
+
+      const rateInput = element.querySelector<HTMLInputElement>('#service-modal-rate')!;
+      rateInput.value = '850000';
+      rateInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(rateInput.value).toBe('850.000');
+      expect(element.textContent).toContain('$850.000 CLP');
+      expect(fixture.componentInstance.serviceForm.controls.rate.value).toBe(850000);
+
+      fixture.componentInstance.serviceForm.controls.name.setValue('Audio Pro');
+      fixture.componentInstance.serviceForm.controls.description.setValue('Multilinea');
+      fixture.componentInstance.submitService();
+      expect(dataServiceMock.createService).toHaveBeenCalledWith({
+        name: 'Audio Pro',
+        description: 'Multilinea',
+        rate: 850000,
+        active: true,
+      });
+    });
+
+    it('renders unified dropzone states and shows optimization badge only when confirmed', async () => {
+      authzMock.hasRole.mockImplementation((role) => role === AppRole.Admin);
+      authzMock.hasScope.mockImplementation((scope) => scope === 'access_as_user');
+      await receive();
+
+      fixture.componentInstance.openCreate();
+      fixture.detectChanges();
+
+      expect(element.textContent).toContain('Arrastra y suelta una fotografía');
+      expect(element.textContent).toContain('Seleccionar imagen');
+      expect(element.textContent).toContain('PNG, JPG, WEBP o AVIF · Máx. 5 MB');
+
+      // Existing remote URL should NOT falsely claim WebP optimization
+      fixture.componentInstance.serviceImageDraft.set('https://cdn.example.com/service.png');
+      fixture.detectChanges();
+      expect(element.textContent).toContain('Cambiar imagen');
+      expect(element.textContent).toContain('Quitar');
+      expect(element.textContent).not.toContain('WebP optimizada');
+
+      // Confirmed WebP Data URL SHOULD display WebP optimizada
+      fixture.componentInstance.serviceImageDraft.set('data:image/webp;base64,UklGRh4AAABXRUJQVlA4');
+      fixture.detectChanges();
+      expect(element.textContent).toContain('WebP optimizada');
+
+      // Provisional removal
+      element.querySelector<HTMLButtonElement>('.dz-action-remove')!.click();
+      fixture.detectChanges();
+      expect(fixture.componentInstance.serviceImageDraft()).toBeNull();
+    });
+
+    it('uses Disponible/Reservado labels and object-fit contain thumbnail class on equipment table', async () => {
+      dataServiceMock.getEquipment.mockReturnValue(of([
+        { id: 1, name: 'Consola dLive', description: 'Mezcla digital', active: true, availableQty: 1, reservedQty: 2, totalQuantity: 3, availableQuantity: 1, status: 'DISPONIBLE', imageUrl: 'https://cdn.example.com/dlive.png' },
+        { id: 2, name: 'Subwoofer', description: 'Bajos activos', active: false, availableQty: 0, reservedQty: 1, totalQuantity: 1, availableQuantity: 0, status: 'INACTIVO' },
+      ]));
+      fixture.componentInstance.retryEquipment();
+      fixture.componentInstance.setActiveTab('equipment');
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(element.textContent).toContain('1 disponible');
+      expect(element.textContent).toContain('2 reservados');
+      expect(element.textContent).toContain('0 disponibles');
+      expect(element.textContent).toContain('1 reservado');
+      expect(element.querySelector('.equipment-thumb-img')).not.toBeNull();
     });
   });
 });

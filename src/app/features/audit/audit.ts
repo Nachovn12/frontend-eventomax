@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -7,18 +6,34 @@ import { BehaviorSubject, merge, of, timer } from 'rxjs';
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { DEFAULT_POLL_INTERVAL_MS } from '../../core/utils/live-polling';
 import {
+  AuditTimestampChile,
+  chileLocalInputToAuditUtc,
+  formatAuditTimestampChile,
+  formatCalendarRangeToChileDatetimeLocal,
+  formatInstantToChileDatetimeLocal,
+  getChileMonthStartDatetimeLocal,
+} from '../../core/utils/chile-time';
+import {
   LucideActivity,
-  LucideCircleCheck,
-  LucideCircleAlert,
-  LucideLayers,
-  LucideUser,
   LucideArrowRight,
-  LucideCopy,
+  LucideCalendarDays,
   LucideCheck,
-  LucideFilter,
-  LucideShieldCheck,
-  LucideRefreshCw,
   LucideChevronDown,
+  LucideChevronLeft,
+  LucideChevronRight,
+  LucideCircleAlert,
+  LucideCircleCheck,
+  LucideCopy,
+  LucideFilter,
+  LucideFingerprint,
+  LucideGitCommitHorizontal,
+  LucideLock,
+  LucideMapPin,
+  LucideRefreshCw,
+  LucideRotateCcw,
+  LucideShieldCheck,
+  LucideUser,
+  LucideUsers,
 } from '@lucide/angular';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
@@ -26,6 +41,8 @@ import { AuditDataService } from './audit-data.service';
 import { AuditEvent, AuditTimelineFilters } from './models/audit-event.model';
 import { DatePickerPreset, DateRangePickerComponent } from '../../shared/ui/date-picker/date-range-picker.component';
 import { ButtonDirective } from '../../shared/ui/button.component';
+import { AuditEventTypeSelectComponent } from './components/audit-event-type-select.component';
+import { AuditJsonViewerComponent } from './components/audit-json-viewer.component';
 
 export interface DecodedAuditDetails {
   productionId?: number | string;
@@ -42,35 +59,77 @@ export interface DecodedAuditDetails {
   [key: string]: unknown;
 }
 
+export interface AuditDayGroupEntry {
+  readonly item: AuditEvent;
+  readonly ts: AuditTimestampChile;
+}
+
+export interface AuditDayGroup {
+  readonly dateKey: string;
+  readonly dateEsCl: string;
+  readonly heading: string;
+  readonly entries: readonly AuditDayGroupEntry[];
+}
+
 interface AuditViewState {
   readonly items: readonly AuditEvent[];
   readonly loading: boolean;
   readonly error: number | null;
 }
 
+function formatChileDayHeading(dateEsCl: string): string {
+  const match = dateEsCl.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return dateEsCl;
+  const day = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const year = Number.parseInt(match[3], 10);
+  const instant = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  try {
+    const formatted = new Intl.DateTimeFormat('es-CL', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(instant);
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  } catch {
+    return dateEsCl;
+  }
+}
+
 @Component({
   selector: 'app-audit',
   standalone: true,
   imports: [
-    DatePipe,
     ReactiveFormsModule,
     DateRangePickerComponent,
+    AuditEventTypeSelectComponent,
+    AuditJsonViewerComponent,
     LucideActivity,
-    LucideCircleCheck,
-    LucideCircleAlert,
-    LucideLayers,
-    LucideUser,
     LucideArrowRight,
-    LucideCopy,
+    LucideCalendarDays,
     LucideCheck,
-    LucideFilter,
-    LucideShieldCheck,
-    LucideRefreshCw,
     LucideChevronDown,
+    LucideChevronLeft,
+    LucideChevronRight,
+    LucideCircleAlert,
+    LucideCircleCheck,
+    LucideCopy,
+    LucideFilter,
+    LucideFingerprint,
+    LucideGitCommitHorizontal,
+    LucideLock,
+    LucideMapPin,
+    LucideRefreshCw,
+    LucideRotateCcw,
+    LucideShieldCheck,
+    LucideUser,
+    LucideUsers,
     ButtonDirective,
   ],
   templateUrl: './audit.html',
-  styleUrl: './audit.css',
+  styleUrls: ['./audit.css', './audit-page.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Audit {
@@ -101,8 +160,10 @@ export class Audit {
   });
   readonly auditRangePreset = signal<string>('all');
   readonly filterError = signal('');
+  readonly hasActiveFilters = signal(false);
   readonly page = signal(0);
   readonly copiedKey = signal<string | null>(null);
+  readonly expandedEventIds = signal<ReadonlySet<string>>(new Set());
 
   readonly auditPresets: readonly DatePickerPreset[] = [
     { id: 'all', label: 'Cualquier fecha' },
@@ -128,10 +189,14 @@ export class Audit {
         }
         const hasCache = this.cachedItems.length > 0;
         return this.api.getTimeline(filters).pipe(
-          tap((items) => { this.cachedItems = items; }),
+          tap((items) => {
+            this.cachedItems = items;
+            this.pruneExpandedEventIds(items);
+          }),
           map((items): AuditViewState => ({ items, loading: false, error: null })),
           catchError((error: HttpErrorResponse) => {
             this.cachedItems = [];
+            this.clearExpandedEventIds();
             return of<AuditViewState>({ items: [], loading: false, error: error.status });
           }),
           startWith<AuditViewState>({
@@ -154,21 +219,63 @@ export class Audit {
   readonly totalEventsCount = computed(() => this.items().length);
 
   readonly uniqueActorsCount = computed(() => {
-    const actors = new Set(this.items().map(i => i.actor).filter(Boolean));
+    const actors = new Set(this.items().map((i) => i.actor).filter(Boolean));
     return actors.size;
   });
+
+  readonly tracedEventsCount = computed(() =>
+    this.items().filter((i) => Boolean(i.traceId && i.eventId)).length
+  );
 
   readonly traceIntegrityPercent = computed(() => {
     const list = this.items();
     if (!list.length) return 100;
-    const ok = list.filter(i => i.traceId && i.eventId).length;
+    const ok = this.tracedEventsCount();
     return Math.round((ok / list.length) * 100);
+  });
+
+  /**
+   * Agrupación visual por día en America/Santiago sobre la página actual,
+   * preservando el orden cronológico descendente sin nuevas consultas ni totales globales.
+   */
+  readonly timelineGroups = computed<readonly AuditDayGroup[]>(() => {
+    const list = this.items();
+    if (list.length === 0) return [];
+
+    const groups: {
+      dateKey: string;
+      dateEsCl: string;
+      heading: string;
+      entries: AuditDayGroupEntry[];
+    }[] = [];
+
+    for (const item of list) {
+      const ts = this.formatTimestampChile(item.timestamp);
+      const dateEsCl = ts.date;
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup && lastGroup.dateEsCl === dateEsCl) {
+        lastGroup.entries.push({ item, ts });
+      } else {
+        groups.push({
+          dateKey: `${dateEsCl}-${groups.length}`,
+          dateEsCl,
+          heading: formatChileDayHeading(dateEsCl),
+          entries: [{ item, ts }],
+        });
+      }
+    }
+
+    return groups;
   });
 
   parseDetails(details: string | null | undefined): DecodedAuditDetails | null {
     if (!details) return null;
     try {
-      return JSON.parse(details) as DecodedAuditDetails;
+      const parsed: unknown = JSON.parse(details);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as DecodedAuditDetails;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -196,10 +303,86 @@ export class Audit {
     }
   }
 
+  private static readonly CANONICAL_TID_OID_PATTERN =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  private static readonly UUID_PATTERN =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  private static readonly OPAQUE_SUB_PATTERN =
+    /^(?:(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z0-9_-]{22,}|[A-Za-z0-9_-]{32,})$/;
+  private static readonly DELIVERABLE_EMAIL_PATTERN =
+    /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  isTechnicalActorId(actor: string | null | undefined): boolean {
+    const value = actor?.trim();
+    if (!value) return false;
+    return (
+      Audit.CANONICAL_TID_OID_PATTERN.test(value) ||
+      Audit.UUID_PATTERN.test(value) ||
+      Audit.OPAQUE_SUB_PATTERN.test(value)
+    );
+  }
+
+  formatActorLabel(item: AuditEvent): string {
+    const displayName = item.actorDisplayName?.trim();
+    if (displayName) return displayName;
+    if (item.actorResolutionSource === 'SYSTEM') return 'Sistema';
+    const rawActor = item.actor?.trim();
+    if (!rawActor) return 'No informado';
+    if (rawActor.toLowerCase() === 'system') return 'Sistema';
+    if (item.actorResolutionSource === 'UNRESOLVED' || this.isTechnicalActorId(rawActor)) {
+      return 'Usuario autenticado';
+    }
+    return rawActor;
+  }
+
+  formatActorEmail(item: AuditEvent): string | null {
+    const email = item.actorEmail?.trim();
+    if (!email || email.toUpperCase().includes('#EXT#')) {
+      return null;
+    }
+    return Audit.DELIVERABLE_EMAIL_PATTERN.test(email) ? email : null;
+  }
+
+  formatResolutionSource(item: AuditEvent): string | null {
+    switch (item.actorResolutionSource) {
+      case 'EVENT':
+        return 'Nombre registrado en el evento';
+      case 'ENTRA_DIRECTORY':
+        return 'Directorio Microsoft Entra ID (datos actuales)';
+      case 'VERIFIED_SUB_TO_ENTRA_DIRECTORY':
+        return 'Identidad histórica vinculada mediante asociación verificada';
+      case 'SYSTEM':
+        return 'Sistema';
+      case 'LEGACY':
+        return 'Identificador histórico legible';
+      case 'UNRESOLVED':
+        return 'Identidad no resuelta';
+      default:
+        return null;
+    }
+  }
+
+  actorInitial(item: AuditEvent): string {
+    const label = this.formatActorLabel(item);
+    return label.charAt(0).toUpperCase() || '?';
+  }
+
+  hasExpandableDetails(item: AuditEvent): boolean {
+    return Boolean(
+      item.details?.trim() ||
+      item.actor?.trim() ||
+      item.actorResolutionSource ||
+      item.eventId ||
+      item.traceId ||
+      item.correlationId ||
+      item.source
+    );
+  }
+
   formatEventType(type: string): string {
     switch (type) {
-      case 'ProductionCreated': return 'Creación de Producción';
-      case 'ProductionStatusChanged': return 'Cambio de Estado';
+      case 'ProductionCreated': return 'Creación de producción';
+      case 'ProductionStatusChanged': return 'Cambio de estado';
       default: return type;
     }
   }
@@ -226,11 +409,53 @@ export class Audit {
     return this.copiedKey() === key;
   }
 
-  /** Inputs datetime-local representan hora local del navegador: serializar como UTC SIN Z para el contrato Audit. */
+  detailsPanelId(eventId: string): string {
+    return `audit-details-panel-${eventId.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+  }
+
+  isDetailsExpanded(eventId: string): boolean {
+    return this.expandedEventIds().has(eventId);
+  }
+
+  toggleDetails(eventId: string): void {
+    this.expandedEventIds.update((current) => {
+      const next = new Set(current);
+      if (next.has(eventId)) {
+        next.delete(eventId);
+      } else {
+        next.add(eventId);
+      }
+      return next;
+    });
+  }
+
+  private pruneExpandedEventIds(items: readonly AuditEvent[]): void {
+    const current = this.expandedEventIds();
+    if (current.size === 0) return;
+    const visibleIds = new Set(items.map((item) => item.eventId));
+    let changed = false;
+    const pruned = new Set<string>();
+    for (const id of current) {
+      if (visibleIds.has(id)) {
+        pruned.add(id);
+      } else {
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.expandedEventIds.set(pruned);
+    }
+  }
+
+  private clearExpandedEventIds(): void {
+    if (this.expandedEventIds().size > 0) {
+      this.expandedEventIds.set(new Set());
+    }
+  }
+
+  /** Inputs datetime-local representan hora de Chile continental (America/Santiago): serializar como UTC SIN Z para el contrato Audit. */
   private toAuditUtc(input: string): string | undefined {
-    if (!input) return undefined;
-    const date = new Date(input);
-    return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 19) : undefined;
+    return chileLocalInputToAuditUtc(input);
   }
 
   applyFilters(): void {
@@ -245,13 +470,17 @@ export class Audit {
     }
     this.filterError.set('');
     this.page.set(0);
+    this.clearExpandedEventIds();
+    const trimmedActor = actor.trim() || undefined;
+    const trimmedType = type.trim() || undefined;
+    this.hasActiveFilters.set(Boolean(trimmedActor || trimmedType || utcFrom || utcTo));
     this.querySubject.next({
-      actor: actor.trim() || undefined,
-      type: type.trim() || undefined,
+      actor: trimmedActor,
+      type: trimmedType,
       from: utcFrom,
       to: utcTo,
       page: 0,
-      size: this.pageSize
+      size: this.pageSize,
     });
   }
 
@@ -259,7 +488,9 @@ export class Audit {
     this.filtersForm.reset();
     this.auditRangePreset.set('all');
     this.filterError.set('');
+    this.hasActiveFilters.set(false);
     this.page.set(0);
+    this.clearExpandedEventIds();
     this.querySubject.next({ page: 0, size: this.pageSize });
   }
 
@@ -273,60 +504,49 @@ export class Audit {
     if (preset === 'last24h') {
       const from = new Date(now.getTime() - 86400000);
       this.filtersForm.patchValue({
-        from: this.toLocalDatetimeString(from),
-        to: this.toLocalDatetimeString(now),
+        from: formatInstantToChileDatetimeLocal(from),
+        to: formatInstantToChileDatetimeLocal(now),
       });
     } else if (preset === 'last7d') {
       const from = new Date(now.getTime() - 7 * 86400000);
       this.filtersForm.patchValue({
-        from: this.toLocalDatetimeString(from),
-        to: this.toLocalDatetimeString(now),
+        from: formatInstantToChileDatetimeLocal(from),
+        to: formatInstantToChileDatetimeLocal(now),
       });
     } else if (preset === 'last30d') {
       const from = new Date(now.getTime() - 30 * 86400000);
       this.filtersForm.patchValue({
-        from: this.toLocalDatetimeString(from),
-        to: this.toLocalDatetimeString(now),
+        from: formatInstantToChileDatetimeLocal(from),
+        to: formatInstantToChileDatetimeLocal(now),
       });
     } else if (preset === 'thisMonth') {
-      const from = new Date(now.getFullYear(), now.getMonth(), 1);
       this.filtersForm.patchValue({
-        from: this.toLocalDatetimeString(from),
-        to: this.toLocalDatetimeString(now),
+        from: getChileMonthStartDatetimeLocal(now),
+        to: formatInstantToChileDatetimeLocal(now),
       });
     }
   }
 
   onAuditRangeChange(range: { start: Date; end: Date }): void {
     this.auditRangePreset.set('custom');
-    const start = new Date(range.start);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(range.end);
-    end.setHours(23, 59, 59, 999);
+    const bounds = formatCalendarRangeToChileDatetimeLocal(range.start, range.end);
     this.filtersForm.patchValue({
-      from: this.toLocalDatetimeString(start),
-      to: this.toLocalDatetimeString(end),
+      from: bounds.from,
+      to: bounds.to,
     });
-  }
-
-  private toLocalDatetimeString(d: Date): string {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
   nextPage(): void {
     if (!this.canAdvance() || this.isLoading()) return;
     this.page.update((value) => value + 1);
+    this.clearExpandedEventIds();
     this.querySubject.next({ ...this.querySubject.value, page: this.page() });
   }
 
   previousPage(): void {
     if (this.page() === 0 || this.isLoading()) return;
     this.page.update((value) => value - 1);
+    this.clearExpandedEventIds();
     this.querySubject.next({ ...this.querySubject.value, page: this.page() });
   }
 
@@ -337,6 +557,11 @@ export class Audit {
   /** Audit define timestamp ISO sin offset, cuyo valor representa UTC. */
   timestampUtc(value: string): string {
     return /(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : `${value}Z`;
+  }
+
+  /** Presentación estándar de Chile continental (America/Santiago, es-CL, 24h, CLST/CLT dinámico). */
+  formatTimestampChile(value: string): AuditTimestampChile {
+    return formatAuditTimestampChile(value);
   }
 
   errorText(status: number | null): string {

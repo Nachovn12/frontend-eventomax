@@ -1,16 +1,21 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { ProductionViewModel } from '../../core/models/production.model';
+import { RouterLink } from '@angular/router';
+import { LucideChevronRight, LucideEye } from '@lucide/angular';
+import {
+  ProductionViewModel,
+  formatOrganizerDisplayLabel,
+} from '../../core/models/production.model';
+import { ScheduledAtChile, formatScheduledAtChile } from '../../core/utils/chile-time';
 import { StatusChip } from './status-chip';
 import { ButtonDirective } from './button.component';
 
 @Component({
   selector: 'emx-production-table',
   standalone: true,
-  imports: [StatusChip, DatePipe, ButtonDirective],
+  imports: [StatusChip, ButtonDirective, RouterLink, LucideChevronRight, LucideEye],
   template: `
     <div class="table-scroll" role="region" [attr.aria-label]="caption()" tabindex="0">
-      <table class="data-table production-table" [class.is-selectable]="selectable()">
+      <table class="data-table production-table" [class.is-selectable]="selectable() || detailLinks()">
         <caption class="sr-only">
           {{ caption() }}
         </caption>
@@ -19,7 +24,7 @@ import { ButtonDirective } from './button.component';
           <col class="col-location" />
           <col class="col-schedule" />
           <col class="col-status" />
-          @if (selectable()) {
+          @if (selectable() || detailLinks()) {
             <col class="col-action" />
           }
         </colgroup>
@@ -29,13 +34,14 @@ import { ButtonDirective } from './button.component';
             <th scope="col">Ubicación</th>
             <th scope="col">Fecha programada</th>
             <th scope="col">Estado</th>
-            @if (selectable()) {
+            @if (selectable() || detailLinks()) {
               <th scope="col" class="th-action">Acción</th>
             }
           </tr>
         </thead>
         <tbody>
           @for (event of rows(); track event.id) {
+            @let schedule = formatSchedule(event.scheduledAt);
             <tr
               [class.row-selectable]="selectable()"
               [class.row-selected]="selectable() && selectedId() === event.id"
@@ -45,19 +51,19 @@ import { ButtonDirective } from './button.component';
               <td class="cell-production">
                 <div class="event-cell">
                   <div class="cal-date-tile" aria-hidden="true">
-                    <span class="cal-month-strip">{{ event.scheduledAt | date:'MMM' }}</span>
-                    <span class="cal-day-num font-mono-num">{{ event.scheduledAt | date:'dd' }}</span>
+                    <span class="cal-month-strip">{{ schedule.monthShort }}</span>
+                    <span class="cal-day-num font-mono-num">{{ schedule.day }}</span>
                   </div>
                   <div class="event-info">
                     <strong class="event-name">{{ event.name }}</strong>
                     <div class="cell-meta-strip">
                       <span class="id-tag font-mono-num"><span class="id-hash">#</span>{{ event.id }}</span>
-                      <span class="tenant-badge font-mono-num">
+                      <span class="tenant-badge">
                         <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                           <circle cx="9" cy="7" r="4"></circle>
                         </svg>
-                        {{ event.organizerId }}
+                        {{ organizerLabel(event) }}
                       </span>
                     </div>
                   </div>
@@ -77,16 +83,22 @@ import { ButtonDirective } from './button.component';
               </td>
               <td class="cell-schedule">
                 <span class="mobile-cell-label" aria-hidden="true">Fecha programada</span>
-                <div class="schedule-time-row font-mono-num">
-                  <strong class="schedule-time">{{ event.scheduledAt | date:'HH:mm' }} hrs</strong>
-                  <span class="schedule-date">{{ event.scheduledAt | date:'dd MMM yyyy' }}</span>
+                <div class="schedule-time-row font-mono-num" [title]="schedule.combined">
+                  <strong class="schedule-time">{{ schedule.time }} {{ schedule.tzAbbr }}</strong>
+                  <span class="schedule-date">{{ schedule.date }}</span>
                 </div>
               </td>
               <td class="cell-status">
                 <span class="mobile-cell-label" aria-hidden="true">Estado</span>
                 <emx-status [status]="event.status" />
               </td>
-              @if (selectable()) {
+              @if (detailLinks()) {
+                <td class="cell-action">
+                  <a class="text-link" routerLink="/productions" [queryParams]="{ productionId: event.id }"
+                    [attr.aria-label]="'Ver detalle: ' + event.name">Ver detalle</a>
+                </td>
+              } @else if (selectable()) {
+                @let btnLabel = rowActionLabel(event);
                 <td class="cell-action">
                   <button
                     type="button"
@@ -95,11 +107,18 @@ import { ButtonDirective } from './button.component';
                     size="small"
                     class="row-select-btn"
                     [class.active]="selectedId() === event.id"
+                    [class.is-consult]="showActionIcon() && rowActionIcon(event) === 'eye'"
                     [attr.aria-pressed]="selectedId() === event.id"
-                    [attr.aria-label]="(selectedId() === event.id ? 'Producción seleccionada: ' : 'Gestionar producción ') + event.name"
+                    [attr.aria-label]="(selectedId() === event.id ? 'Producción seleccionada: ' : btnLabel + ': ') + event.name"
                     (click)="onButtonSelect(event, $event)"
                   >
-                    <span>{{ selectedId() === event.id ? 'Seleccionada' : 'Gestionar' }}</span>
+                    @if (showActionIcon() && selectedId() !== event.id && rowActionIcon(event) === 'eye') {
+                      <svg lucideEye class="row-action-icon" strokeWidth="1.9" aria-hidden="true"></svg>
+                    }
+                    <span>{{ selectedId() === event.id ? 'Seleccionada' : btnLabel }}</span>
+                    @if (showActionIcon() && selectedId() !== event.id && rowActionIcon(event) === 'chevron') {
+                      <svg lucideChevronRight class="row-action-icon row-action-chevron" strokeWidth="2" aria-hidden="true"></svg>
+                    }
                   </button>
                 </td>
               }
@@ -128,10 +147,10 @@ import { ButtonDirective } from './button.component';
     .col-schedule { width: 22%; }
     .col-status { width: 16%; }
     .data-table.production-table.is-selectable .col-production { width: 33%; }
-    .data-table.production-table.is-selectable .col-location { width: 23%; }
-    .data-table.production-table.is-selectable .col-schedule { width: 20%; }
-    .data-table.production-table.is-selectable .col-status { width: 12%; }
-    .data-table.production-table.is-selectable .col-action { width: 12%; }
+    .data-table.production-table.is-selectable .col-location { width: 22%; }
+    .data-table.production-table.is-selectable .col-schedule { width: 18%; }
+    .data-table.production-table.is-selectable .col-status { width: 13.5%; }
+    .data-table.production-table.is-selectable .col-action { width: 13.5%; }
 
     .data-table.production-table thead tr {
       height: 38px;
@@ -358,6 +377,48 @@ import { ButtonDirective } from './button.component';
     }
     .row-select-btn {
       flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      height: 31px;
+      padding: 0 11px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 500;
+      transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+    }
+    .row-select-btn:focus-visible {
+      outline: 2px solid #2563EB;
+      outline-offset: 2px;
+    }
+    .row-select-btn.is-consult:not(.active) {
+      color: #475569;
+    }
+    .row-select-btn.is-consult:not(.active):hover {
+      color: #0F172A;
+    }
+    .row-action-icon {
+      width: 13.5px;
+      height: 13.5px;
+      flex-shrink: 0;
+      display: block;
+      opacity: 0.78;
+      transition: transform 140ms ease, opacity 140ms ease;
+    }
+    .row-select-btn:hover .row-action-icon {
+      opacity: 1;
+    }
+    .row-select-btn:hover .row-action-chevron {
+      transform: translateX(1.5px);
+    }
+    :host-context([data-theme="dark"]) .row-select-btn.is-consult:not(.active),
+    :host-context(.dark) .row-select-btn.is-consult:not(.active) {
+      color: #CBD5E1;
+    }
+    :host-context([data-theme="dark"]) .row-select-btn.is-consult:not(.active):hover,
+    :host-context(.dark) .row-select-btn.is-consult:not(.active):hover {
+      color: #F8FAFC;
     }
 
     /* Dark Pro 3D Mode Calibrations */
@@ -449,6 +510,25 @@ import { ButtonDirective } from './button.component';
     .mobile-cell-label {
       display: none;
     }
+    @container (max-width: 860px) {
+      .data-table.production-table th,
+      .data-table.production-table td {
+        padding: 10px 10px;
+      }
+      .data-table.production-table th:first-child,
+      .data-table.production-table td:first-child {
+        padding-left: 14px;
+      }
+      .data-table.production-table th:last-child,
+      .data-table.production-table td:last-child {
+        padding-right: 14px;
+      }
+      .data-table.production-table.is-selectable .col-production { width: 32%; }
+      .data-table.production-table.is-selectable .col-location { width: 20%; }
+      .data-table.production-table.is-selectable .col-schedule { width: 15.5%; }
+      .data-table.production-table.is-selectable .col-status { width: 15%; }
+      .data-table.production-table.is-selectable .col-action { width: 17.5%; }
+    }
     @container (max-width: 640px) {
       .data-table.production-table,
       .data-table.production-table tbody {
@@ -522,7 +602,43 @@ export class ProductionTable {
   readonly caption = input('Listado de producciones');
   readonly selectable = input(false);
   readonly selectedId = input<number | null>(null);
+  readonly actionLabel = input('Gestionar');
+  readonly terminalActionLabel = input<string | null>(null);
+  readonly showActionIcon = input(false);
+  readonly detailLinks = input(false);
   readonly selectProduction = output<ProductionViewModel>();
+
+  isTerminalStatus(status: ProductionViewModel['status']): boolean {
+    return status === 'CERRADO' || status === 'CANCELADO';
+  }
+
+  rowActionLabel(event: ProductionViewModel): string {
+    const terminal = this.terminalActionLabel();
+    if (terminal && this.isTerminalStatus(event.status)) {
+      return terminal;
+    }
+    return this.actionLabel();
+  }
+
+  rowActionIcon(event: ProductionViewModel): 'eye' | 'chevron' {
+    const label = this.rowActionLabel(event);
+    if (this.isTerminalStatus(event.status) || label === 'Consultar' || label === 'Ver detalle') {
+      return 'eye';
+    }
+    return 'chevron';
+  }
+
+  organizerLabel(event: ProductionViewModel): string {
+    return formatOrganizerDisplayLabel(
+      event.organizerId,
+      event.organizerDisplayName,
+      event.organizerResolutionSource,
+    );
+  }
+
+  formatSchedule(iso: string | null | undefined): ScheduledAtChile {
+    return formatScheduledAtChile(iso);
+  }
 
   onRowClick(event: ProductionViewModel): void {
     if (!this.selectable()) return;

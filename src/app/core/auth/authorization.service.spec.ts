@@ -265,5 +265,43 @@ describe('AuthorizationService', () => {
 
     service.clear();
     expect(service.ownerId()).toBe('');
+    expect(service.userEmail()).toBe('');
+    expect(service.userDisplayName()).toBe('');
+  });
+
+  it('should expose login email from preferred_username, email or upn as UI suggestion without altering authorization', async () => {
+    const payload: any = getValidPayload();
+    payload.tid = 'tenant-1';
+    payload.oid = 'oid-1';
+    payload.preferred_username = 'ig.valeria@duocuc.cl';
+    payload.name = 'Ignacio Valeria';
+    authMock.acquireAccessToken.mockResolvedValue({
+      accessToken: createDummyJwt(payload)
+    });
+    await service.refreshAuthorization();
+
+    expect(service.userEmail()).toBe('ig.valeria@duocuc.cl');
+    expect(service.userDisplayName()).toBe('Ignacio Valeria');
+    expect(service.ownerId()).toBe('tenant-1:oid-1');
+    expect(service.roles()).toEqual([AppRole.Admin]);
+  });
+
+  it('should fallback userEmail to email, upn and active MSAL account username', async () => {
+    const payload: any = getValidPayload();
+    payload.upn = 'upn.user@duocuc.cl';
+    authMock.acquireAccessToken.mockResolvedValue({
+      accessToken: createDummyJwt(payload)
+    });
+    await service.refreshAuthorization();
+    expect(service.userEmail()).toBe('upn.user@duocuc.cl');
+
+    const payloadNoEmail: any = getValidPayload();
+    authMock.getAccount = vi.fn(() => ({ username: 'account.user@duocuc.cl', name: 'Cuenta Demo' }));
+    authMock.acquireAccessToken.mockResolvedValue({
+      accessToken: createDummyJwt(payloadNoEmail)
+    });
+    await service.refreshAuthorization();
+    expect(service.userEmail()).toBe('account.user@duocuc.cl');
+    expect(service.userDisplayName()).toBe('Cuenta Demo');
   });
 });

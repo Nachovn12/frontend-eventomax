@@ -1,18 +1,24 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, of } from 'rxjs';
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
 import {
+  OperationalTimestampChile,
+  formatOperationalTimestampChile,
+  getChileDateTimeParts,
+  parseServerTimestampAsUtc,
+} from '../../core/utils/chile-time';
+import {
   LucideActivity,
+  LucideBan,
   LucideClock,
   LucideCircleCheck,
   LucideCircleAlert,
   LucideInfo,
   LucideArrowRight,
-  LucideCalendar,
+  LucideCalendarDays,
   LucideRefreshCw,
 } from '@lucide/angular';
 import { AuthorizationService } from '../../core/auth/authorization.service';
@@ -42,24 +48,24 @@ interface TopServicesViewState {
   selector: 'app-reports',
   standalone: true,
   imports: [
-    DatePipe,
     ReactiveFormsModule,
     StatusDistributionChart,
     DailyEventsChart,
     KafkaMonitorComponent,
     LucideActivity,
+    LucideBan,
     LucideClock,
     LucideCircleCheck,
     LucideCircleAlert,
     LucideInfo,
     LucideArrowRight,
-    LucideCalendar,
+    LucideCalendarDays,
     LucideRefreshCw,
     DateRangePickerComponent,
     ButtonDirective,
   ],
   templateUrl: './reports.html',
-  styleUrl: './reports.css',
+  styleUrls: ['./reports.css', './reports-page.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Reports {
@@ -188,7 +194,10 @@ export class Reports {
 
   readonly averageMontageLabel = computed(() => {
     const avg = this.averageMontageTime();
-    if (avg > 0) return `${avg} min`;
+    if (avg > 0) {
+      const formatted = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 1 }).format(avg);
+      return `${formatted} min`;
+    }
     if (this.montageTransitionsCount() > 0) return '< 1 min';
     return '0 min';
   });
@@ -199,7 +208,10 @@ export class Reports {
     if (raw.length > 0) return raw;
     const total = res?.metrics.totalStatusChanges ?? 0;
     if (total > 0) {
-      const fallbackDate = (res?.to || res?.generatedAt || '').slice(0, 10) || 'Período actual';
+      const refInstant = parseServerTimestampAsUtc(res?.to || res?.generatedAt);
+      const fallbackDate = refInstant
+        ? getChileDateTimeParts(refInstant).dateKey
+        : (res?.to || res?.generatedAt || '').slice(0, 10) || 'Período actual';
       return [{ date: fallbackDate, count: total }];
     }
     return [];
@@ -229,6 +241,15 @@ export class Reports {
     return Math.max(1, ...items.map((i) => i.hireCount));
   });
 
+  readonly topServiceLeaders = computed(() => {
+    const items = this.topServicesItems();
+    if (items.length === 0) return [];
+    const max = this.maxServiceHires();
+    return items.filter((item) => item.hireCount === max);
+  });
+
+  readonly hasTopServiceTie = computed(() => this.topServiceLeaders().length > 1);
+
   calcServicePercent(hires: number): number {
     const total = this.totalServiceHires();
     if (total <= 0) return 0;
@@ -252,12 +273,24 @@ export class Reports {
     }
   }
 
-  readonly operationalSuccessRate = computed(() => {
+  readonly terminalTransitionsTotal = computed(() => {
     const closed = this.response()?.metrics.closedCount ?? 0;
     const cancelled = this.response()?.metrics.cancelledCount ?? 0;
-    const total = closed + cancelled;
+    return closed + cancelled;
+  });
+
+  readonly operationalSuccessRate = computed(() => {
+    const closed = this.response()?.metrics.closedCount ?? 0;
+    const total = this.terminalTransitionsTotal();
     if (total === 0) return 100;
     return Math.round((closed / total) * 100);
+  });
+
+  readonly cancelledTerminalRate = computed(() => {
+    const cancelled = this.response()?.metrics.cancelledCount ?? 0;
+    const total = this.terminalTransitionsTotal();
+    if (total === 0) return 0;
+    return Math.round((cancelled / total) * 100);
   });
 
   formatStatus(status: string): string {
@@ -278,6 +311,10 @@ export class Reports {
     if (code === 404) return 'El servicio de analítica no se encuentra disponible en este momento.';
     if (code === 0 || code === 502 || code === 503) return 'Report no está disponible. Revisa la conectividad cloud.';
     return 'No fue posible cargar la información. Intenta nuevamente.';
+  }
+
+  formatReportTimestamp(iso: string | null | undefined): OperationalTimestampChile {
+    return formatOperationalTimestampChile(iso);
   }
 
   retry(): void {

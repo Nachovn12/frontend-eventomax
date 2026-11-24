@@ -8,9 +8,16 @@ import {
   input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
+import { LucideCalendarRange, LucideChevronDown, LucideGlobe } from '@lucide/angular';
 import { DateCalendarComponent } from './date-calendar.component';
 import { ButtonComponent } from '../button.component';
+import {
+  formatOperationalTimestampChile,
+  getChileDateTimeParts,
+  getChileTodayCalendarDate,
+} from '../../../core/utils/chile-time';
 
 export interface DatePickerPreset {
   readonly id: string;
@@ -38,11 +45,12 @@ const DEFAULT_PRESETS: readonly DatePickerPreset[] = [
 @Component({
   selector: 'emx-date-range-picker',
   standalone: true,
-  imports: [DateCalendarComponent, ButtonComponent],
+  imports: [DateCalendarComponent, ButtonComponent, LucideCalendarRange, LucideChevronDown, LucideGlobe],
   template: `
     <div class="emx-date-picker-wrapper" style="position: relative; display: inline-block;">
-      <!-- Trigger Button (Board UI triggerButtonClassName) -->
+      <!-- Trigger Button -->
       <button
+        #triggerBtn
         type="button"
         class="emx-date-trigger"
         [attr.aria-expanded]="isOpen()"
@@ -50,18 +58,11 @@ const DEFAULT_PRESETS: readonly DatePickerPreset[] = [
         [attr.aria-label]="ariaLabel()"
         (click)="toggle()"
       >
-        <svg class="trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
+        <svg lucideCalendarRange class="trigger-icon" strokeWidth="1.9" aria-hidden="true"></svg>
 
-        <span>{{ displayLabel() }}</span>
+        <span class="trigger-label">{{ displayLabel() }}</span>
 
-        <svg class="trigger-chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <svg lucideChevronDown class="trigger-chevron" strokeWidth="2" aria-hidden="true"></svg>
       </button>
 
       <!-- Popover Menu -->
@@ -72,11 +73,27 @@ const DEFAULT_PRESETS: readonly DatePickerPreset[] = [
           [class.emx-date-picker-popover--left]="align() === 'left'"
           role="dialog"
           aria-modal="true"
-          [attr.aria-label]="'Selector de fechas'"
+          aria-labelledby="emx-drp-heading"
         >
+          <!-- Corporate Header (aligned with UI/UX-03.1 DateTime Picker) -->
+          <div class="emx-drp-header">
+            <span class="emx-drp-header-icon" aria-hidden="true">
+              <svg lucideCalendarRange class="emx-drp-header-svg" strokeWidth="1.9"></svg>
+            </span>
+            <div class="emx-drp-header-copy">
+              <h4 id="emx-drp-heading" class="emx-drp-title">Período de análisis</h4>
+              <p class="emx-drp-subtitle">Selecciona un rango en hora chilena</p>
+            </div>
+            <span class="emx-drp-tz-pill" title="Zona horaria oficial America/Santiago">
+              <svg lucideGlobe class="emx-drp-tz-icon" strokeWidth="1.9" aria-hidden="true"></svg>
+              <span>{{ chileTzLabel() }}</span>
+            </span>
+          </div>
+
           <div class="emx-date-picker-body">
             <!-- Sidebar Quick-Select Presets -->
             <div class="emx-date-presets" role="radiogroup" aria-label="Períodos rápidos">
+              <span class="emx-presets-caption">Accesos rápidos</span>
               @for (preset of presets(); track preset.id) {
                 <button
                   type="button"
@@ -103,30 +120,34 @@ const DEFAULT_PRESETS: readonly DatePickerPreset[] = [
           <!-- Footer with Chips & Action Buttons -->
           <div class="emx-date-picker-footer">
             <div class="emx-date-chips">
-              <span>Desde</span>
-              <input
-                type="text"
-                class="emx-date-chip-input"
-                [value]="formatChip(draftStart())"
-                readonly
-                aria-label="Fecha de inicio"
-              />
-              <span>Hasta</span>
-              <input
-                type="text"
-                class="emx-date-chip-input"
-                [value]="formatChip(draftEnd())"
-                readonly
-                aria-label="Fecha de fin"
-              />
+              <label class="emx-date-chip-group">
+                <span>Desde</span>
+                <input
+                  type="text"
+                  class="emx-date-chip-input"
+                  [value]="formatChip(draftStart())"
+                  readonly
+                  aria-label="Fecha de inicio"
+                />
+              </label>
+              <label class="emx-date-chip-group">
+                <span>Hasta</span>
+                <input
+                  type="text"
+                  class="emx-date-chip-input"
+                  [value]="formatChip(draftEnd())"
+                  readonly
+                  aria-label="Fecha de fin"
+                />
+              </label>
             </div>
 
             <div class="emx-date-footer-actions">
-              <emx-button [variant]="'secondary'" [size]="'small'" (click)="close()">
+              <emx-button [variant]="'secondary'" [size]="'small'" (click)="close(true)">
                 Cancelar
               </emx-button>
               <emx-button [variant]="'primary'" [size]="'small'" (click)="apply()">
-                Aplicar
+                Aplicar período
               </emx-button>
             </div>
           </div>
@@ -139,6 +160,7 @@ const DEFAULT_PRESETS: readonly DatePickerPreset[] = [
 })
 export class DateRangePickerComponent {
   private readonly elRef = inject(ElementRef);
+  readonly triggerBtn = viewChild<ElementRef<HTMLButtonElement>>('triggerBtn');
 
   readonly value = input<string>('last24h');
   readonly ariaLabel = input<string>('Seleccionar rango de fechas');
@@ -153,6 +175,12 @@ export class DateRangePickerComponent {
 
   readonly draftStart = signal<Date | null>(new Date(Date.now() - 86400000));
   readonly draftEnd = signal<Date | null>(new Date());
+
+  readonly chileTzLabel = computed(() => {
+    const ref = this.draftEnd() ?? new Date();
+    const formatted = formatOperationalTimestampChile(ref.toISOString());
+    return `America/Santiago · ${formatted.tzAbbr}`;
+  });
 
   readonly displayLabel = computed(() => {
     const val = this.value();
@@ -170,21 +198,35 @@ export class DateRangePickerComponent {
     if (!this.isOpen()) return;
     const target = event.target as Node;
     if (!this.elRef.nativeElement.contains(target)) {
-      this.close();
+      this.close(false);
     }
   }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    if (this.isOpen()) this.close();
+    if (this.isOpen()) this.close(true);
   }
 
   toggle(): void {
-    this.isOpen.update((v) => !v);
+    if (this.isOpen()) {
+      this.close(true);
+    } else {
+      const committed = this.value();
+      if (committed !== 'custom') {
+        this.selectPreset(committed);
+      } else {
+        this.activePreset.set('custom');
+      }
+      this.isOpen.set(true);
+    }
   }
 
-  close(): void {
+  close(restoreFocus = false): void {
+    if (!this.isOpen()) return;
     this.isOpen.set(false);
+    if (restoreFocus) {
+      setTimeout(() => this.triggerBtn()?.nativeElement.focus(), 0);
+    }
   }
 
   selectPreset(presetId: string): void {
@@ -204,8 +246,9 @@ export class DateRangePickerComponent {
       this.draftStart.set(new Date(now.getTime() - 30 * 86400000));
       this.draftEnd.set(now);
     } else if (presetId === 'thisMonth') {
-      this.draftStart.set(new Date(now.getFullYear(), now.getMonth(), 1));
-      this.draftEnd.set(now);
+      const todayChile = getChileTodayCalendarDate(now);
+      this.draftStart.set(new Date(todayChile.getFullYear(), todayChile.getMonth(), 1));
+      this.draftEnd.set(todayChile);
     }
   }
 
@@ -226,14 +269,17 @@ export class DateRangePickerComponent {
         end: e,
       });
     }
-    this.close();
+    this.close(true);
   }
 
   formatChip(d: Date | null): string {
     if (!d) return '--/--/----';
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
+    if (d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0 && d.getMilliseconds() === 0) {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+    return getChileDateTimeParts(d).dateEsCl;
   }
 }

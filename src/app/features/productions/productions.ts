@@ -1,78 +1,147 @@
 import { Component, ChangeDetectionStrategy, DestroyRef, OnDestroy, OnInit, computed, signal, inject } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, of } from 'rxjs';
-import { switchMap, map, catchError, startWith, distinctUntilChanged } from 'rxjs/operators';
+import { BehaviorSubject, Subject, of } from 'rxjs';
+import { switchMap, map, catchError, startWith, distinctUntilChanged, debounceTime } from 'rxjs/operators';
 import {
+  LucideActivity,
   LucideCalendarDays,
+  LucideClock,
   LucideClock3,
   LucideCircleCheck,
+  LucideCheck,
+  LucideContactRound,
+  LucideInfo,
+  LucideLoaderCircle,
   LucideSearch,
   LucideSearchX,
   LucideCalendarX2,
   LucideCircleAlert,
   LucideX,
   LucideArrowRight,
-  LucideChevronDown,
+  LucideChevronRight,
   LucideMapPin,
-  LucideBuilding2,
-  LucideUsers,
+  LucideUserRound,
+  LucideUsersRound,
+  LucideUserRoundPlus,
   LucideTicket,
-  LucideDownload
+  LucideDownload,
+  LucideWrench,
+  LucidePlay,
+  LucideBan,
+  LucideMinus,
+  LucidePlus,
+  LucideTrash2,
+  LucideTriangleAlert,
+  LucideFileText,
+  LucidePackage,
+  LucidePackageOpen,
+  LucideLock,
+  LucideClipboardList,
+  LucidePrinter,
+  LucideCopy
 } from '@lucide/angular';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
-import { Production, ProductionStatus, ProductionReservationItemRequest, CrewTicket } from '../../core/models/production.model';
+import {
+  Production,
+  ProductionStatus,
+  CreateProductionRequest,
+  OrganizerMode,
+  EligibleOrganizer,
+  DirectorySyncStatus,
+  ProductionReservationItemRequest,
+  CrewTicket,
+  OrganizerContact,
+  OrganizerContactRequest,
+  formatOrganizerDisplayLabel,
+} from '../../core/models/production.model';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { StatusChip } from '../../shared/ui/status-chip';
 import { Tag } from '../../shared/ui/status-pill/status-pill';
 import { ButtonDirective } from '../../shared/ui/button.component';
+import { DateTimePickerComponent } from '../../shared/ui/date-picker/date-time-picker.component';
+import { StatusTransitionSelectorComponent } from './components/status-transition-selector/status-transition-selector.component';
+import { StatusFilterSelectorComponent } from './components/status-filter-selector/status-filter-selector.component';
+import { EquipmentComboboxComponent } from './components/equipment-combobox/equipment-combobox.component';
 import { ProductionsDataService } from './productions-data.service';
 import { CatalogDataService } from '../catalog/catalog-data.service';
+import { CatalogImageStorageService } from '../catalog/services/catalog-image-storage.service';
 import { Equipment, EquipmentReservationItem } from '../catalog/models/equipment.model';
 import { CatalogService } from '../catalog/models/catalog-service.model';
 import {
+  formatChileEventDateTime,
+  formatServerTimestampChile,
   removeExistingCrewTicketPrintFrame,
   triggerCrewTicketSinglePagePrint,
 } from './crew-ticket-print';
+import {
+  formatScheduledAtChile,
+  parseScheduledAtToInstant,
+} from '../../core/utils/chile-time';
 
 @Component({
   selector: 'app-productions',
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    DatePipe,
     DecimalPipe,
     ProductionTable,
     StatusChip,
     Tag,
     ButtonDirective,
+    DateTimePickerComponent,
+    StatusTransitionSelectorComponent,
+    StatusFilterSelectorComponent,
+    EquipmentComboboxComponent,
+    LucideActivity,
     LucideCalendarDays,
+    LucideClock,
     LucideClock3,
     LucideCircleCheck,
+    LucideCheck,
+    LucideContactRound,
+    LucideInfo,
+    LucideLoaderCircle,
     LucideSearch,
     LucideSearchX,
     LucideCalendarX2,
     LucideCircleAlert,
     LucideX,
     LucideArrowRight,
-    LucideChevronDown,
+    LucideChevronRight,
     LucideMapPin,
-    LucideBuilding2,
-    LucideUsers,
+    LucideUserRound,
+    LucideUsersRound,
+    LucideUserRoundPlus,
     LucideTicket,
-    LucideDownload
+    LucideDownload,
+    LucideWrench,
+    LucidePlay,
+    LucideBan,
+    LucideMinus,
+    LucidePlus,
+    LucideTrash2,
+    LucideTriangleAlert,
+    LucideFileText,
+    LucidePackage,
+    LucidePackageOpen,
+    LucideLock,
+    LucideClipboardList,
+    LucidePrinter,
+    LucideCopy
   ],
   templateUrl: './productions.html',
-  styleUrls: ['./productions.css', './crew-ticket-modal.css'],
+  styleUrls: ['./productions.css', './productions-page.css', './crew-ticket-modal.css', './detail-drawer.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Productions implements OnInit, OnDestroy {
   private readonly dataService = inject(ProductionsDataService);
   private readonly catalogDataService = inject(CatalogDataService);
+  private readonly imageStorage = inject(CatalogImageStorageService);
   private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly router = inject(Router, { optional: true });
   private readonly destroyRef = inject(DestroyRef);
@@ -103,6 +172,7 @@ export class Productions implements OnInit, OnDestroy {
   private readonly query = toSignal(this.search.valueChanges, { initialValue: '' });
   private readonly selectedStatus = toSignal(this.status.valueChanges, { initialValue: '' });
 
+  readonly searchHasValue = computed(() => this.query().trim().length > 0);
   readonly hasActiveFilters = computed(() => this.query().trim() !== '' || this.selectedStatus() !== '');
 
   readonly announcement = signal('');
@@ -112,11 +182,15 @@ export class Productions implements OnInit, OnDestroy {
     const filtered = this.allProductions().filter(
       (item) =>
         (!this.selectedStatus() || item.status === this.selectedStatus()) &&
-        [String(item.id), item.name, item.location, item.organizerId].some((value) =>
+        [String(item.id), item.name, item.location, item.organizerId, item.organizerDisplayName ?? ''].some((value) =>
           value.toLocaleLowerCase('es').includes(query),
         ),
     );
-    return [...filtered].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+    return [...filtered].sort(
+      (a, b) =>
+        (parseScheduledAtToInstant(a.scheduledAt)?.getTime() ?? 0) -
+        (parseScheduledAtToInstant(b.scheduledAt)?.getTime() ?? 0),
+    );
   });
 
   readonly total = computed(() => this.allProductions().length);
@@ -141,11 +215,63 @@ export class Productions implements OnInit, OnDestroy {
 
   private readonly authz = inject(AuthorizationService);
   readonly canCreate = computed(() => this.authz.hasAnyRole([AppRole.Productor, AppRole.Organizador]) && this.authz.hasScope('access_as_user'));
+  readonly canUseExternalMode = computed(() => this.authz.hasAnyRole([AppRole.Productor]) && this.authz.hasScope('access_as_user'));
   readonly canUpdate = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]) && this.authz.hasScope('access_as_user'));
   readonly canViewCrewTicket = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]) && this.authz.hasScope('access_as_user'));
   readonly canDownloadQuote = computed(() => this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor, AppRole.Organizador]) && this.authz.hasScope('access_as_user'));
   readonly isOrganizerOnly = computed(() => this.authz.hasAnyRole([AppRole.Organizador]) && !this.authz.hasAnyRole([AppRole.Admin, AppRole.Productor]));
-  readonly currentOwnerId = computed(() => this.authz.ownerId());
+  readonly currentOwnerId = computed(() => (typeof this.authz.ownerId === 'function' ? this.authz.ownerId() : ''));
+  readonly canManageSelfContact = computed(() => this.canCreate() && Boolean(this.currentOwnerId().trim()));
+  readonly suggestedEmail = computed(() => (typeof this.authz.userEmail === 'function' ? this.authz.userEmail() : ''));
+  readonly suggestedDisplayName = computed(() => (typeof this.authz.userDisplayName === 'function' ? this.authz.userDisplayName() : ''));
+
+  // Self organizer contact (Organizador, Productor, Admin+Productor)
+  readonly selfContact = signal<OrganizerContact | null>(null);
+  readonly selfContactLoading = signal(false);
+  readonly selfContactMissing = signal(false);
+  readonly selfContactError = signal<string | null>(null);
+  readonly selfContactSuccess = signal<string | null>(null);
+  readonly showSelfContactForm = signal(false);
+  readonly selfContactSaving = signal(false);
+  readonly showSelfContactPanel = computed(
+    () =>
+      this.canManageSelfContact() &&
+      (this.isOrganizerOnly() ||
+        this.selfContactMissing() ||
+        this.showSelfContactForm() ||
+        Boolean(this.selfContactSuccess()) ||
+        Boolean(this.selfContactError()))
+  );
+  readonly selfContactForm = new FormGroup({
+    email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email, Validators.maxLength(255)] }),
+    contactName: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(150)] }),
+    phone: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(50)] }),
+  });
+
+  // Create Production modal mode: SELF vs EXTERNAL (eligible selector / NEW_EXTERNAL)
+  readonly createMode = signal<OrganizerMode>('SELF');
+  readonly creatingNewExternalClient = signal(false);
+  readonly externalSearchControl = new FormControl('', { nonNullable: true });
+  readonly eligibleOrganizers = signal<readonly EligibleOrganizer[]>([]);
+  readonly eligibleLoading = signal(false);
+  readonly eligibleError = signal<string | null>(null);
+  readonly eligibleDirectoryStatus = signal<DirectorySyncStatus>('OK');
+  readonly eligiblePage = signal(0);
+  readonly eligiblePageSize = 20;
+  readonly eligibleTotal = signal(0);
+  readonly eligibleTotalPages = computed(() => Math.max(1, Math.ceil(this.eligibleTotal() / this.eligiblePageSize)));
+  readonly selectedEligibleOrganizer = signal<EligibleOrganizer | null>(null);
+  readonly externalSelectionError = signal('');
+  private readonly eligibleSearchTrigger$ = new Subject<{ q: string; page: number } | null>();
+
+  readonly newExternalClientForm = new FormGroup({
+    externalClientName: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
+    externalClientEmail: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email, Validators.maxLength(255)] }),
+  });
+
+  // Passive non-blocking notice before CONFIRMADO transition if organizer lacks registered contact
+  readonly confirmContactMissing = signal(false);
+  private readonly confirmContactLookup$ = new Subject<string | null>();
   readonly showCreate = signal(false);
   readonly createSubmitted = signal(false);
   readonly saving = signal(false);
@@ -162,10 +288,83 @@ export class Productions implements OnInit, OnDestroy {
     return status === 'CERRADO' || status === 'CANCELADO';
   }
 
+  getOrganizerLabel(production: Pick<Production, 'organizerId' | 'organizerDisplayName' | 'organizerResolutionSource'>): string {
+    return formatOrganizerDisplayLabel(
+      production.organizerId,
+      production.organizerDisplayName,
+      production.organizerResolutionSource,
+    );
+  }
+
   readonly isSelectedTerminal = computed(() => {
     const current = this.detail();
     return current ? this.isTerminalStatus(current.status) : false;
   });
+
+  // UI/UX-04: Lifecycle indicator stages (presentation only — never certifies physical events)
+  readonly lifecycleStages = [
+    { key: 'SOLICITADO' as ProductionStatus, label: 'Solicitud' },
+    { key: 'CONFIRMADO' as ProductionStatus, label: 'Confirmación' },
+    { key: 'EN_MONTAJE' as ProductionStatus, label: 'Montaje' },
+    { key: 'EN_EJECUCION' as ProductionStatus, label: 'Ejecución' },
+    { key: 'CERRADO' as ProductionStatus, label: 'Cierre' },
+  ] as const;
+
+  // UI/UX-04: Presentation transition matrix aligned with ProductionStateCoordinator.ALLOWED_TRANSITIONS
+  getAllowedNextStatuses(current: ProductionStatus): readonly ProductionStatus[] {
+    switch (current) {
+      case 'SOLICITADO':
+        return ['CONFIRMADO', 'CANCELADO'];
+      case 'CONFIRMADO':
+        return ['EN_MONTAJE', 'CANCELADO'];
+      case 'EN_MONTAJE':
+        return ['EN_EJECUCION', 'CANCELADO'];
+      case 'EN_EJECUCION':
+        return ['CERRADO', 'CANCELADO'];
+      case 'CERRADO':
+      case 'CANCELADO':
+      default:
+        return [];
+    }
+  }
+
+  readonly allowedNextStatuses = computed<readonly ProductionStatus[]>(() => {
+    const current = this.detail();
+    return current ? this.getAllowedNextStatuses(current.status) : [];
+  });
+
+  getLifecycleStageIndex(status: ProductionStatus): number {
+    return this.lifecycleStages.findIndex((s) => s.key === status);
+  }
+
+  canShowCrewTicketAction(status: ProductionStatus): boolean {
+    return ['EN_MONTAJE', 'EN_EJECUCION', 'CERRADO'].includes(status) && this.canViewCrewTicket();
+  }
+
+  canShowQuotePdfAction(status: ProductionStatus): boolean {
+    return status === 'CERRADO' && this.canDownloadQuote();
+  }
+
+  hasDocumentActions(status: ProductionStatus): boolean {
+    return this.canShowCrewTicketAction(status) || this.canShowQuotePdfAction(status);
+  }
+
+  getTransitionSubmitLabel(next: ProductionStatus | ''): string {
+    switch (next) {
+      case 'CONFIRMADO':
+        return 'Confirmar y reservar equipos';
+      case 'EN_MONTAJE':
+        return 'Iniciar montaje';
+      case 'EN_EJECUCION':
+        return 'Iniciar ejecución';
+      case 'CERRADO':
+        return 'Cerrar producción';
+      case 'CANCELADO':
+        return 'Cancelar producción';
+      default:
+        return 'Actualizar estado';
+    }
+  }
 
   private lastTriggerElement: HTMLElement | null = null;
   private detailTriggerElement: HTMLElement | null = null;
@@ -208,34 +407,104 @@ export class Productions implements OnInit, OnDestroy {
   readonly crewNameControl = new FormControl<string>('', { nonNullable: true });
   readonly reservationInputError = signal('');
 
+  private readonly selectedEquipmentIdValue = toSignal(this.selectedEquipmentId.valueChanges, { initialValue: '' });
+
+  readonly reservationsTotalUnits = computed(() =>
+    this.productionReservations().reduce((acc, r) => acc + (r.quantity || 0), 0)
+  );
+
+  readonly draftReservationUnits = computed(() =>
+    this.reservationItems().reduce((acc, item) => acc + (item.quantity || 0), 0)
+  );
+
+  readonly draftEquipmentTotals = computed<Readonly<Record<number, number>>>(() => {
+    const mapTotals: Record<number, number> = {};
+    for (const item of this.reservationItems()) {
+      mapTotals[item.equipmentId] = (mapTotals[item.equipmentId] ?? 0) + item.quantity;
+    }
+    return mapTotals;
+  });
+
+  readonly selectedEquipmentRemainingStock = computed<number | null>(() => {
+    const rawId = this.selectedEquipmentIdValue() || this.selectedEquipmentId.value;
+    const eqId = Number(rawId);
+    if (!rawId || !Number.isSafeInteger(eqId) || eqId < 1) return null;
+    const eq = this.availableEquipment().find((e) => e.id === eqId);
+    if (!eq) return null;
+    const maxStock = eq.availableQty ?? eq.availableQuantity ?? 0;
+    const alreadyAdded = this.draftEquipmentTotals()[eqId] ?? 0;
+    return Math.max(0, maxStock - alreadyAdded);
+  });
+
+  stepQuantity(delta: number): void {
+    if (this.isSelectedTerminal() || this.saving()) return;
+    const cur = Number(this.selectedQuantity.value);
+    const base = Number.isSafeInteger(cur) && cur >= 1 ? cur : 1;
+    const maxRemaining = this.selectedEquipmentRemainingStock();
+    let next = Math.max(1, base + delta);
+    if (maxRemaining !== null && maxRemaining >= 1 && next > maxRemaining) {
+      next = maxRemaining;
+    }
+    this.selectedQuantity.setValue(next);
+    this.reservationInputError.set('');
+  }
+
   // Ticket de cuadrilla
+  readonly ticketProductionId = signal<number | null>(null);
   readonly ticketLoading = signal<boolean>(false);
   readonly ticketError = signal<string | null>(null);
   readonly currentTicket = signal<CrewTicket | null>(null);
+  readonly ticketProduction = signal<Production | null>(null);
+  readonly ticketProductionLoading = signal<boolean>(false);
+  readonly ticketProductionError = signal<string | null>(null);
+  readonly ticketProductionQueriedAt = signal<string | null>(null);
+  readonly ticketReservationsLoading = signal<boolean>(false);
+  readonly ticketReservationsError = signal<string | null>(null);
   readonly showTicketModal = signal<boolean>(false);
   readonly ticketCopied = signal<boolean>(false);
   readonly ticketEquipmentReservations = signal<readonly EquipmentReservationItem[]>([]);
   private ticketCopyTimer: ReturnType<typeof setTimeout> | null = null;
+  private ticketRequestSeq = 0;
 
   readonly ticketReservations = computed(() => {
-    const fromTicket = this.ticketEquipmentReservations();
-    if (fromTicket.length > 0) return fromTicket;
-    const ticket = this.currentTicket();
-    const selected = this.detail();
-    return ticket && selected?.id === ticket.productionId ? this.productionReservations() : [];
+    if (this.ticketReservationsError()) return [];
+    return this.ticketEquipmentReservations();
   });
 
-  readonly resolvedTicketCrew = computed<{ crewName: string | null; crewId: string | null }>(() => {
+  readonly ticketReservationsTotalUnits = computed(() =>
+    this.ticketReservations().reduce((acc, r) => acc + (r.quantity || 0), 0),
+  );
+
+  readonly ticketDataLoading = computed(
+    () => this.ticketLoading() || this.ticketProductionLoading() || this.ticketReservationsLoading(),
+  );
+
+  readonly ticketAuxiliaryError = computed(
+    () => this.ticketProductionError() ?? this.ticketReservationsError(),
+  );
+
+  readonly ticketPrintReady = computed(
+    () =>
+      Boolean(this.currentTicket()) &&
+      Boolean(this.ticketProduction()) &&
+      !this.ticketLoading() &&
+      !this.ticketProductionLoading() &&
+      !this.ticketReservationsLoading() &&
+      !this.ticketError() &&
+      !this.ticketProductionError() &&
+      !this.ticketReservationsError(),
+  );
+
+  readonly ticketHistoricalCrew = computed<{ crewName: string | null; crewId: string | null }>(() => {
     const ticket = this.currentTicket();
     if (!ticket) return { crewName: null, crewId: null };
 
-    const selected = this.detail()?.id === ticket.productionId ? this.detail() : null;
-    let crewName = ticket.crewName?.trim() || selected?.crewName?.trim() || '';
-    let crewId = ticket.crewId?.trim() || selected?.crewId?.trim() || '';
+    let crewName = ticket.crewName?.trim() || '';
+    let crewId = ticket.crewId?.trim() || '';
 
     if (!crewName && !crewId && ticket.instructions) {
       const match = ticket.instructions.match(
-        /Cuadrilla asignada:\s*([^.()\n]+?)(?:\s*\(([^)]+)\))?\.(?:\s|$)/
+        /Cuadrilla asignada:\s*([^.()\n]+?)(?:\s*\(([^)]+)\))?\.(?:\s|$)/,
       );
       if (match) {
         crewName = match[1]?.trim() ?? '';
@@ -247,6 +516,23 @@ export class Productions implements OnInit, OnDestroy {
       crewName: crewName || null,
       crewId: crewId || null,
     };
+  });
+
+  readonly currentProductionCrew = computed<{ crewName: string | null; crewId: string | null }>(() => {
+    const prod = this.ticketProduction();
+    if (!prod) return { crewName: null, crewId: null };
+    return {
+      crewName: prod.crewName?.trim() || null,
+      crewId: prod.crewId?.trim() || null,
+    };
+  });
+
+  readonly resolvedTicketCrew = computed<{ crewName: string | null; crewId: string | null }>(() => {
+    const historical = this.ticketHistoricalCrew();
+    if (historical.crewName || historical.crewId) {
+      return historical;
+    }
+    return this.currentProductionCrew();
   });
 
   readonly resolvedTicketDirective = computed<string>(() => {
@@ -272,13 +558,17 @@ export class Productions implements OnInit, OnDestroy {
   });
 
   readonly createForm = new FormGroup({
-    organizerId: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
     name: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
     scheduledAt: new FormControl('', { nonNullable: true, validators: Validators.required }),
     location: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
   });
 
   ngOnInit(): void {
+    this.setupPassiveContactLookups();
+    this.setupEligibleOrganizerSearch();
+    if (this.canManageSelfContact()) {
+      this.loadSelfContact();
+    }
     this.route?.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((params) => {
@@ -378,14 +668,12 @@ export class Productions implements OnInit, OnDestroy {
     this.operationError.set('');
     this.operationSuccess.set('');
     this.createSubmitted.set(false);
-    if (this.isOrganizerOnly()) {
-      this.createForm.controls.organizerId.setValue(this.currentOwnerId());
-    }
+    this.resetCreateModeState();
     this.showCreate.set(true);
     this.syncBodyScrollLock();
     setTimeout(() => {
       if (typeof document !== 'undefined') {
-        const firstInput = document.getElementById('create-name-input') ?? document.getElementById('create-organizer-input');
+        const firstInput = document.getElementById('create-name-input');
         firstInput?.focus();
       }
     }, 0);
@@ -396,14 +684,82 @@ export class Productions implements OnInit, OnDestroy {
     this.showCreate.set(false);
     this.createSubmitted.set(false);
     this.operationError.set('');
+    this.resetCreateModeState();
     this.syncBodyScrollLock();
     const trigger = this.lastTriggerElement;
     this.lastTriggerElement = null;
     setTimeout(() => trigger?.focus(), 0);
   }
 
+  setCreateMode(mode: OrganizerMode): void {
+    if (mode === 'EXTERNAL' && !this.canUseExternalMode()) return;
+    if (this.createMode() === mode) return;
+    this.createMode.set(mode);
+    this.creatingNewExternalClient.set(false);
+    this.selectedEligibleOrganizer.set(null);
+    this.externalSelectionError.set('');
+    this.operationError.set('');
+    if (mode === 'EXTERNAL') {
+      this.eligiblePage.set(0);
+      this.eligibleSearchTrigger$.next({ q: this.externalSearchControl.value.trim(), page: 0 });
+    } else {
+      this.eligibleSearchTrigger$.next(null);
+    }
+  }
+
+  toggleNewExternalClient(enabled: boolean): void {
+    if (!this.canUseExternalMode()) return;
+    this.creatingNewExternalClient.set(enabled);
+    this.externalSelectionError.set('');
+    this.operationError.set('');
+    if (enabled) {
+      this.selectedEligibleOrganizer.set(null);
+      this.newExternalClientForm.reset({ externalClientName: '', externalClientEmail: '' });
+      this.eligibleSearchTrigger$.next(null);
+    } else {
+      this.eligibleSearchTrigger$.next({ q: this.externalSearchControl.value.trim(), page: this.eligiblePage() });
+    }
+  }
+
+  selectEligibleOrganizer(item: EligibleOrganizer): void {
+    if (item.source === 'ENTRA_ORGANIZER' && this.eligibleDirectoryStatus() === 'DEGRADED') {
+      this.externalSelectionError.set('El directorio Entra no está disponible temporalmente. Selecciona un cliente externo o registra uno nuevo.');
+      return;
+    }
+    this.selectedEligibleOrganizer.set(item);
+    this.externalSelectionError.set('');
+    this.operationError.set('');
+  }
+
+  goToEligiblePage(page: number): void {
+    if (page < 0 || page >= this.eligibleTotalPages() || this.eligibleLoading()) return;
+    this.eligiblePage.set(page);
+    this.eligibleSearchTrigger$.next({ q: this.externalSearchControl.value.trim(), page });
+  }
+
+  retryEligibleSearch(): void {
+    this.eligibleSearchTrigger$.next({ q: this.externalSearchControl.value.trim(), page: this.eligiblePage() });
+  }
+
+  private resetCreateModeState(): void {
+    this.createMode.set('SELF');
+    this.creatingNewExternalClient.set(false);
+    this.externalSearchControl.setValue('', { emitEvent: false });
+    this.eligibleOrganizers.set([]);
+    this.eligibleLoading.set(false);
+    this.eligibleError.set(null);
+    this.eligibleDirectoryStatus.set('OK');
+    this.eligiblePage.set(0);
+    this.eligibleTotal.set(0);
+    this.selectedEligibleOrganizer.set(null);
+    this.externalSelectionError.set('');
+    this.newExternalClientForm.reset({ externalClientName: '', externalClientEmail: '' });
+    this.eligibleSearchTrigger$.next(null);
+  }
+
   onDialogKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
+      if (event.defaultPrevented) return;
       if (!this.saving()) {
         event.preventDefault();
         this.closeCreateModal();
@@ -415,6 +771,7 @@ export class Productions implements OnInit, OnDestroy {
 
   onDetailKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
+      if (event.defaultPrevented) return;
       if (!this.saving()) {
         event.preventDefault();
         this.closeDetail();
@@ -444,12 +801,12 @@ export class Productions implements OnInit, OnDestroy {
     }
   }
 
-  hasFieldError(field: 'organizerId' | 'name' | 'scheduledAt' | 'location'): boolean {
+  hasFieldError(field: 'name' | 'scheduledAt' | 'location'): boolean {
     const control = this.createForm.controls[field];
     return control.invalid && (control.touched || control.dirty || this.createSubmitted());
   }
 
-  getFieldError(field: 'organizerId' | 'name' | 'scheduledAt' | 'location'): string {
+  getFieldError(field: 'name' | 'scheduledAt' | 'location'): string {
     const control = this.createForm.controls[field];
     if (!control.errors) return '';
     switch (field) {
@@ -457,10 +814,6 @@ export class Productions implements OnInit, OnDestroy {
         return control.errors['maxlength']
           ? 'El nombre del evento no puede superar los 150 caracteres.'
           : 'Ingresa el nombre del evento.';
-      case 'organizerId':
-        return control.errors['maxlength']
-          ? 'El identificador del organizador no puede superar los 255 caracteres.'
-          : 'Ingresa el identificador del organizador.';
       case 'scheduledAt':
         return 'Selecciona la fecha y hora programada para el evento.';
       case 'location':
@@ -470,43 +823,136 @@ export class Productions implements OnInit, OnDestroy {
     }
   }
 
+  hasExternalClientFieldError(field: 'externalClientName' | 'externalClientEmail'): boolean {
+    const control = this.newExternalClientForm.controls[field];
+    return control.invalid && (control.touched || control.dirty || this.createSubmitted());
+  }
+
+  getExternalClientFieldError(field: 'externalClientName' | 'externalClientEmail'): string {
+    const control = this.newExternalClientForm.controls[field];
+    if (!control.errors) return '';
+    if (field === 'externalClientName') {
+      return control.errors['maxlength']
+        ? 'El nombre del cliente no puede superar los 150 caracteres.'
+        : 'Ingresa el nombre del cliente externo.';
+    }
+    if (control.errors['email']) {
+      return 'Ingresa un correo electrónico con formato válido.';
+    }
+    if (control.errors['maxlength']) {
+      return 'El correo electrónico no puede superar los 255 caracteres.';
+    }
+    return 'Ingresa el correo de notificaciones del cliente externo.';
+  }
+
   submitCreate(): void {
     if (!this.canCreate() || this.saving()) return;
     this.createSubmitted.set(true);
     this.createForm.markAllAsTouched();
+    this.externalSelectionError.set('');
+    this.operationError.set('');
+
     if (this.createForm.invalid) return;
     const request = this.createForm.getRawValue();
-    if (!Number.isFinite(Date.parse(request.scheduledAt)) || new Date(request.scheduledAt).getTime() < Date.now()) {
+    const scheduledInstant = parseScheduledAtToInstant(request.scheduledAt);
+    if (!scheduledInstant || scheduledInstant.getTime() < Date.now()) {
       this.operationError.set('Ingresa una fecha programada actual o futura.');
       return;
     }
-    const effectiveOrganizerId = this.isOrganizerOnly()
-      ? this.currentOwnerId()
-      : request.organizerId.trim();
+
+    let payload: CreateProductionRequest;
+    const effectiveMode: OrganizerMode = this.canUseExternalMode() ? this.createMode() : 'SELF';
+
+    if (effectiveMode === 'SELF') {
+      const canonicalOwnerId = this.currentOwnerId().trim();
+      if (!canonicalOwnerId) {
+        this.operationError.set(
+          'No se pudo verificar tu identidad autenticada para asignar la producción. Cierra sesión y vuelve a ingresar.'
+        );
+        return;
+      }
+      payload = {
+        organizerMode: 'SELF',
+        organizerId: canonicalOwnerId,
+        name: request.name.trim(),
+        scheduledAt: request.scheduledAt,
+        location: request.location.trim(),
+      };
+    } else if (this.creatingNewExternalClient()) {
+      this.newExternalClientForm.markAllAsTouched();
+      if (this.newExternalClientForm.invalid) return;
+      const ext = this.newExternalClientForm.getRawValue();
+      payload = {
+        organizerMode: 'EXTERNAL',
+        externalOrganizerType: 'NEW_EXTERNAL',
+        externalClientName: ext.externalClientName.trim(),
+        externalClientEmail: ext.externalClientEmail.trim(),
+        name: request.name.trim(),
+        scheduledAt: request.scheduledAt,
+        location: request.location.trim(),
+      };
+    } else {
+      const selected = this.selectedEligibleOrganizer();
+      if (!selected) {
+        this.externalSelectionError.set('Selecciona un organizador elegible o registra un nuevo cliente externo.');
+        return;
+      }
+      if (selected.source === 'ENTRA_ORGANIZER' && this.eligibleDirectoryStatus() === 'DEGRADED') {
+        this.externalSelectionError.set('El directorio Entra no está disponible temporalmente. Selecciona un cliente externo o registra uno nuevo.');
+        return;
+      }
+      payload = {
+        organizerMode: 'EXTERNAL',
+        externalOrganizerType: selected.source === 'ENTRA_ORGANIZER' ? 'ENTRA_ORGANIZER' : 'EXISTING_EXTERNAL',
+        organizerId: selected.organizerId,
+        name: request.name.trim(),
+        scheduledAt: request.scheduledAt,
+        location: request.location.trim(),
+      };
+    }
 
     this.saving.set(true);
-    this.operationError.set('');
     this.operationSuccess.set('');
-    this.dataService.createProduction({
-      organizerId: effectiveOrganizerId,
-      name: request.name.trim(),
-      scheduledAt: request.scheduledAt,
-      location: request.location.trim()
-    }).subscribe({
+    this.dataService.createProduction(payload).subscribe({
       next: (production) => {
         this.saving.set(false);
         this.createSubmitted.set(false);
         this.operationSuccess.set(`Producción #${production.id} («${production.name}») creada correctamente.`);
         this.createForm.reset();
+        this.resetCreateModeState();
         this.showCreate.set(false);
         this.syncBodyScrollLock();
+        if (effectiveMode === 'SELF' && this.canManageSelfContact()) {
+          this.loadSelfContact();
+        }
         this.retry();
       },
       error: (error: HttpErrorResponse) => {
         this.saving.set(false);
-        this.operationError.set(this.errorMessage(error));
+        this.operationError.set(this.createProductionErrorMessage(error));
       }
     });
+  }
+
+  private createProductionErrorMessage(error: HttpErrorResponse): string {
+    if (error.status === 0) return 'No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo nuevamente.';
+    if (error.status === 401) return 'Tu sesión expiró o el token no es válido. Inicia sesión nuevamente.';
+    if (error.status === 403) return 'No tienes permisos o el organizador seleccionado no está autorizado.';
+    if (error.status === 404) return 'El cliente o recurso seleccionado no existe.';
+    if (error.status === 409) {
+      return (error.error && typeof error.error === 'object' && error.error.message)
+        ? error.error.message
+        : 'Existe un conflicto con el contacto o el organizador seleccionado.';
+    }
+    if (error.status === 400) {
+      return (error.error && typeof error.error === 'object' && error.error.message)
+        ? error.error.message
+        : 'Revisa los datos ingresados en el formulario.';
+    }
+    if (error.status === 502 || error.status === 503) {
+      return 'El servicio de organizadores o directorio no está disponible temporalmente. Inténtalo nuevamente en unos instantes.';
+    }
+    return 'No fue posible crear la producción. Inténtalo nuevamente.';
   }
 
   selectProduction(item: Production): void {
@@ -546,6 +992,7 @@ export class Productions implements OnInit, OnDestroy {
     this.reservationItems.set([]);
     this.selectedServiceIds.set([]);
     this.reservationInputError.set('');
+    this.confirmContactLookup$.next(null);
     this.syncBodyScrollLock();
     const trigger = this.detailTriggerElement;
     this.detailTriggerElement = null;
@@ -587,6 +1034,7 @@ export class Productions implements OnInit, OnDestroy {
         this.detailLoading.set(false);
         this.syncBodyScrollLock();
         this.fetchReservations(id);
+        this.checkConfirmContactWarning(result);
       },
       error: (error: HttpErrorResponse) => {
         this.detailLoading.set(false);
@@ -696,6 +1144,38 @@ export class Productions implements OnInit, OnDestroy {
     if (!eq) return `Equipo #${eqId}`;
     const detail = eq.description || eq.category;
     return detail ? `${eq.name} (${detail})` : eq.name;
+  }
+
+  // UI/UX-04.2: Structured read-only accessors for provisional equipment cards (preserves getEquipmentName untouched)
+  readonly failedDraftEquipmentImages = signal<ReadonlySet<number>>(new Set());
+
+  getEquipmentById(eqId: number): Equipment | null {
+    return this.availableEquipment().find((e) => e.id === eqId) ?? null;
+  }
+
+  getEquipmentDisplayName(eqId: number): string {
+    const cleanName = this.getEquipmentById(eqId)?.name?.trim();
+    return cleanName || `Equipo #${eqId}`;
+  }
+
+  getEquipmentCategory(eqId: number): string | null {
+    const cleanCategory = this.getEquipmentById(eqId)?.category?.trim();
+    return cleanCategory || null;
+  }
+
+  getEquipmentThumbnail(eqId: number): string | null {
+    if (this.failedDraftEquipmentImages().has(eqId)) return null;
+    const dtoUrl = this.getEquipmentById(eqId)?.imageUrl?.trim();
+    if (dtoUrl) return dtoUrl;
+    return this.imageStorage.getImage('equipment', eqId);
+  }
+
+  onDraftEquipmentImageError(eqId: number): void {
+    this.failedDraftEquipmentImages.update((prev) => {
+      const next = new Set(prev);
+      next.add(eqId);
+      return next;
+    });
   }
 
   toggleService(serviceId: number): void {
@@ -812,6 +1292,10 @@ export class Productions implements OnInit, OnDestroy {
     }
   }
 
+  clearSearch(): void {
+    this.search.setValue('');
+  }
+
   clearFilters(): void {
     this.search.setValue('');
     this.status.setValue('');
@@ -823,17 +1307,63 @@ export class Productions implements OnInit, OnDestroy {
 
   viewCrewTicket(productionId: number, trigger?: HTMLElement): void {
     if (!this.canViewCrewTicket()) return;
-    this.ticketTriggerElement = trigger ?? (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    if (trigger) {
+      this.ticketTriggerElement = trigger;
+    } else if (!this.showTicketModal()) {
+      this.ticketTriggerElement =
+        typeof document !== 'undefined' && document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+    }
+
+    const requestSeq = ++this.ticketRequestSeq;
+    this.ticketProductionId.set(productionId);
     this.ticketLoading.set(true);
     this.ticketError.set(null);
     this.currentTicket.set(null);
+    this.ticketProduction.set(null);
+    this.ticketProductionLoading.set(true);
+    this.ticketProductionError.set(null);
+    this.ticketProductionQueriedAt.set(null);
+    this.ticketReservationsLoading.set(true);
+    this.ticketReservationsError.set(null);
     this.ticketEquipmentReservations.set([]);
     this.showTicketModal.set(true);
     this.syncBodyScrollLock();
 
+    this.dataService.getProduction(productionId).subscribe({
+      next: (prod) => {
+        if (requestSeq !== this.ticketRequestSeq) return;
+        this.ticketProduction.set(prod);
+        this.ticketProductionQueriedAt.set(new Date().toISOString());
+        this.ticketProductionLoading.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        if (requestSeq !== this.ticketRequestSeq) return;
+        this.ticketProductionLoading.set(false);
+        if (err.status === 403) {
+          this.ticketProductionError.set('No tienes permisos para consultar los datos actualizados de la producción.');
+        } else {
+          this.ticketProductionError.set(
+            'No se pudo obtener el estado actualizado de la producción. Reintenta antes de imprimir.',
+          );
+        }
+      },
+    });
+
     this.catalogDataService.getReservationsByProduction(productionId).subscribe({
-      next: (res) => this.ticketEquipmentReservations.set(res ?? []),
-      error: () => this.ticketEquipmentReservations.set([]),
+      next: (res) => {
+        if (requestSeq !== this.ticketRequestSeq) return;
+        this.ticketEquipmentReservations.set(res ?? []);
+        this.ticketReservationsLoading.set(false);
+      },
+      error: () => {
+        if (requestSeq !== this.ticketRequestSeq) return;
+        this.ticketReservationsLoading.set(false);
+        this.ticketReservationsError.set(
+          'No se pudo consultar el manifiesto de equipamiento en Catálogo. Reintenta antes de imprimir.',
+        );
+      },
     });
 
     setTimeout(() => {
@@ -845,10 +1375,12 @@ export class Productions implements OnInit, OnDestroy {
 
     this.dataService.getCrewTicket(productionId).subscribe({
       next: (ticket) => {
+        if (requestSeq !== this.ticketRequestSeq) return;
         this.currentTicket.set(ticket);
         this.ticketLoading.set(false);
       },
       error: (err: HttpErrorResponse) => {
+        if (requestSeq !== this.ticketRequestSeq) return;
         this.ticketLoading.set(false);
         if (err.status === 404) {
           this.ticketError.set('No se ha emitido un ticket de cuadrilla para esta producción.');
@@ -857,16 +1389,31 @@ export class Productions implements OnInit, OnDestroy {
         } else {
           this.ticketError.set('Error al recuperar el ticket de cuadrilla.');
         }
-      }
+      },
     });
   }
 
+  retryCrewTicket(): void {
+    const prodId = this.ticketProductionId();
+    if (prodId !== null) {
+      this.viewCrewTicket(prodId);
+    }
+  }
+
   closeTicketModal(): void {
+    this.ticketRequestSeq++;
     this.clearTicketCopyTimer();
     removeExistingCrewTicketPrintFrame();
     this.ticketCopied.set(false);
     this.showTicketModal.set(false);
+    this.ticketProductionId.set(null);
     this.currentTicket.set(null);
+    this.ticketProduction.set(null);
+    this.ticketProductionLoading.set(false);
+    this.ticketProductionError.set(null);
+    this.ticketProductionQueriedAt.set(null);
+    this.ticketReservationsLoading.set(false);
+    this.ticketReservationsError.set(null);
     this.ticketEquipmentReservations.set([]);
     this.ticketError.set(null);
     this.syncBodyScrollLock();
@@ -894,23 +1441,42 @@ export class Productions implements OnInit, OnDestroy {
     }, 1800);
   }
 
+  formatProductionScheduledAt(iso: string | null | undefined): string {
+    return formatScheduledAtChile(iso).combined;
+  }
+
+  formatTicketScheduledAt(iso: string | null | undefined): string {
+    return formatChileEventDateTime(iso).full;
+  }
+
+  formatTicketIssuedAt(iso: string | null | undefined): string {
+    return formatServerTimestampChile(iso).full;
+  }
+
   printCrewTicket(): void {
+    if (!this.ticketPrintReady()) return;
     const ticket = this.currentTicket();
-    if (!ticket) return;
-    const crew = this.resolvedTicketCrew();
-    const prod =
-      (this.detail()?.id === ticket.productionId ? this.detail() : null) ??
-      this.allProductions().find((p) => p.id === ticket.productionId) ??
-      null;
+    const prod = this.ticketProduction();
+    if (!ticket || !prod) return;
+
+    const historicalCrew = this.ticketHistoricalCrew();
+    const currentCrew = this.currentProductionCrew();
     triggerCrewTicketSinglePagePrint({
       ticket,
-      crewName: crew.crewName,
-      crewId: crew.crewId,
+      crewName: historicalCrew.crewName,
+      crewId: historicalCrew.crewId,
+      currentCrewName: currentCrew.crewName,
+      currentCrewId: currentCrew.crewId,
       directive: this.resolvedTicketDirective(),
       statusLabel: this.getReadableStatus(ticket.status),
-      reservations: this.ticketReservations(),
-      organizerId: prod?.organizerId ?? null,
-      productionStatusLabel: prod ? this.getReadableStatus(prod.status) : null,
+      reservations: this.ticketEquipmentReservations(),
+      organizerId: prod.organizerId ?? null,
+      organizerDisplayName: prod.organizerDisplayName ?? null,
+      organizerResolutionSource: prod.organizerResolutionSource ?? null,
+      productionStatusLabel: this.getReadableStatus(prod.status),
+      productionStatusCode: prod.status,
+      productionUpdatedAt: prod.updatedAt ?? null,
+      productionQueriedAt: this.ticketProductionQueriedAt(),
       actorOwnerId: typeof this.authz.ownerId === 'function' ? this.authz.ownerId() || null : null,
     });
   }
@@ -922,8 +1488,8 @@ export class Productions implements OnInit, OnDestroy {
       return;
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') {
-      if (this.currentTicket()) {
-        event.preventDefault();
+      event.preventDefault();
+      if (this.ticketPrintReady()) {
         this.printCrewTicket();
       }
       return;
@@ -961,5 +1527,201 @@ export class Productions implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  // --- Gestión de contacto propio (Organizador, Productor, Admin+Productor) ---
+
+  loadSelfContact(): void {
+    const ownerId = this.currentOwnerId().trim();
+    if (!this.canManageSelfContact() || !ownerId || typeof this.dataService.getOrganizerContact !== 'function') {
+      return;
+    }
+    this.selfContactLoading.set(true);
+    this.selfContactMissing.set(false);
+    this.selfContactError.set(null);
+    this.dataService.getOrganizerContact(ownerId).subscribe({
+      next: (contact) => {
+        this.selfContactLoading.set(false);
+        this.selfContact.set(contact);
+        this.selfContactMissing.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.selfContactLoading.set(false);
+        if (err.status === 404) {
+          this.selfContact.set(null);
+          this.selfContactMissing.set(true);
+          this.prefillSelfContactForm();
+        } else if (err.status === 403) {
+          this.selfContactError.set('No tienes permisos para consultar este contacto de organizador.');
+        } else {
+          this.selfContactError.set('No pudimos consultar tu contacto de notificaciones en este momento.');
+        }
+      }
+    });
+  }
+
+  openSelfContactForm(): void {
+    if (!this.canManageSelfContact()) return;
+    this.selfContactError.set(null);
+    this.selfContactSuccess.set(null);
+    this.prefillSelfContactForm();
+    this.showSelfContactForm.set(true);
+  }
+
+  cancelSelfContactForm(): void {
+    if (this.selfContactSaving()) return;
+    this.showSelfContactForm.set(false);
+    this.selfContactError.set(null);
+  }
+
+  submitSelfContact(): void {
+    const ownerId = this.currentOwnerId().trim();
+    if (!this.canManageSelfContact() || !ownerId || this.selfContactSaving()) return;
+    this.selfContactForm.markAllAsTouched();
+    if (this.selfContactForm.invalid || typeof this.dataService.upsertOrganizerContact !== 'function') return;
+
+    const raw = this.selfContactForm.getRawValue();
+    const request: OrganizerContactRequest = {
+      email: raw.email.trim(),
+      contactName: raw.contactName.trim() || undefined,
+      phone: raw.phone.trim() || undefined,
+    };
+
+    this.selfContactSaving.set(true);
+    this.selfContactError.set(null);
+    this.selfContactSuccess.set(null);
+    this.dataService.upsertOrganizerContact(ownerId, request).subscribe({
+      next: (saved) => {
+        this.selfContactSaving.set(false);
+        this.selfContact.set(saved);
+        this.selfContactMissing.set(false);
+        this.showSelfContactForm.set(false);
+        this.selfContactSuccess.set(`Contacto registrado para notificaciones: ${saved.email} (contacto configurado, no verificado por enlace).`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.selfContactSaving.set(false);
+        this.selfContactError.set(this.contactErrorMessage(err));
+      }
+    });
+  }
+
+  private prefillSelfContactForm(): void {
+    const existing = this.selfContact();
+    this.selfContactForm.reset({
+      email: existing?.email ?? this.suggestedEmail(),
+      contactName: existing?.contactName ?? this.suggestedDisplayName(),
+      phone: existing?.phone ?? '',
+    });
+  }
+
+  private contactErrorMessage(err: HttpErrorResponse): string {
+    if (err.status === 403) {
+      return 'No tienes permisos para registrar o modificar el contacto de este organizador.';
+    }
+    if (err.status === 400) {
+      return 'Verifica que el correo electrónico y los datos de contacto sean válidos.';
+    }
+    if (err.status === 401) {
+      return 'Sesión expirada o no autorizada. Vuelve a iniciar sesión.';
+    }
+    return 'No pudimos guardar el contacto del organizador en este momento.';
+  }
+
+  // --- Búsqueda de organizadores elegibles (EXTERNAL) y aviso de confirmación ---
+
+  private setupEligibleOrganizerSearch(): void {
+    this.externalSearchControl.valueChanges
+      .pipe(
+        debounceTime(250),
+        map((val) => val.trim()),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((q) => {
+        if (this.showCreate() && this.createMode() === 'EXTERNAL' && !this.creatingNewExternalClient()) {
+          this.eligiblePage.set(0);
+          this.eligibleSearchTrigger$.next({ q, page: 0 });
+        }
+      });
+
+    this.eligibleSearchTrigger$
+      .pipe(
+        switchMap((req) => {
+          if (!req || typeof this.dataService.getEligibleOrganizers !== 'function') {
+            this.eligibleLoading.set(false);
+            return of(null);
+          }
+          this.eligibleLoading.set(true);
+          this.eligibleError.set(null);
+          return this.dataService.getEligibleOrganizers({
+            q: req.q,
+            page: req.page,
+            size: this.eligiblePageSize,
+          }).pipe(
+            map((page) => ({ ok: true as const, page })),
+            catchError((err: HttpErrorResponse) => of({ ok: false as const, status: err.status ?? 0 }))
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((outcome) => {
+        this.eligibleLoading.set(false);
+        if (!outcome) return;
+        if (outcome.ok) {
+          this.eligibleOrganizers.set(outcome.page.items);
+          this.eligiblePage.set(outcome.page.page);
+          this.eligibleTotal.set(outcome.page.total);
+          this.eligibleDirectoryStatus.set(outcome.page.directorySyncStatus);
+          if (
+            outcome.page.directorySyncStatus === 'DEGRADED' &&
+            this.selectedEligibleOrganizer()?.source === 'ENTRA_ORGANIZER'
+          ) {
+            this.selectedEligibleOrganizer.set(null);
+          }
+        } else {
+          this.eligibleOrganizers.set([]);
+          this.eligibleTotal.set(0);
+          this.eligibleError.set(this.directoryErrorMessage(outcome.status));
+        }
+      });
+  }
+
+  private setupPassiveContactLookups(): void {
+    this.confirmContactLookup$
+      .pipe(
+        switchMap((organizerId) => {
+          if (!organizerId || typeof this.dataService.getOrganizerContact !== 'function') {
+            this.confirmContactMissing.set(false);
+            return of(null);
+          }
+          this.confirmContactMissing.set(false);
+          return this.dataService.getOrganizerContact(organizerId).pipe(
+            map(() => false),
+            catchError((err: HttpErrorResponse) => of(err.status === 404))
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((missing) => {
+        if (missing !== null) {
+          this.confirmContactMissing.set(missing);
+        }
+      });
+  }
+
+  private checkConfirmContactWarning(production: Production): void {
+    if (this.canUpdate() && production.status === 'SOLICITADO' && production.organizerId?.trim()) {
+      this.confirmContactLookup$.next(production.organizerId.trim());
+    } else {
+      this.confirmContactLookup$.next(null);
+    }
+  }
+
+  private directoryErrorMessage(status: number): string {
+    if (status === 401) return 'Tu sesión expiró al consultar organizadores. Vuelve a iniciar sesión.';
+    if (status === 403) return 'No tienes permisos para consultar el directorio de organizadores.';
+    if (status === 502 || status === 503) return 'El directorio de organizadores no está disponible temporalmente. Puedes registrar un cliente externo nuevo.';
+    if (status === 0) return 'No se pudo conectar para consultar organizadores elegibles.';
+    return 'No fue posible consultar organizadores elegibles en este momento.';
   }
 }

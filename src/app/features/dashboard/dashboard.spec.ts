@@ -12,6 +12,7 @@ import { Production } from '../../core/models/production.model';
 import { CatalogService } from '../catalog/models/catalog-service.model';
 
 describe('Dashboard', () => {
+  afterEach(() => vi.restoreAllMocks());
   let fixture: ComponentFixture<Dashboard>;
   const roles = signal<AppRole[]>([]);
   let dataServiceMock: any;
@@ -45,6 +46,73 @@ describe('Dashboard', () => {
     }).compileComponents();
   });
 
+  it('shows organizer upcoming, overdue and live events with detail links from the authorized API list', async () => {
+    roles.set([AppRole.Organizador]);
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2030-01-10T12:00:00Z').getTime());
+    const sample = (id: number, scheduledAt: string, status: Production['status']): Production => ({
+      id, name: `Own ${id}`, organizerId: 'business-own', location: 'Venue', scheduledAt, status,
+      createdAt: '', updatedAt: ''
+    });
+    dataServiceMock.getProductions.mockReturnValue(of([
+      sample(1, '2030-01-11T12:00:00Z', 'SOLICITADO'),
+      sample(2, '2030-01-09T12:00:00Z', 'CONFIRMADO'),
+      sample(3, '2030-01-09T12:00:00Z', 'EN_MONTAJE'),
+      sample(4, '2030-01-11T12:00:00Z', 'CERRADO')
+    ]));
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.upcoming().map(p => p.id)).toEqual([1]);
+    expect(fixture.componentInstance.overdueProductions().map(p => p.id)).toEqual([2]);
+    expect(fixture.componentInstance.liveProductions().map(p => p.id)).toEqual([3]);
+    expect(fixture.nativeElement.querySelector('a[href="/productions?productionId=1"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Mis eventos');
+    expect(fixture.nativeElement.textContent).toContain('Pendientes atrasadas');
+    expect(fixture.nativeElement.textContent).not.toContain('Own 4');
+    expect(dataServiceMock.getCatalogServices).not.toHaveBeenCalled();
+    expect(reportsMock.getKpis).not.toHaveBeenCalled();
+  });
+
+  it('filters the entire agenda before limiting to four and treats the exact current instant as upcoming', async () => {
+    roles.set([AppRole.Productor]);
+    const now = new Date('2030-01-10T12:00:00Z').getTime();
+    vi.spyOn(Date, 'now').mockReturnValue(now);
+    dataServiceMock.getProductions.mockReturnValue(of(Array.from({ length: 7 }, (_, i): Production => ({
+      id: i + 1, name: `Event ${i}`, organizerId: 'org', location: 'Venue',
+      scheduledAt: new Date(now + i * 3600000).toISOString(),
+      status: i < 5 ? 'CONFIRMADO' : 'SOLICITADO', createdAt: '', updatedAt: ''
+    }))));
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.componentInstance.setPipelineFilter('requested');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.filteredUpcoming().map(p => p.id)).toEqual([6, 7]);
+    expect(fixture.componentInstance.upcomingProductions()).toHaveLength(7);
+    expect(fixture.nativeElement.textContent).toContain('Mostrando 2 de 2');
+  });
+
+  it('distinguishes organizer loading and network failure from an empty authorized list and allows retry', async () => {
+    roles.set([AppRole.Organizador]);
+    const pending = new Subject<readonly Production[]>();
+    dataServiceMock.getProductions.mockReturnValue(pending);
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.skeleton')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('No tienes próximas');
+    pending.error(new Error('Network unavailable'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('No tienes próximas');
+    dataServiceMock.getProductions.mockReturnValue(of([]));
+    fixture.nativeElement.querySelector('[role="alert"] button').click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No tienes próximas');
+    expect(dataServiceMock.getCatalogServices).not.toHaveBeenCalled();
+    expect(reportsMock.getKpis).not.toHaveBeenCalled();
+  });
+
   it('renders loading state initially, then real operational metrics', async () => {
     roles.set([AppRole.Admin]);
     dataServiceMock.getProductions.mockReturnValue(of([
@@ -63,12 +131,15 @@ describe('Dashboard', () => {
 
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Producciones2');
-    expect(text).toContain('Pendientes1');
+    expect(text).toContain('2 abiertas');
+    expect(text).toContain('Por confirmar1');
     expect(text).toContain('En operación0');
     expect(text).toContain('Servicios activos 1/2');
+    expect(text).toContain('1 servicio inactivo');
   });
 
-  it('orders upcoming productions chronologically and takes first 4', async () => {
+  it('orders future productions chronologically and takes first 4', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-09-01T00:00:00Z').getTime());
     roles.set([AppRole.Admin]);
     dataServiceMock.getProductions.mockReturnValue(of([
       { id: 1, name: 'P1', organizerId: 'org', location: 'L1', scheduledAt: '2026-09-20T00:00:00Z', status: 'CONFIRMADO', createdAt: '', updatedAt: '' },
@@ -89,9 +160,10 @@ describe('Dashboard', () => {
     expect(upcoming[1].id).toBe(5);
     expect(upcoming[2].id).toBe(3);
     expect(upcoming[3].id).toBe(1);
+    vi.restoreAllMocks();
   });
 
-  it('displays organizer isolation note and skips catalog and productions requests', async () => {
+  it('loads the organizer authorized list without catalog or reports', async () => {
     roles.set([AppRole.Organizador]);
     dataServiceMock.getProductions.mockReturnValue(of([]));
 
@@ -100,9 +172,11 @@ describe('Dashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(dataServiceMock.getProductions).not.toHaveBeenCalled();
+    expect(dataServiceMock.getProductions).toHaveBeenCalledTimes(1);
     expect(dataServiceMock.getCatalogServices).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.textContent).toContain('La consulta personalizada de producciones estará disponible cuando el servicio aplique el alcance de datos por organizador');
+    expect(reportsMock.getKpis).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('Mis eventos');
+    expect(fixture.nativeElement.textContent).toContain('No tienes próximas producciones');
   });
 
   it('shows error state when requests fail and can retry', async () => {
@@ -222,6 +296,104 @@ describe('Dashboard', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('uses dynamic Chile timezone abbreviations (CLST in summer, CLT in winter) on telemetry axis instead of hardcoded CLT', async () => {
+    roles.set([AppRole.Admin]);
+    // Summer anchor (November = CLST, UTC-3): 22:00Z -> 19:00 CLST
+    reportsMock.getKpis.mockReturnValue(of({
+      ...reportResponse,
+      generatedAt: '2026-11-23T22:00:00Z',
+    }));
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.telemetryAxisLabels().now).toBe('19:00');
+    expect(fixture.componentInstance.telemetryAxisLabels().tzAbbr).toBe('CLST');
+    expect(fixture.nativeElement.textContent).toContain('Corte (19:00 CLST)');
+    expect(fixture.nativeElement.textContent).not.toContain('Corte (19:00 CLT)');
+
+    // Winter anchor (July = CLT, UTC-4): 22:00Z -> 18:00 CLT
+    reportsMock.getKpis.mockReturnValue(of({
+      ...reportResponse,
+      generatedAt: '2026-07-15T22:00:00Z',
+    }));
+    fixture.componentInstance.retry();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.telemetryAxisLabels().now).toBe('18:00');
+    expect(fixture.componentInstance.telemetryAxisLabels().tzAbbr).toBe('CLT');
+    expect(fixture.nativeElement.textContent).toContain('Corte (18:00 CLT)');
+  });
+
+  it('enforces UI/UX-05 hierarchy, semantic accuracy, honest Kafka config/lag, and empty 24h activity state', async () => {
+    roles.set([AppRole.Admin]);
+    dataServiceMock.getProductions.mockReturnValue(of([
+      { id: 1, name: 'Evento Cumbre', organizerId: 'org', location: 'SurActivo', scheduledAt: '2030-12-10T10:00:00', status: 'SOLICITADO', createdAt: '', updatedAt: '' },
+      { id: 2, name: 'Gala Anual', organizerId: 'org', location: 'SurActivo', scheduledAt: '2030-12-12T10:00:00', status: 'EN_EJECUCION', createdAt: '', updatedAt: '' },
+    ]));
+    dataServiceMock.getCatalogServices.mockReturnValue(of([
+      { id: 1, name: 'Audio', description: '', rate: 100, active: true },
+      { id: 2, name: 'Video', description: '', rate: 200, active: false },
+    ]));
+    reportsMock.getKpis.mockReturnValue(of({
+      ...reportResponse,
+      metrics: { ...reportResponse.metrics, totalStatusChanges: 0, closedCount: 0, cancelledCount: 0 },
+    }));
+
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const text = el.textContent ?? '';
+
+    // 1. Visual hierarchy order: KPI Grid -> Report Transitions -> Próximas producciones
+    const kpiGrid = el.querySelector('.dash-kpi-grid') as HTMLElement;
+    const reportSection = el.querySelector('.telemetry-card') as HTMLElement;
+    const tableSection = el.querySelector('.dashboard-table-panel') as HTMLElement;
+    expect(kpiGrid.compareDocumentPosition(reportSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(reportSection.compareDocumentPosition(tableSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // 2. Semantic precision (no legacy misleading labels)
+    expect(text).toContain('Por confirmar');
+    expect(text).toContain('1 pendiente de confirmación');
+    expect(text).toContain('1 en ejecución');
+    expect(text).toContain('1 servicio activo');
+    expect(text).toContain('1 servicio inactivo');
+    expect(text).toContain('Transiciones a Cerrado registradas');
+    expect(text).not.toContain('cotizar rider');
+    expect(text).not.toContain('en bodega');
+    expect(text).not.toContain('bloqueos');
+    expect(text).not.toContain('acta final');
+
+    // 3. Honest Kafka config vs unreported consumer lag & 30s polling wording
+    expect(text).toContain('production-status-changed');
+    expect(text).toContain('Consumer lag (report)');
+    expect(text).toContain('No reportado');
+    expect(text).not.toContain('0 lag');
+    expect(text).not.toContain('Escuchando en vivo');
+    expect(text).not.toContain('Actualizado en tiempo real');
+    expect(text).toContain('Sincronización automática · cada 30 s');
+
+    // 4. Empty 24h activity state without fabricated bars
+    expect(el.querySelector('.dash-chart-empty-badge')?.textContent?.trim()).toBe(
+      'Sin transiciones registradas en las últimas 24 horas'
+    );
+    expect(el.querySelectorAll('.dash-bar-fill.is-active').length).toBe(0);
+
+    // 5. Accessible segmented filter tabs
+    const tabs = Array.from(el.querySelectorAll('button[role="tab"]')) as HTMLButtonElement[];
+    expect(tabs.length).toBe(3);
+    expect(tabs[0].getAttribute('aria-selected')).toBe('true');
+    tabs[1].click();
+    fixture.detectChanges();
+    expect(tabs[1].getAttribute('aria-selected')).toBe('true');
   });
 
 });

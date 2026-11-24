@@ -6,6 +6,7 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { getChileTodayCalendarDate } from '../../../core/utils/chile-time';
 
 export interface CalendarDay {
   readonly date: Date;
@@ -125,7 +126,7 @@ export class DateCalendarComponent {
   readonly rangeSelected = output<{ start: Date; end: Date }>();
 
   readonly weekDays = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'] as const;
-  readonly viewDate = signal<Date>(new Date());
+  readonly viewDate = signal<Date>(getChileTodayCalendarDate());
 
   readonly monthTitle = computed(() => {
     const d = this.viewDate();
@@ -150,8 +151,7 @@ export class DateCalendarComponent {
     const prevMonthDays = new Date(year, month, 0).getDate();
 
     const result: CalendarDay[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = getChileTodayCalendarDate();
 
     const sel = this.selectedDate();
     const rStart = this.rangeStart();
