@@ -1,17 +1,17 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
   ProductionViewModel,
   formatOrganizerDisplayLabel,
 } from '../../core/models/production.model';
+import { ScheduledAtChile, formatScheduledAtChile } from '../../core/utils/chile-time';
 import { StatusChip } from './status-chip';
 import { ButtonDirective } from './button.component';
 
 @Component({
   selector: 'emx-production-table',
   standalone: true,
-  imports: [StatusChip, DatePipe, ButtonDirective, RouterLink],
+  imports: [StatusChip, ButtonDirective, RouterLink],
   template: `
     <div class="table-scroll" role="region" [attr.aria-label]="caption()" tabindex="0">
       <table class="data-table production-table" [class.is-selectable]="selectable() || detailLinks()">
@@ -40,6 +40,7 @@ import { ButtonDirective } from './button.component';
         </thead>
         <tbody>
           @for (event of rows(); track event.id) {
+            @let schedule = formatSchedule(event.scheduledAt);
             <tr
               [class.row-selectable]="selectable()"
               [class.row-selected]="selectable() && selectedId() === event.id"
@@ -49,8 +50,8 @@ import { ButtonDirective } from './button.component';
               <td class="cell-production">
                 <div class="event-cell">
                   <div class="cal-date-tile" aria-hidden="true">
-                    <span class="cal-month-strip">{{ event.scheduledAt | date:'MMM' }}</span>
-                    <span class="cal-day-num font-mono-num">{{ event.scheduledAt | date:'dd' }}</span>
+                    <span class="cal-month-strip">{{ schedule.monthShort }}</span>
+                    <span class="cal-day-num font-mono-num">{{ schedule.day }}</span>
                   </div>
                   <div class="event-info">
                     <strong class="event-name">{{ event.name }}</strong>
@@ -81,9 +82,9 @@ import { ButtonDirective } from './button.component';
               </td>
               <td class="cell-schedule">
                 <span class="mobile-cell-label" aria-hidden="true">Fecha programada</span>
-                <div class="schedule-time-row font-mono-num">
-                  <strong class="schedule-time">{{ event.scheduledAt | date:'HH:mm' }} hrs</strong>
-                  <span class="schedule-date">{{ event.scheduledAt | date:'dd MMM yyyy' }}</span>
+                <div class="schedule-time-row font-mono-num" [title]="schedule.combined">
+                  <strong class="schedule-time">{{ schedule.time }} {{ schedule.tzAbbr }}</strong>
+                  <span class="schedule-date">{{ schedule.date }}</span>
                 </div>
               </td>
               <td class="cell-status">
@@ -541,6 +542,10 @@ export class ProductionTable {
       event.organizerDisplayName,
       event.organizerResolutionSource,
     );
+  }
+
+  formatSchedule(iso: string | null | undefined): ScheduledAtChile {
+    return formatScheduledAtChile(iso);
   }
 
   onRowClick(event: ProductionViewModel): void {

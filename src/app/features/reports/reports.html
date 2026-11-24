@@ -461,10 +461,13 @@
           </div>
         }
         <div class="footnote-item">
+          @let fromTs = formatReportTimestamp(result.from);
+          @let toTs = formatReportTimestamp(result.to);
+          @let genTs = formatReportTimestamp(result.generatedAt);
           <svg lucideCalendar class="footnote-icon" strokeWidth="1.75" aria-hidden="true" />
-          <span>
-            Período: {{ result.from | date:'dd/MM/yyyy HH:mm':'':'es-CL' }} a {{ result.to | date:'dd/MM/yyyy HH:mm':'':'es-CL' }} ·
-            Actualizado: {{ result.generatedAt | date:'dd/MM/yyyy HH:mm':'':'es-CL' }}
+          <span [title]="'UTC original: ' + fromTs.utcIso + ' a ' + toTs.utcIso + ' · Generado: ' + genTs.utcIso">
+            Período: {{ fromTs.full }} a {{ toTs.full }} ·
+            Actualizado: {{ genTs.full }}
           </span>
         </div>
       </footer>

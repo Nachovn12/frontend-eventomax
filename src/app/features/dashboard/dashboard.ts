@@ -17,6 +17,12 @@ import { ButtonDirective } from '../../shared/ui/button.component';
 import { StatusPill, Tag } from '../../shared/ui/status-pill/status-pill';
 import { BehaviorSubject, catchError, forkJoin, map, of, startWith, switchMap, tap } from 'rxjs';
 import { withLivePolling } from '../../core/utils/live-polling';
+import {
+  getChileDateTimeParts,
+  getChileZoneInfo,
+  parseScheduledAtToInstant,
+  parseServerTimestampAsUtc,
+} from '../../core/utils/chile-time';
 import { Production } from '../../core/models/production.model';
 import { CatalogService } from '../catalog/models/catalog-service.model';
 
@@ -114,18 +120,10 @@ export class Dashboard {
   });
 
   private getSantiagoDateHour(date: Date): { dateKey: string; hour: number } {
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Santiago',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      hourCycle: 'h23',
-    }).formatToParts(date);
-    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00';
+    const parts = getChileDateTimeParts(date);
     return {
-      dateKey: `${get('year')}-${get('month')}-${get('day')}`,
-      hour: Number.parseInt(get('hour'), 10) % 24,
+      dateKey: parts.dateKey,
+      hour: parts.hour,
     };
   }
 
@@ -133,19 +131,21 @@ export class Dashboard {
     const report = this.reportKpis();
     const total = report?.metrics?.totalStatusChanges ?? 0;
     const productions = this.allProductions();
-    const anchorDate = report?.generatedAt ? new Date(report.generatedAt) : new Date();
-    const validAnchor = Number.isNaN(anchorDate.getTime()) ? new Date() : anchorDate;
+    const anchorDate = report?.generatedAt ? parseServerTimestampAsUtc(report.generatedAt) : null;
+    const validAnchor = anchorDate ?? new Date();
     const todayKey = this.getSantiagoDateHour(validAnchor).dateKey;
 
     // 24 bloques horarios móviles en hora de Chile (America/Santiago), donde el índice 23 es la hora actual
     const slots = Array.from({ length: 24 }, (_, idx) => {
       const slotDate = new Date(validAnchor.getTime() - (23 - idx) * 3_600_000);
       const { dateKey, hour } = this.getSantiagoDateHour(slotDate);
+      const tzAbbr = getChileZoneInfo(slotDate).abbr;
       const dayPrefix = dateKey === todayKey ? 'Hoy' : 'Ayer';
       const hh = hour.toString().padStart(2, '0');
       return {
         key: `${dateKey}-${hh}`,
         hour,
+        tzAbbr,
         dayPrefix,
         timeLabel: `${hh}:00`,
         axisLabel: `${dayPrefix} ${hh}:00`,
@@ -160,8 +160,8 @@ export class Dashboard {
       for (const prod of productions) {
         const rawTs = prod.updatedAt || prod.createdAt;
         if (!rawTs) continue;
-        const parsed = new Date(rawTs);
-        if (!Number.isNaN(parsed.getTime())) {
+        const parsed = parseServerTimestampAsUtc(rawTs);
+        if (parsed) {
           const { dateKey, hour } = this.getSantiagoDateHour(parsed);
           const hh = hour.toString().padStart(2, '0');
           const slot = slotByKey.get(`${dateKey}-${hh}`);
@@ -182,9 +182,10 @@ export class Dashboard {
       const heightPct = active ? Math.max(25, Math.round((slot.count / maxCount) * 85)) : 0;
       const isNow = idx === 23;
       return {
-        label: isNow ? `Ahora (${slot.timeLabel} CLT)` : `${slot.axisLabel} CLT`,
+        label: isNow ? `Ahora (${slot.timeLabel} ${slot.tzAbbr})` : `${slot.axisLabel} ${slot.tzAbbr}`,
         axisLabel: slot.axisLabel,
         timeLabel: slot.timeLabel,
+        tzAbbr: slot.tzAbbr,
         count: slot.count,
         active,
         heightPct,
@@ -200,6 +201,7 @@ export class Dashboard {
       third: bars[12]?.axisLabel ?? '',
       fourth: bars[18]?.axisLabel ?? '',
       now: bars[23]?.timeLabel ?? '',
+      tzAbbr: bars[23]?.tzAbbr ?? getChileZoneInfo(new Date()).abbr,
     };
   });
 
@@ -242,14 +244,18 @@ export class Dashboard {
 
   readonly activeProductions = computed(() => {
     const active = this.allProductions().filter((item) => !['CERRADO', 'CANCELADO'].includes(item.status));
-    return [...active].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+    return [...active].sort(
+      (a, b) =>
+        (parseScheduledAtToInstant(a.scheduledAt)?.getTime() ?? 0) -
+        (parseScheduledAtToInstant(b.scheduledAt)?.getTime() ?? 0)
+    );
   });
 
   readonly upcomingProductions = computed(() => this.activeProductions().filter(
-    (p) => new Date(p.scheduledAt).getTime() >= this.agendaNow()
+    (p) => (parseScheduledAtToInstant(p.scheduledAt)?.getTime() ?? 0) >= this.agendaNow()
   ));
   readonly overdueProductions = computed(() => this.activeProductions().filter(
-    (p) => new Date(p.scheduledAt).getTime() < this.agendaNow()
+    (p) => (parseScheduledAtToInstant(p.scheduledAt)?.getTime() ?? 0) < this.agendaNow()
       && ['SOLICITADO', 'CONFIRMADO'].includes(p.status)
   ));
   readonly upcoming = computed(() => this.upcomingProductions().slice(0, 4));

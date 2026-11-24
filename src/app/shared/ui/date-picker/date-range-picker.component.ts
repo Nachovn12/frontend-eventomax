@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { DateCalendarComponent } from './date-calendar.component';
 import { ButtonComponent } from '../button.component';
+import { getChileDateTimeParts, getChileTodayCalendarDate } from '../../../core/utils/chile-time';
 
 export interface DatePickerPreset {
   readonly id: string;
@@ -204,8 +205,9 @@ export class DateRangePickerComponent {
       this.draftStart.set(new Date(now.getTime() - 30 * 86400000));
       this.draftEnd.set(now);
     } else if (presetId === 'thisMonth') {
-      this.draftStart.set(new Date(now.getFullYear(), now.getMonth(), 1));
-      this.draftEnd.set(now);
+      const todayChile = getChileTodayCalendarDate(now);
+      this.draftStart.set(new Date(todayChile.getFullYear(), todayChile.getMonth(), 1));
+      this.draftEnd.set(todayChile);
     }
   }
 
@@ -231,9 +233,12 @@ export class DateRangePickerComponent {
 
   formatChip(d: Date | null): string {
     if (!d) return '--/--/----';
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
+    if (d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0 && d.getMilliseconds() === 0) {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+    return getChileDateTimeParts(d).dateEsCl;
   }
 }

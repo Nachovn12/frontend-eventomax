@@ -297,4 +297,36 @@ describe('Dashboard', () => {
     }
   });
 
+  it('uses dynamic Chile timezone abbreviations (CLST in summer, CLT in winter) on telemetry axis instead of hardcoded CLT', async () => {
+    roles.set([AppRole.Admin]);
+    // Summer anchor (November = CLST, UTC-3): 22:00Z -> 19:00 CLST
+    reportsMock.getKpis.mockReturnValue(of({
+      ...reportResponse,
+      generatedAt: '2026-11-23T22:00:00Z',
+    }));
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.telemetryAxisLabels().now).toBe('19:00');
+    expect(fixture.componentInstance.telemetryAxisLabels().tzAbbr).toBe('CLST');
+    expect(fixture.nativeElement.textContent).toContain('Tiempo Real (19:00 CLST)');
+    expect(fixture.nativeElement.textContent).not.toContain('Tiempo Real (19:00 CLT)');
+
+    // Winter anchor (July = CLT, UTC-4): 22:00Z -> 18:00 CLT
+    reportsMock.getKpis.mockReturnValue(of({
+      ...reportResponse,
+      generatedAt: '2026-07-15T22:00:00Z',
+    }));
+    fixture.componentInstance.retry();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.telemetryAxisLabels().now).toBe('18:00');
+    expect(fixture.componentInstance.telemetryAxisLabels().tzAbbr).toBe('CLT');
+    expect(fixture.nativeElement.textContent).toContain('Tiempo Real (18:00 CLT)');
+  });
+
 });

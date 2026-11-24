@@ -404,4 +404,50 @@ describe('buildCrewTicketPrintHtml (Propuesta C v2)', () => {
       document.title = originalTitle;
     }
   });
+
+  it('OBS-03. preserves complete C v2 content, >= 8pt operational text, 54px internal QR and dynamic pagination for OT-0009 (5 reservations / 10 units)', () => {
+    const reservations: EquipmentReservationItem[] = [
+      makeReservation(1, { reservationId: 11, equipmentName: 'Sistema de Audio Line Array Profesional 2x12"', quantity: 2 }),
+      makeReservation(2, { reservationId: 12, equipmentName: 'Consola Digital de Mezcla 32 Canales FOH', quantity: 1 }),
+      makeReservation(3, { reservationId: 13, equipmentName: 'Kit de Iluminación LED Moving Head Beam RGBW', quantity: 4 }),
+      makeReservation(4, { reservationId: 14, equipmentName: 'Pantalla LED Modular Pitch 2.9mm 4x2.5m', quantity: 1 }),
+      makeReservation(5, { reservationId: 15, equipmentName: 'Micrófono Inalámbrico Doble Canal UHF Pro', quantity: 2 }),
+    ];
+
+    const html = buildCrewTicketPrintHtml({
+      ticket: makeTicket({
+        id: 9,
+        productionId: 13,
+        productionName: 'Cumbre Nacional de Innovación Cloud Native & Arquitectura 2026!!', // 64 chars
+        location: 'Centro de Convenciones Parque Bicentenario, Salón Sur', // 53 chars
+        status: 'EN_MONTAJE',
+        scheduledAt: '2026-11-30T19:00:00',
+        createdAt: '2026-11-23T22:25:00.000000',
+      }),
+      crewName: 'Cuadrilla Técnica Audiovisual Región',
+      crewId: 'crew-audiovis-013',
+      directive: 'Ejecutar montaje integral de audio, iluminación y pantalla LED.',
+      statusLabel: 'En montaje',
+      productionStatusLabel: 'Cerrado',
+      productionStatusCode: 'CERRADO',
+      productionUpdatedAt: '2026-11-23T22:30:26',
+      productionQueriedAt: '2026-11-23T23:00:00Z',
+      organizerDisplayName: 'Organizador Corporativo Verificado',
+      organizerResolutionSource: 'ENTRA_GRAPH',
+      reservations,
+    });
+
+    expect(html).toContain('OT-0009 · Producción #13');
+    expect(html).toContain('5 ítems · 10 unidades');
+    expect(html).toContain('Total reservado:</strong> 5 ítems (10 unidades)');
+    expect(html).toContain('producción cerrada antes de la fecha programada');
+    expect(html).toContain('width="54" height="54"');
+    expect(html).toContain('font-size: 8.4pt;');
+    expect(html).toContain('margin: 6mm 10mm 8.5mm 10mm;');
+    expect(html).toContain('display: table-header-group;');
+    expect(html).toContain('break-inside: avoid;');
+    expect(html).toContain('Entrega / Despacho Bodega');
+    expect(html).toContain('Responsable de Cuadrilla');
+    expect(html).toContain('Recepción en Terreno / Producción');
+  });
 });

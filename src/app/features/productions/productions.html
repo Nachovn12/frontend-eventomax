@@ -438,7 +438,7 @@
             <dl class="detail-meta-grid">
               <div class="meta-item">
                 <dt><svg lucideCalendarDays class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Fecha programada</dt>
-                <dd>{{ selected.scheduledAt | date:'dd MMM yyyy, HH:mm' }} h</dd>
+                <dd>{{ formatProductionScheduledAt(selected.scheduledAt) }}</dd>
               </div>
               <div class="meta-item">
                 <dt><svg lucideMapPin class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Ubicación</dt>
@@ -1059,7 +1059,7 @@
             @if (hasFieldError('scheduledAt')) {
               <span id="err-scheduled" class="field-error-text" role="alert">{{ getFieldError('scheduledAt') }}</span>
             } @else {
-              <span id="hint-scheduled" class="field-hint">Debe corresponder a una fecha y hora actual o futura.</span>
+              <span id="hint-scheduled" class="field-hint">Hora de Chile continental (America/Santiago). Debe corresponder a una fecha y hora actual o futura.</span>
             }
           </div>
 

@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, DestroyRef, OnDestroy, OnInit, computed, signal, inject } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -52,13 +52,16 @@ import {
   removeExistingCrewTicketPrintFrame,
   triggerCrewTicketSinglePagePrint,
 } from './crew-ticket-print';
+import {
+  formatScheduledAtChile,
+  parseScheduledAtToInstant,
+} from '../../core/utils/chile-time';
 
 @Component({
   selector: 'app-productions',
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    DatePipe,
     DecimalPipe,
     ProductionTable,
     StatusChip,
@@ -130,7 +133,11 @@ export class Productions implements OnInit, OnDestroy {
           value.toLocaleLowerCase('es').includes(query),
         ),
     );
-    return [...filtered].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+    return [...filtered].sort(
+      (a, b) =>
+        (parseScheduledAtToInstant(a.scheduledAt)?.getTime() ?? 0) -
+        (parseScheduledAtToInstant(b.scheduledAt)?.getTime() ?? 0),
+    );
   });
 
   readonly total = computed(() => this.allProductions().length);
@@ -681,7 +688,8 @@ export class Productions implements OnInit, OnDestroy {
 
     if (this.createForm.invalid) return;
     const request = this.createForm.getRawValue();
-    if (!Number.isFinite(Date.parse(request.scheduledAt)) || new Date(request.scheduledAt).getTime() < Date.now()) {
+    const scheduledInstant = parseScheduledAtToInstant(request.scheduledAt);
+    if (!scheduledInstant || scheduledInstant.getTime() < Date.now()) {
       this.operationError.set('Ingresa una fecha programada actual o futura.');
       return;
     }
@@ -1229,6 +1237,10 @@ export class Productions implements OnInit, OnDestroy {
       this.ticketCopied.set(false);
       this.ticketCopyTimer = null;
     }, 1800);
+  }
+
+  formatProductionScheduledAt(iso: string | null | undefined): string {
+    return formatScheduledAtChile(iso).combined;
   }
 
   formatTicketScheduledAt(iso: string | null | undefined): string {
