@@ -138,10 +138,10 @@ export class DailyEventsChart implements AfterViewInit, OnDestroy {
         type: 'value',
         min: 0,
         minInterval: 1,
-        boundaryGap: [0, '20%'],
-        splitLine: { lineStyle: { color: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' } },
+        boundaryGap: [0, '22%'],
+        splitLine: { lineStyle: { color: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9', type: 'dashed' } },
         axisLabel: {
-          color: isDark ? '#64748B' : '#94A3B8',
+          color: isDark ? '#94A3B8' : '#64748B',
           fontFamily: 'Inter, -apple-system, sans-serif',
           fontSize: 11,
         },
@@ -150,23 +150,24 @@ export class DailyEventsChart implements AfterViewInit, OnDestroy {
         name: 'Eventos',
         type: 'bar',
         data: counts,
-        barMaxWidth: 36,
+        barMaxWidth: 38,
         showBackground: true,
         backgroundStyle: {
           color: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
           borderRadius: [6, 6, 0, 0]
         },
         itemStyle: {
-          color: '#2563EB',
-          borderRadius: [4, 4, 0, 0],
+          color: isDark ? '#3B82F6' : '#2563EB',
+          borderRadius: [6, 6, 0, 0],
         },
         label: {
           show: true,
           position: 'top',
-          color: isDark ? '#F1F5F9' : '#0F172A',
+          distance: 6,
+          color: isDark ? '#F8FAFC' : '#0F172A',
           fontWeight: 600,
           fontFamily: 'Inter, -apple-system, sans-serif',
-          fontSize: 11,
+          fontSize: 11.5,
         },
       }],
     };

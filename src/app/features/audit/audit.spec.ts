@@ -454,4 +454,160 @@ describe('Audit EP2 (EMX-109/110)', () => {
     fixture.detectChanges();
     expect(component.expandedEventIds().size).toBe(0);
   });
+
+  it('UI/UX-09: renders honest Solo lectura KPIs, America/Santiago day grouping, and corporate event type selector', async () => {
+    const rows: AuditEvent[] = [
+      // 2026-11-24T01:30:00Z -> 23/11/2026 22:30:00 CLST (stays on 23/11 in Chile!)
+      {
+        ...sample,
+        eventId: 'evt-day-1a',
+        type: 'ProductionStatusChanged',
+        timestamp: '2026-11-24T01:30:00',
+        details: JSON.stringify({
+          productionId: 13,
+          productionName: 'Foro Biobío 2026',
+          previousStatus: 'EN_EJECUCION',
+          newStatus: 'CERRADO',
+          location: 'Centro de Convenciones, Concepción',
+          crewName: 'Cuadrilla Técnica Audiovisual Biobío',
+        }),
+      },
+      // 2026-11-23T22:30:26Z -> 23/11/2026 19:30:26 CLST (same Chile day)
+      {
+        ...sample,
+        eventId: 'evt-day-1b',
+        type: 'ProductionCreated',
+        timestamp: '2026-11-23T22:30:26',
+        traceId: null,
+        details: JSON.stringify({
+          productionId: 14,
+          productionName: 'Encuentro Empresarial 2026',
+          status: 'SOLICITADO',
+        }),
+      },
+      // 2026-11-22T15:00:00Z -> 22/11/2026 12:00:00 CLST (previous Chile day)
+      {
+        ...sample,
+        eventId: 'evt-day-2',
+        type: 'ProductionCreated',
+        timestamp: '2026-11-22T15:00:00',
+        details: JSON.stringify({ productionId: 11, productionName: 'Seminario Digital', status: 'SOLICITADO' }),
+      },
+    ];
+
+    const { fixture, api } = await setup(true, rows);
+    const root: HTMLElement = fixture.nativeElement;
+    const text = root.textContent ?? '';
+
+    // Honest KPIs: Solo lectura (no unverified immutability claim), real traced ratio 2/3 (67%), only 1 real meter
+    expect(text).toContain('Solo lectura');
+    expect(text).toContain('Integridad del registro');
+    expect(text).toContain('67%');
+    expect(text).toContain('2/3');
+    expect(root.querySelectorAll('.au-kpi-card .kpi-meter')).toHaveLength(1);
+
+    // Day grouping strictly in America/Santiago without altering order or firing extra queries
+    expect(api.getTimeline).toHaveBeenCalledTimes(1);
+    const dayGroups = Array.from(root.querySelectorAll('.audit-day-group')) as HTMLElement[];
+    expect(dayGroups).toHaveLength(2);
+    expect(dayGroups[0].textContent).toContain('23/11/2026');
+    expect(dayGroups[0].textContent).toContain('2 eventos en página');
+    expect(dayGroups[1].textContent).toContain('22/11/2026');
+    expect(dayGroups[1].textContent).toContain('1 evento en página');
+
+    // ProductionCreated shows initial status without inventing previousStatus
+    expect(text).toContain('Estado inicial:');
+    expect(text).toContain('Creación de producción');
+    expect(text).toContain('Cambio de estado');
+
+    // Corporate Event Type Selector (replaces native <select>)
+    expect(root.querySelector('select#filter-type')).toBeNull();
+    const typeTrigger = root.querySelector('button#filter-type') as HTMLButtonElement;
+    expect(typeTrigger).not.toBeNull();
+    typeTrigger.click();
+    fixture.detectChanges();
+
+    const statusOpt = root.querySelector('button.aets-option[data-event-type="ProductionStatusChanged"]') as HTMLButtonElement;
+    expect(statusOpt).not.toBeNull();
+    statusOpt.click();
+    fixture.detectChanges();
+
+    const submitBtn = root.querySelector('button.btn-filter-submit') as HTMLButtonElement;
+    submitBtn.click();
+    fixture.detectChanges();
+    expect(api.getTimeline).toHaveBeenLastCalledWith({
+      type: 'ProductionStatusChanged',
+      page: 0,
+      size: 25,
+    });
+  });
+
+  it('UI/UX-09: JSON viewer safely escapes XSS payloads, highlights valid tokens, and falls back for invalid JSON', async () => {
+    const xssPayload = JSON.stringify({
+      productionId: 99,
+      productionName: '<img src=x onerror=alert(1)><script>window.__xss=1</script>',
+      active: true,
+      services: null,
+    });
+    const rows: AuditEvent[] = [
+      { ...sample, eventId: 'evt-xss', details: xssPayload },
+      { ...sample, eventId: 'evt-invalid', details: '{malformed-json:::not-valid' },
+    ];
+
+    const { fixture, component } = await setup(true, rows);
+    component.toggleDetails('evt-xss');
+    component.toggleDetails('evt-invalid');
+    fixture.detectChanges();
+
+    const root: HTMLElement = fixture.nativeElement;
+    const panels = Array.from(root.querySelectorAll('.audit-details-content')) as HTMLElement[];
+
+    // Valid JSON + XSS escape verification: zero injected <img> or <script> nodes
+    expect(panels[0].querySelectorAll('img, script')).toHaveLength(0);
+    expect(panels[0].querySelector('.jv-tok-key')).not.toBeNull();
+    expect(panels[0].querySelector('.jv-tok-string')?.textContent).toContain('<img src=x onerror=alert(1)>');
+    expect(panels[0].querySelector('.jv-tok-number')?.textContent).toBe('99');
+    expect(panels[0].querySelector('.jv-tok-boolean')?.textContent).toBe('true');
+    expect(panels[0].querySelector('.jv-tok-null')?.textContent).toBe('null');
+    expect(panels[0].textContent).toContain('JSON · Solo lectura');
+
+    // Three technical categories present
+    expect(panels[0].textContent).toContain('Trazabilidad');
+    expect(panels[0].textContent).toContain('Identidad');
+    expect(panels[0].textContent).toContain('Payload del evento');
+
+    // Invalid JSON graceful literal fallback
+    expect(panels[1].textContent).toContain('Texto literal · Solo lectura');
+    expect(panels[1].querySelector('.audit-json')?.textContent).toContain('{malformed-json:::not-valid');
+  });
+
+  it('UI/UX-09: preserves expanded state across 30s polling and distinguishes empty vs filtered no-matches states', async () => {
+    vi.useFakeTimers();
+    try {
+      const { api, component, fixture } = await setup(true, [sample]);
+      component.toggleDetails(sample.eventId);
+      fixture.detectChanges();
+      expect(component.isDetailsExpanded(sample.eventId)).toBe(true);
+
+      // Polling refresh returns same event -> stays expanded
+      await vi.advanceTimersByTimeAsync(30_000);
+      fixture.detectChanges();
+      expect(component.isDetailsExpanded(sample.eventId)).toBe(true);
+
+      // Empty state without filters
+      api.getTimeline.mockReturnValue(of([]));
+      component.retry();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Sin eventos registrados');
+      expect(fixture.nativeElement.textContent).toContain('Sin eventos');
+
+      // Empty state with active filters
+      component.filtersForm.patchValue({ actor: 'inexistente' });
+      component.applyFilters();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Sin coincidencias en esta página');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -15,17 +15,25 @@ import {
 } from '../../core/utils/chile-time';
 import {
   LucideActivity,
-  LucideCircleCheck,
-  LucideCircleAlert,
-  LucideLayers,
-  LucideUser,
   LucideArrowRight,
-  LucideCopy,
+  LucideCalendarDays,
   LucideCheck,
-  LucideFilter,
-  LucideShieldCheck,
-  LucideRefreshCw,
   LucideChevronDown,
+  LucideChevronLeft,
+  LucideChevronRight,
+  LucideCircleAlert,
+  LucideCircleCheck,
+  LucideCopy,
+  LucideFilter,
+  LucideFingerprint,
+  LucideGitCommitHorizontal,
+  LucideLock,
+  LucideMapPin,
+  LucideRefreshCw,
+  LucideRotateCcw,
+  LucideShieldCheck,
+  LucideUser,
+  LucideUsers,
 } from '@lucide/angular';
 import { AuthorizationService } from '../../core/auth/authorization.service';
 import { AppRole } from '../../core/auth/models/app-role';
@@ -33,6 +41,8 @@ import { AuditDataService } from './audit-data.service';
 import { AuditEvent, AuditTimelineFilters } from './models/audit-event.model';
 import { DatePickerPreset, DateRangePickerComponent } from '../../shared/ui/date-picker/date-range-picker.component';
 import { ButtonDirective } from '../../shared/ui/button.component';
+import { AuditEventTypeSelectComponent } from './components/audit-event-type-select.component';
+import { AuditJsonViewerComponent } from './components/audit-json-viewer.component';
 
 export interface DecodedAuditDetails {
   productionId?: number | string;
@@ -49,10 +59,43 @@ export interface DecodedAuditDetails {
   [key: string]: unknown;
 }
 
+export interface AuditDayGroupEntry {
+  readonly item: AuditEvent;
+  readonly ts: AuditTimestampChile;
+}
+
+export interface AuditDayGroup {
+  readonly dateKey: string;
+  readonly dateEsCl: string;
+  readonly heading: string;
+  readonly entries: readonly AuditDayGroupEntry[];
+}
+
 interface AuditViewState {
   readonly items: readonly AuditEvent[];
   readonly loading: boolean;
   readonly error: number | null;
+}
+
+function formatChileDayHeading(dateEsCl: string): string {
+  const match = dateEsCl.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return dateEsCl;
+  const day = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const year = Number.parseInt(match[3], 10);
+  const instant = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  try {
+    const formatted = new Intl.DateTimeFormat('es-CL', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(instant);
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  } catch {
+    return dateEsCl;
+  }
 }
 
 @Component({
@@ -61,22 +104,32 @@ interface AuditViewState {
   imports: [
     ReactiveFormsModule,
     DateRangePickerComponent,
+    AuditEventTypeSelectComponent,
+    AuditJsonViewerComponent,
     LucideActivity,
-    LucideCircleCheck,
-    LucideCircleAlert,
-    LucideLayers,
-    LucideUser,
     LucideArrowRight,
-    LucideCopy,
+    LucideCalendarDays,
     LucideCheck,
-    LucideFilter,
-    LucideShieldCheck,
-    LucideRefreshCw,
     LucideChevronDown,
+    LucideChevronLeft,
+    LucideChevronRight,
+    LucideCircleAlert,
+    LucideCircleCheck,
+    LucideCopy,
+    LucideFilter,
+    LucideFingerprint,
+    LucideGitCommitHorizontal,
+    LucideLock,
+    LucideMapPin,
+    LucideRefreshCw,
+    LucideRotateCcw,
+    LucideShieldCheck,
+    LucideUser,
+    LucideUsers,
     ButtonDirective,
   ],
   templateUrl: './audit.html',
-  styleUrl: './audit.css',
+  styleUrls: ['./audit.css', './audit-page.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Audit {
@@ -107,6 +160,7 @@ export class Audit {
   });
   readonly auditRangePreset = signal<string>('all');
   readonly filterError = signal('');
+  readonly hasActiveFilters = signal(false);
   readonly page = signal(0);
   readonly copiedKey = signal<string | null>(null);
   readonly expandedEventIds = signal<ReadonlySet<string>>(new Set());
@@ -165,21 +219,63 @@ export class Audit {
   readonly totalEventsCount = computed(() => this.items().length);
 
   readonly uniqueActorsCount = computed(() => {
-    const actors = new Set(this.items().map(i => i.actor).filter(Boolean));
+    const actors = new Set(this.items().map((i) => i.actor).filter(Boolean));
     return actors.size;
   });
+
+  readonly tracedEventsCount = computed(() =>
+    this.items().filter((i) => Boolean(i.traceId && i.eventId)).length
+  );
 
   readonly traceIntegrityPercent = computed(() => {
     const list = this.items();
     if (!list.length) return 100;
-    const ok = list.filter(i => i.traceId && i.eventId).length;
+    const ok = this.tracedEventsCount();
     return Math.round((ok / list.length) * 100);
+  });
+
+  /**
+   * Agrupación visual por día en America/Santiago sobre la página actual,
+   * preservando el orden cronológico descendente sin nuevas consultas ni totales globales.
+   */
+  readonly timelineGroups = computed<readonly AuditDayGroup[]>(() => {
+    const list = this.items();
+    if (list.length === 0) return [];
+
+    const groups: {
+      dateKey: string;
+      dateEsCl: string;
+      heading: string;
+      entries: AuditDayGroupEntry[];
+    }[] = [];
+
+    for (const item of list) {
+      const ts = this.formatTimestampChile(item.timestamp);
+      const dateEsCl = ts.date;
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup && lastGroup.dateEsCl === dateEsCl) {
+        lastGroup.entries.push({ item, ts });
+      } else {
+        groups.push({
+          dateKey: `${dateEsCl}-${groups.length}`,
+          dateEsCl,
+          heading: formatChileDayHeading(dateEsCl),
+          entries: [{ item, ts }],
+        });
+      }
+    }
+
+    return groups;
   });
 
   parseDetails(details: string | null | undefined): DecodedAuditDetails | null {
     if (!details) return null;
     try {
-      return JSON.parse(details) as DecodedAuditDetails;
+      const parsed: unknown = JSON.parse(details);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as DecodedAuditDetails;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -272,13 +368,21 @@ export class Audit {
   }
 
   hasExpandableDetails(item: AuditEvent): boolean {
-    return Boolean(item.details?.trim() || item.actor?.trim() || item.actorResolutionSource);
+    return Boolean(
+      item.details?.trim() ||
+      item.actor?.trim() ||
+      item.actorResolutionSource ||
+      item.eventId ||
+      item.traceId ||
+      item.correlationId ||
+      item.source
+    );
   }
 
   formatEventType(type: string): string {
     switch (type) {
-      case 'ProductionCreated': return 'Creación de Producción';
-      case 'ProductionStatusChanged': return 'Cambio de Estado';
+      case 'ProductionCreated': return 'Creación de producción';
+      case 'ProductionStatusChanged': return 'Cambio de estado';
       default: return type;
     }
   }
@@ -367,13 +471,16 @@ export class Audit {
     this.filterError.set('');
     this.page.set(0);
     this.clearExpandedEventIds();
+    const trimmedActor = actor.trim() || undefined;
+    const trimmedType = type.trim() || undefined;
+    this.hasActiveFilters.set(Boolean(trimmedActor || trimmedType || utcFrom || utcTo));
     this.querySubject.next({
-      actor: actor.trim() || undefined,
-      type: type.trim() || undefined,
+      actor: trimmedActor,
+      type: trimmedType,
       from: utcFrom,
       to: utcTo,
       page: 0,
-      size: this.pageSize
+      size: this.pageSize,
     });
   }
 
@@ -381,6 +488,7 @@ export class Audit {
     this.filtersForm.reset();
     this.auditRangePreset.set('all');
     this.filterError.set('');
+    this.hasActiveFilters.set(false);
     this.page.set(0);
     this.clearExpandedEventIds();
     this.querySubject.next({ page: 0, size: this.pageSize });

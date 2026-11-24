@@ -1,0 +1,36 @@
+<div class="jv-container">
+  <div class="jv-header">
+    <div class="jv-header-left">
+      <span class="jv-icon-box" aria-hidden="true">
+        <svg lucideCode class="jv-icon" strokeWidth="1.9" />
+      </span>
+      <span class="jv-title">Payload del evento</span>
+      <span class="jv-badge" [class.jv-badge-fallback]="!parsed().isValidJson">
+        {{ parsed().isValidJson ? 'JSON · Solo lectura' : 'Texto literal · Solo lectura' }}
+      </span>
+    </div>
+    <button
+      type="button"
+      class="jv-copy-btn"
+      [class.is-copied]="copied()"
+      [attr.aria-label]="'Copiar payload JSON del evento ' + eventId()"
+      (click)="copyRaw($event)"
+    >
+      @if (copied()) {
+        <svg lucideCheck class="jv-btn-icon copied" strokeWidth="2" aria-hidden="true" />
+        <span>¡Copiado!</span>
+      } @else {
+        <svg lucideCopy class="jv-btn-icon" strokeWidth="1.9" aria-hidden="true" />
+        <span>Copiar JSON</span>
+      }
+    </button>
+  </div>
+
+  @if (!parsed().isValidJson && payload()) {
+    <div class="jv-fallback-note" role="note">
+      Contenido no estructurado como JSON válido; se muestra de forma literal sin alteraciones.
+    </div>
+  }
+
+  <pre class="audit-json jv-pre" tabindex="0" aria-label="Contenido del payload del evento"><code>@for (tok of parsed().tokens; track $index) {<span [class]="'jv-tok-' + tok.kind">{{ tok.text }}</span>}</code></pre>
+</div>

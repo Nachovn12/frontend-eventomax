@@ -12,12 +12,12 @@ export interface StatusChartPoint {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  SOLICITADO: '#F59E0B',
+  SOLICITADO: '#D97706',
   CONFIRMADO: '#2563EB',
-  EN_MONTAJE: '#6366F1',
-  EN_EJECUCION: '#0EA5E9',
+  EN_MONTAJE: '#9333EA',
+  EN_EJECUCION: '#16A34A',
   CERRADO: '#10B981',
-  CANCELADO: '#EF4444',
+  CANCELADO: '#DC2626',
 };
 
 /**

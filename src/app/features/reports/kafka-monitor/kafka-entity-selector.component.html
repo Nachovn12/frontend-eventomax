@@ -1,0 +1,71 @@
+<div class="kes-root">
+  <button
+    #triggerBtn
+    type="button"
+    class="kes-trigger"
+    [id]="inputId()"
+    [class.is-open]="isOpen()"
+    [disabled]="options().length === 0"
+    role="combobox"
+    aria-haspopup="listbox"
+    [attr.aria-label]="ariaLabel()"
+    [attr.aria-expanded]="isOpen()"
+    [attr.aria-controls]="inputId() + '-listbox'"
+    [attr.aria-activedescendant]="isOpen() && options()[activeIndex()] ? inputId() + '-opt-' + activeIndex() : null"
+    (click)="toggle()"
+    (keydown)="onKeydown($event)"
+  >
+    <span class="kes-icon-wrap" aria-hidden="true">
+      @if (kind() === 'topic') {
+        <svg lucideDatabase class="kes-icon" strokeWidth="1.9"></svg>
+      } @else {
+        <svg lucideUsers class="kes-icon" strokeWidth="1.9"></svg>
+      }
+    </span>
+    @if (selectedOption(); as sel) {
+      <code class="kes-trigger-code">{{ sel.label }}</code>
+      @if (sel.meta) {
+        <span class="kes-meta-pill" [class]="'tone-' + (sel.stateTone || 'neutral')">{{ sel.meta }}</span>
+      }
+    } @else {
+      <span class="kes-placeholder">{{ placeholder() }}</span>
+    }
+    <svg lucideChevronDown class="kes-chevron" strokeWidth="1.9" aria-hidden="true"></svg>
+  </button>
+
+  <div
+    class="kes-popover"
+    [id]="inputId() + '-listbox'"
+    role="listbox"
+    [attr.aria-label]="ariaLabel()"
+    [hidden]="!isOpen()"
+    (keydown)="onKeydown($event)"
+  >
+    @for (opt of options(); track opt.id; let idx = $index) {
+      <button
+        type="button"
+        role="option"
+        class="kes-option"
+        [id]="inputId() + '-opt-' + idx"
+        [attr.data-kafka-option]="opt.id"
+        [class.is-selected]="selectedId() === opt.id"
+        [class.is-active]="activeIndex() === idx"
+        [attr.aria-selected]="selectedId() === opt.id"
+        (mouseenter)="activeIndex.set(idx)"
+        (click)="choose(opt.id)"
+      >
+        <code class="kes-option-code">{{ opt.label }}</code>
+        <span class="kes-option-right">
+          @if (opt.meta) {
+            <span class="kes-meta-pill" [class]="'tone-' + (opt.stateTone || 'neutral')">{{ opt.meta }}</span>
+          }
+          @if (selectedId() === opt.id) {
+            <span class="kes-check-mark" aria-hidden="true">
+              <svg lucideCheck class="kes-check-icon" strokeWidth="2.5"></svg>
+            </span>
+          }
+        </span>
+      </button>
+    }
+  </div>
+</div>

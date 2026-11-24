@@ -12,12 +12,13 @@ import {
 } from '../../core/utils/chile-time';
 import {
   LucideActivity,
+  LucideBan,
   LucideClock,
   LucideCircleCheck,
   LucideCircleAlert,
   LucideInfo,
   LucideArrowRight,
-  LucideCalendar,
+  LucideCalendarDays,
   LucideRefreshCw,
 } from '@lucide/angular';
 import { AuthorizationService } from '../../core/auth/authorization.service';
@@ -52,18 +53,19 @@ interface TopServicesViewState {
     DailyEventsChart,
     KafkaMonitorComponent,
     LucideActivity,
+    LucideBan,
     LucideClock,
     LucideCircleCheck,
     LucideCircleAlert,
     LucideInfo,
     LucideArrowRight,
-    LucideCalendar,
+    LucideCalendarDays,
     LucideRefreshCw,
     DateRangePickerComponent,
     ButtonDirective,
   ],
   templateUrl: './reports.html',
-  styleUrl: './reports.css',
+  styleUrls: ['./reports.css', './reports-page.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Reports {
@@ -192,7 +194,10 @@ export class Reports {
 
   readonly averageMontageLabel = computed(() => {
     const avg = this.averageMontageTime();
-    if (avg > 0) return `${avg} min`;
+    if (avg > 0) {
+      const formatted = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 1 }).format(avg);
+      return `${formatted} min`;
+    }
     if (this.montageTransitionsCount() > 0) return '< 1 min';
     return '0 min';
   });
@@ -236,6 +241,15 @@ export class Reports {
     return Math.max(1, ...items.map((i) => i.hireCount));
   });
 
+  readonly topServiceLeaders = computed(() => {
+    const items = this.topServicesItems();
+    if (items.length === 0) return [];
+    const max = this.maxServiceHires();
+    return items.filter((item) => item.hireCount === max);
+  });
+
+  readonly hasTopServiceTie = computed(() => this.topServiceLeaders().length > 1);
+
   calcServicePercent(hires: number): number {
     const total = this.totalServiceHires();
     if (total <= 0) return 0;
@@ -259,12 +273,24 @@ export class Reports {
     }
   }
 
-  readonly operationalSuccessRate = computed(() => {
+  readonly terminalTransitionsTotal = computed(() => {
     const closed = this.response()?.metrics.closedCount ?? 0;
     const cancelled = this.response()?.metrics.cancelledCount ?? 0;
-    const total = closed + cancelled;
+    return closed + cancelled;
+  });
+
+  readonly operationalSuccessRate = computed(() => {
+    const closed = this.response()?.metrics.closedCount ?? 0;
+    const total = this.terminalTransitionsTotal();
     if (total === 0) return 100;
     return Math.round((closed / total) * 100);
+  });
+
+  readonly cancelledTerminalRate = computed(() => {
+    const cancelled = this.response()?.metrics.cancelledCount ?? 0;
+    const total = this.terminalTransitionsTotal();
+    if (total === 0) return 0;
+    return Math.round((cancelled / total) * 100);
   });
 
   formatStatus(status: string): string {

@@ -3,10 +3,22 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, combineLatest, forkJoin, of } from 'rxjs';
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
-import { LucideDatabase, LucideLayers, LucideRefreshCw } from '@lucide/angular';
+import {
+  LucideDatabase,
+  LucideGauge,
+  LucideLayers,
+  LucideRefreshCw,
+  LucideServer,
+  LucideShieldCheck,
+  LucideUsers,
+} from '@lucide/angular';
 import { KafkaAdminDataService } from '../kafka-admin-data.service';
 import { withLivePolling } from '../../../core/utils/live-polling';
 import { ButtonDirective } from '../../../shared/ui/button.component';
+import {
+  KafkaEntitySelectorComponent,
+  KafkaSelectorOption,
+} from './kafka-entity-selector.component';
 import {
   KafkaConsumerGroupDetail,
   KafkaConsumerGroupSummary,
@@ -24,9 +36,19 @@ interface KafkaClusterViewState {
 @Component({
   selector: 'emx-kafka-monitor',
   standalone: true,
-  imports: [LucideDatabase, LucideLayers, LucideRefreshCw, ButtonDirective],
+  imports: [
+    LucideDatabase,
+    LucideGauge,
+    LucideLayers,
+    LucideRefreshCw,
+    LucideServer,
+    LucideShieldCheck,
+    LucideUsers,
+    ButtonDirective,
+    KafkaEntitySelectorComponent,
+  ],
   templateUrl: './kafka-monitor.html',
-  styleUrl: './kafka-monitor.css',
+  styleUrls: ['./kafka-monitor.css', './kafka-monitor-uiux08.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KafkaMonitorComponent {
@@ -141,14 +163,55 @@ export class KafkaMonitorComponent {
     this.groups().filter((g) => g.state === 'STABLE').length
   );
 
+  readonly topicSelectorOptions = computed<readonly KafkaSelectorOption[]>(() =>
+    this.topics().map((t) => ({
+      id: t.name,
+      label: t.name,
+      meta: `${t.partitionsCount}P`,
+      stateTone: 'neutral',
+    }))
+  );
+
+  readonly groupSelectorOptions = computed<readonly KafkaSelectorOption[]>(() =>
+    this.groups().map((g) => ({
+      id: g.groupId,
+      label: g.groupId,
+      meta: g.state,
+      stateTone: this.resolveGroupStateTone(g.state),
+    }))
+  );
+
+  readonly healthyPartitionsCount = computed(() => {
+    const partitions = this.topicDetail()?.partitions ?? [];
+    return partitions.filter((p) => p.replicas.length > 0 && p.isr.length >= p.replicas.length).length;
+  });
+
+  readonly hasRealTotalLag = computed(() => {
+    const lag = this.groupDetail()?.totalLag;
+    return typeof lag === 'number' && Number.isFinite(lag);
+  });
+
   readonly effectivePartitionOffsets = computed(() => {
     const g = this.groupDetail();
     if (!g) return [];
     if (g.partitionOffsets && g.partitionOffsets.length > 0) {
-      return g.partitionOffsets;
+      return g.partitionOffsets.map((po) => ({
+        topic: po.topic,
+        partition: po.partition,
+        currentOffset: typeof po.currentOffset === 'number' && Number.isFinite(po.currentOffset) ? po.currentOffset : null,
+        endOffset: typeof po.endOffset === 'number' && Number.isFinite(po.endOffset) ? po.endOffset : null,
+        lag: typeof po.lag === 'number' && Number.isFinite(po.lag) ? po.lag : null,
+      }));
     }
+    // Preserve unknown state when partitions are assigned without committed offsets (never fabricate 0)
     const members = g.members ?? [];
-    const rows: { topic: string; partition: number; currentOffset: number; endOffset: number; lag: number }[] = [];
+    const rows: {
+      topic: string;
+      partition: number;
+      currentOffset: number | null;
+      endOffset: number | null;
+      lag: number | null;
+    }[] = [];
     for (const m of members) {
       for (const raw of m.assignedPartitions ?? []) {
         const dashIdx = raw.lastIndexOf('-');
@@ -156,13 +219,20 @@ export class KafkaMonitorComponent {
           const topic = raw.slice(0, dashIdx);
           const partNum = Number(raw.slice(dashIdx + 1));
           if (Number.isFinite(partNum)) {
-            rows.push({ topic, partition: partNum, currentOffset: 0, endOffset: 0, lag: 0 });
+            rows.push({ topic, partition: partNum, currentOffset: null, endOffset: null, lag: null });
           }
         }
       }
     }
     return rows.sort((a, b) => a.topic.localeCompare(b.topic) || a.partition - b.partition);
   });
+
+  resolveGroupStateTone(state: string | undefined): 'stable' | 'warn' | 'dead' | 'neutral' {
+    if (!state) return 'neutral';
+    if (state === 'STABLE') return 'stable';
+    if (state === 'DEAD' || state === 'EMPTY') return 'dead';
+    return 'warn';
+  }
 
   readonly primaryMember = computed(() => {
     const members = this.groupDetail()?.members ?? [];
