@@ -1,0 +1,96 @@
+<div class="dz-root">
+  @if (isProcessing()) {
+    <div class="dz-processing-card" role="status" aria-live="polite">
+      <svg lucideLoaderCircle class="dz-spinner" strokeWidth="2" aria-hidden="true"></svg>
+      <div class="dz-processing-copy">
+        <span class="dz-processing-title">Procesando fotografía…</span>
+        <span class="dz-processing-sub">Validando formato y optimizando tamaño para el catálogo.</span>
+      </div>
+    </div>
+  } @else if (imageUrl(); as previewUrl) {
+    <div class="dz-preview-card">
+      <div class="dz-thumb-wrap" [class.fit-contain]="imageFit() === 'contain'">
+        <img
+          [src]="previewUrl"
+          [alt]="'Vista previa del ' + entityLabel()"
+          class="dz-thumb-img"
+          [class.fit-contain]="imageFit() === 'contain'"
+        />
+      </div>
+      <div class="dz-preview-info">
+        <div class="dz-badge-row">
+          <span class="dz-badge-attached">Fotografía cargada</span>
+          @if (confirmedOptimization(); as optBadge) {
+            <span class="dz-badge-opt">{{ optBadge }}</span>
+          }
+        </div>
+        <p class="dz-preview-hint">{{ imageInfoLabel() }}</p>
+        <div class="dz-preview-actions">
+          <button
+            type="button"
+            emxButton
+            variant="secondary"
+            size="small"
+            class="dz-action-change"
+            (click)="changeFileInput.click()"
+          >
+            <svg lucideRefreshCw class="dz-btn-icon" strokeWidth="1.9" aria-hidden="true"></svg>
+            <span>Cambiar imagen</span>
+          </button>
+          <input
+            #changeFileInput
+            type="file"
+            class="dz-hidden-input"
+            accept="image/png,image/jpeg,image/webp,image/avif"
+            (change)="onFileChange($event)"
+          />
+          <button
+            type="button"
+            class="dz-action-remove"
+            (click)="removeRequested.emit()"
+          >
+            <svg lucideTrash2 class="dz-btn-icon" strokeWidth="1.9" aria-hidden="true"></svg>
+            <span>Quitar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div
+      class="dz-empty"
+      [class.is-dragover]="isDragging()"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="'Seleccionar fotografía del ' + entityLabel()"
+      (click)="emptyFileInput.click()"
+      (keydown.enter)="emptyFileInput.click()"
+      (keydown.space)="$event.preventDefault(); emptyFileInput.click()"
+      (dragover)="dragOverEvent.emit($event)"
+      (dragleave)="dragLeaveEvent.emit($event)"
+      (drop)="dropEvent.emit($event)"
+    >
+      <input
+        #emptyFileInput
+        type="file"
+        class="dz-hidden-input"
+        accept="image/png,image/jpeg,image/webp,image/avif"
+        (change)="onFileChange($event)"
+      />
+      <div class="dz-icon-box" aria-hidden="true">
+        <svg lucideImagePlus class="dz-empty-icon" strokeWidth="1.8"></svg>
+      </div>
+      <div class="dz-empty-copy">
+        <span class="dz-empty-title">Arrastra y suelta una fotografía</span>
+        <span class="dz-empty-meta">PNG, JPG, WEBP o AVIF · Máx. 5 MB</span>
+      </div>
+      <span class="dz-empty-cta" aria-hidden="true">Seleccionar imagen</span>
+    </div>
+  }
+
+  @if (error(); as err) {
+    <div class="dz-error-row" role="alert">
+      <svg lucideCircleAlert class="dz-error-icon" strokeWidth="1.9" aria-hidden="true"></svg>
+      <span>{{ err }}</span>
+    </div>
+  }
+</div>

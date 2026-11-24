@@ -211,19 +211,36 @@
     align-items: center;
     gap: 12px;
   }
-  .topbar-status-pill {
+  emx-status-pill.topbar-status-pill {
     display: inline-flex;
     align-items: center;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  emx-status-pill.topbar-status-pill .emx-status-pill {
+    height: 26px;
+    padding: 0 10px;
     gap: 6px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: #F0FDF4;
-    border: 1px solid #DCFCE7;
     font-size: 12px;
     font-weight: 500;
-    color: #15803D;
     line-height: 1;
-    white-space: nowrap;
+    border-radius: 9999px;
+    box-shadow: none;
+  }
+  emx-status-pill.topbar-status-pill .emx-status-pill.tone-positive {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    color: #047857;
+  }
+  emx-status-pill.topbar-status-pill .pill-dot {
+    width: 6px;
+    height: 6px;
+    box-shadow: none;
   }
   .status-dot {
     width: 6px;
@@ -695,10 +712,19 @@
     color: #F1F5F9;
   }
 
-  :root[data-theme="dark"] .topbar-status-pill,
-  [data-theme="dark"] .topbar-status-pill {
-    background: rgba(16, 185, 129, 0.12);
-    border-color: rgba(16, 185, 129, 0.25);
+  :root[data-theme="dark"] emx-status-pill.topbar-status-pill,
+  [data-theme="dark"] emx-status-pill.topbar-status-pill,
+  .dark emx-status-pill.topbar-status-pill {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  :root[data-theme="dark"] emx-status-pill.topbar-status-pill .emx-status-pill.tone-positive,
+  [data-theme="dark"] emx-status-pill.topbar-status-pill .emx-status-pill.tone-positive,
+  .dark emx-status-pill.topbar-status-pill .emx-status-pill.tone-positive {
+    background: rgba(16, 185, 129, 0.14);
+    border-color: rgba(52, 211, 153, 0.26);
     color: #34D399;
   }
 

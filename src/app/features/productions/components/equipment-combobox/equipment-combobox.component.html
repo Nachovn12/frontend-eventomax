@@ -1,0 +1,130 @@
+<div class="eqc-root">
+  <button
+    #triggerBtn
+    type="button"
+    class="eqc-trigger"
+    [id]="inputId()"
+    [class.is-open]="isOpen()"
+    [class.is-placeholder]="!selectedEquipment()"
+    [disabled]="disabled()"
+    role="combobox"
+    aria-haspopup="listbox"
+    [attr.aria-expanded]="isOpen()"
+    [attr.aria-controls]="isOpen() ? inputId() + '-listbox' : null"
+    (click)="toggle()"
+    (keydown)="onTriggerKeydown($event)"
+  >
+    @if (selectedEquipment(); as sel) {
+      <span class="eqc-trigger-thumb" aria-hidden="true">
+        @if (hasUsableImage(sel)) {
+          <img [src]="sel.imageUrl!" [alt]="''" (error)="onImageError(sel.id)" />
+        } @else {
+          <svg lucidePackage class="eqc-fallback-icon"></svg>
+        }
+      </span>
+      <span class="eqc-trigger-name">{{ sel.name }}</span>
+      <span class="eqc-trigger-stock">Stock: {{ getStock(sel) }}</span>
+    } @else {
+      <svg lucidePackage class="eqc-trigger-lead-icon" aria-hidden="true"></svg>
+      <span class="eqc-trigger-placeholder">{{ placeholder() }}</span>
+    }
+    <svg lucideChevronDown class="eqc-chevron" aria-hidden="true"></svg>
+  </button>
+
+  @if (isOpen()) {
+    <div
+      class="eqc-popover"
+      role="dialog"
+      aria-label="Seleccionar equipo de catálogo"
+      (keydown)="onPanelKeydown($event)"
+    >
+      <div class="eqc-search-bar">
+        <svg lucideSearch class="eqc-search-icon" aria-hidden="true"></svg>
+        <input
+          #searchInput
+          type="search"
+          class="eqc-search-input"
+          autocomplete="off"
+          aria-label="Buscar equipamiento"
+          placeholder="Buscar por nombre, código o categoría…"
+          [value]="searchQuery()"
+          (input)="onSearchInput($any($event.target).value)"
+        />
+      </div>
+
+      @if (filteredEquipment().length > 0) {
+        <div
+          class="eqc-list"
+          [id]="inputId() + '-listbox'"
+          role="listbox"
+          aria-label="Equipos disponibles"
+        >
+          @for (eq of filteredEquipment(); track eq.id; let idx = $index) {
+            <button
+              type="button"
+              role="option"
+              class="eqc-option"
+              [attr.data-equipment-id]="eq.id"
+              [class.is-selected]="value() === '' + eq.id"
+              [class.is-active]="activeIndex() === idx"
+              [class.is-out-of-stock]="isOutOfStock(eq)"
+              [disabled]="isOutOfStock(eq)"
+              [attr.aria-selected]="value() === '' + eq.id"
+              [attr.aria-disabled]="isOutOfStock(eq)"
+              (mouseenter)="!isOutOfStock(eq) && activeIndex.set(idx)"
+              (click)="selectEquipment(eq)"
+            >
+              <span class="eqc-option-thumb" aria-hidden="true">
+                @if (hasUsableImage(eq)) {
+                  <img [src]="eq.imageUrl!" [alt]="''" (error)="onImageError(eq.id)" />
+                } @else {
+                  <svg lucidePackage class="eqc-fallback-icon"></svg>
+                }
+              </span>
+
+              <span class="eqc-option-body">
+                <span class="eqc-option-top">
+                  <span class="eqc-option-name">{{ eq.name }}</span>
+                  <span class="eqc-code-pill">#{{ eq.id }}</span>
+                  @if (eq.category) {
+                    <span class="eqc-cat-pill">{{ eq.category }}</span>
+                  }
+                </span>
+                @if (eq.description) {
+                  <span class="eqc-option-desc">{{ eq.description }}</span>
+                }
+              </span>
+
+              <span class="eqc-option-aside">
+                @if (isOutOfStock(eq)) {
+                  <span class="eqc-stock-badge out">Sin stock</span>
+                } @else {
+                  <span class="eqc-stock-badge ok">Stock: {{ getStock(eq) }}</span>
+                }
+                @if (getDraftQty(eq.id) > 0) {
+                  <span class="eqc-draft-pill">En lista: {{ getDraftQty(eq.id) }}</span>
+                }
+                @if (value() === '' + eq.id) {
+                  <span class="eqc-check-mark" aria-hidden="true">
+                    <svg lucideCheck class="eqc-check-icon"></svg>
+                  </span>
+                }
+              </span>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="eqc-empty" role="status">
+          <svg lucideSearchX class="eqc-empty-icon" aria-hidden="true"></svg>
+          <span>
+            {{
+              searchQuery().trim()
+                ? 'No encontramos equipos que coincidan con esa búsqueda.'
+                : 'No hay equipos disponibles en el inventario.'
+            }}
+          </span>
+        </div>
+      }
+    </div>
+  }
+</div>

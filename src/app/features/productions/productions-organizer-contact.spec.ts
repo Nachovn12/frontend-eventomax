@@ -506,4 +506,68 @@ describe('Productions SELF / EXTERNAL & organizer contact behavior (Etapa 4)', (
     fixture.detectChanges();
     expect(component.rows().map((r) => r.id)).toEqual([21]);
   });
+
+  it('UI/UX-02: renders two accessible native Radio Cards for organizer mode and preserves SELF/EXTERNAL switching', async () => {
+    const { api, fixture, component } = await setup({
+      roles: [AppRole.Productor],
+      productions: [ownProduction],
+    });
+
+    component.openCreateModal();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('.create-production-dialog') as HTMLElement;
+    expect(dialog.textContent).toContain('¿Para quién es el evento?');
+    expect(dialog.textContent).toContain('Selecciona quién será el organizador de la producción.');
+
+    const radios = Array.from(
+      dialog.querySelectorAll('input[type="radio"][name="createOrganizerMode"]')
+    ) as HTMLInputElement[];
+    expect(radios.length).toBe(2);
+    expect(radios[0].value).toBe('SELF');
+    expect(radios[0].checked).toBe(true);
+    expect(radios[1].value).toBe('EXTERNAL');
+    expect(radios[1].checked).toBe(false);
+
+    const cards = Array.from(dialog.querySelectorAll('label.create-mode-tab')) as HTMLLabelElement[];
+    expect(cards.length).toBe(2);
+    expect(cards[0].classList.contains('active')).toBe(true);
+    expect(cards[0].textContent).toContain('Para mí');
+    expect(cards[0].textContent).toContain('Soy el organizador');
+    expect(cards[1].classList.contains('active')).toBe(false);
+    expect(cards[1].textContent).toContain('Para otro cliente');
+    expect(cards[1].textContent).toContain('Asignar un organizador');
+
+    // No nested interactive controls inside Radio Card labels (only the single native radio input)
+    for (const card of cards) {
+      expect(card.querySelectorAll('button, a, select, textarea').length).toBe(0);
+      expect(card.querySelectorAll('input').length).toBe(1);
+    }
+
+    // SELF contextual info surface
+    const selfHint = dialog.querySelector('.self-mode-hint') as HTMLElement;
+    expect(selfHint).not.toBeNull();
+    expect(selfHint.textContent).toContain('La producción quedará asociada automáticamente a tu cuenta.');
+
+    // Switch to EXTERNAL via native radio interaction
+    radios[1].checked = true;
+    radios[1].dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(component.createMode()).toBe('EXTERNAL');
+    expect(cards[1].classList.contains('active')).toBe(true);
+    expect(cards[0].classList.contains('active')).toBe(false);
+    expect(dialog.querySelector('.self-mode-hint')).toBeNull();
+    expect(dialog.querySelector('#external-organizer-search')).not.toBeNull();
+    expect(dialog.querySelector('.btn-new-external-client')).not.toBeNull();
+    expect(api.getEligibleOrganizers).toHaveBeenCalled();
+
+    // Switch back to SELF
+    radios[0].checked = true;
+    radios[0].dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(component.createMode()).toBe('SELF');
+    expect(dialog.querySelector('.self-mode-hint')).not.toBeNull();
+  });
 });

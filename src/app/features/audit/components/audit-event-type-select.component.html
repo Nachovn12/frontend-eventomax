@@ -1,0 +1,56 @@
+<div class="aets-root" (keydown)="onKeydown($event)">
+  <button
+    #triggerBtn
+    type="button"
+    class="aets-trigger"
+    [class.is-open]="isOpen()"
+    [id]="inputId()"
+    [disabled]="isDisabled()"
+    role="combobox"
+    aria-haspopup="listbox"
+    [attr.aria-expanded]="isOpen()"
+    [attr.aria-controls]="listboxId()"
+    [attr.aria-label]="ariaLabel()"
+    (click)="toggle()"
+  >
+    <svg lucideLayers class="aets-lead-icon" strokeWidth="1.8" aria-hidden="true" />
+    <span class="aets-value-text">
+      {{ selectedOption()?.label || 'Todos los tipos' }}
+    </span>
+    <svg lucideChevronDown class="aets-chevron" [class.rotated]="isOpen()" strokeWidth="2" aria-hidden="true" />
+  </button>
+
+  <div
+    class="aets-popover"
+    [id]="listboxId()"
+    role="listbox"
+    [attr.aria-label]="ariaLabel()"
+    [hidden]="!isOpen()"
+  >
+    @for (opt of options(); track opt.value; let idx = $index) {
+      <button
+        type="button"
+        class="aets-option"
+        role="option"
+        [attr.aria-selected]="opt.value === value()"
+        [class.is-selected]="opt.value === value()"
+        [class.is-active]="idx === activeIndex()"
+        [attr.data-event-type]="opt.value"
+        (mouseenter)="activeIndex.set(idx)"
+        (click)="select(opt)"
+      >
+        <span class="aets-option-copy">
+          <span class="aets-option-label">{{ opt.label }}</span>
+          @if (opt.technical) {
+            <code class="aets-option-tech">{{ opt.technical }}</code>
+          }
+        </span>
+        @if (opt.value === value()) {
+          <span class="aets-check" aria-hidden="true">
+            <svg lucideCheck strokeWidth="2.4" />
+          </span>
+        }
+      </button>
+    }
+  </div>
+</div>

@@ -120,5 +120,29 @@ describe('Apple Design System Date Calendar & Picker (Board UI 1:1)', () => {
       expect(fixture.componentInstance.selectedRangePreset).toBe('last7d');
       expect(fixture.nativeElement.querySelector('.emx-date-picker-popover')).toBeNull();
     });
+
+    it('UI/UX-08: renders corporate header with Chile timezone and discards draft changes on Cancel', () => {
+      const trigger = fixture.nativeElement.querySelector('.emx-date-trigger') as HTMLButtonElement;
+      trigger.click();
+      fixture.detectChanges();
+
+      const popover = fixture.nativeElement.querySelector('.emx-date-picker-popover') as HTMLElement;
+      expect(popover.textContent).toContain('Período de análisis');
+      expect(popover.textContent).toContain('America/Santiago');
+      expect(popover.textContent).toContain('Aplicar período');
+
+      // Select 7d preset then Cancel -> must NOT emit change
+      const preset7d = Array.from(popover.querySelectorAll<HTMLButtonElement>('.emx-preset-btn'))
+        .find((b) => b.textContent?.includes('Últimos 7 días'))!;
+      preset7d.click();
+      fixture.detectChanges();
+
+      const cancelBtn = popover.querySelector('.emx-date-footer-actions emx-button:nth-of-type(1) button') as HTMLButtonElement;
+      cancelBtn.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.selectedRangePreset).toBeNull();
+      expect(fixture.nativeElement.querySelector('.emx-date-picker-popover')).toBeNull();
+    });
   });
 });

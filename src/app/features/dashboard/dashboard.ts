@@ -10,11 +10,20 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   LucideCalendarDays,
   LucideArrowRight,
-  LucideCircleAlert
+  LucideCircleAlert,
+  LucideClock,
+  LucideActivity,
+  LucideLayers,
+  LucideCircleCheck,
+  LucideCircleX,
+  LucideMap,
+  LucidePlus,
+  LucideInfo,
+  LucideServer,
+  LucideRefreshCw
 } from '@lucide/angular';
 import { ProductionTable } from '../../shared/ui/production-table';
 import { ButtonDirective } from '../../shared/ui/button.component';
-import { StatusPill, Tag } from '../../shared/ui/status-pill/status-pill';
 import { BehaviorSubject, catchError, forkJoin, map, of, startWith, switchMap, tap } from 'rxjs';
 import { withLivePolling } from '../../core/utils/live-polling';
 import {
@@ -46,11 +55,19 @@ interface DashboardDomainState {
     RouterLink,
     ProductionTable,
     ButtonDirective,
-    StatusPill,
-    Tag,
     LucideCalendarDays,
     LucideArrowRight,
-    LucideCircleAlert
+    LucideCircleAlert,
+    LucideClock,
+    LucideActivity,
+    LucideLayers,
+    LucideCircleCheck,
+    LucideCircleX,
+    LucideMap,
+    LucidePlus,
+    LucideInfo,
+    LucideServer,
+    LucideRefreshCw
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
@@ -205,6 +222,22 @@ export class Dashboard {
     };
   });
 
+  readonly telemetryMaxCount = computed(() =>
+    Math.max(...this.telemetryBars().map((b) => b.count), 0)
+  );
+
+  readonly telemetryYAxis = computed(() => {
+    const max = this.telemetryMaxCount();
+    if (max <= 1) {
+      return { top: '1', mid: '', bottom: '0' };
+    }
+    return {
+      top: String(max),
+      mid: String(Math.ceil(max / 2)),
+      bottom: '0',
+    };
+  });
+
   private readonly dashboardState = toSignal(
     withLivePolling(this.retrySubject).pipe(
       switchMap(() => {
@@ -291,6 +324,12 @@ export class Dashboard {
 
   readonly activeServicesCount = computed(() => this.allCatalog().filter(s => s.active).length);
   readonly totalServicesCount = computed(() => this.allCatalog().length);
+  readonly inactiveServicesCount = computed(() =>
+    Math.max(0, this.totalServicesCount() - this.activeServicesCount())
+  );
+  readonly activeServicesPct = computed(() =>
+    this.totalServicesCount() > 0 ? (this.activeServicesCount() / this.totalServicesCount()) * 100 : 0
+  );
 
   // Ratios y porcentajes del pipeline (Caso 8)
   readonly activeProductionsCount = computed(() => this.activeProductions().length);

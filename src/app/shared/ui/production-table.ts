@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { LucideChevronRight, LucideEye } from '@lucide/angular';
 import {
   ProductionViewModel,
   formatOrganizerDisplayLabel,
@@ -11,7 +12,7 @@ import { ButtonDirective } from './button.component';
 @Component({
   selector: 'emx-production-table',
   standalone: true,
-  imports: [StatusChip, ButtonDirective, RouterLink],
+  imports: [StatusChip, ButtonDirective, RouterLink, LucideChevronRight, LucideEye],
   template: `
     <div class="table-scroll" role="region" [attr.aria-label]="caption()" tabindex="0">
       <table class="data-table production-table" [class.is-selectable]="selectable() || detailLinks()">
@@ -97,6 +98,7 @@ import { ButtonDirective } from './button.component';
                     [attr.aria-label]="'Ver detalle: ' + event.name">Ver detalle</a>
                 </td>
               } @else if (selectable()) {
+                @let btnLabel = rowActionLabel(event);
                 <td class="cell-action">
                   <button
                     type="button"
@@ -105,11 +107,18 @@ import { ButtonDirective } from './button.component';
                     size="small"
                     class="row-select-btn"
                     [class.active]="selectedId() === event.id"
+                    [class.is-consult]="showActionIcon() && rowActionIcon(event) === 'eye'"
                     [attr.aria-pressed]="selectedId() === event.id"
-                    [attr.aria-label]="(selectedId() === event.id ? 'Producción seleccionada: ' : actionLabel() + ': ') + event.name"
+                    [attr.aria-label]="(selectedId() === event.id ? 'Producción seleccionada: ' : btnLabel + ': ') + event.name"
                     (click)="onButtonSelect(event, $event)"
                   >
-                    <span>{{ selectedId() === event.id ? 'Seleccionada' : actionLabel() }}</span>
+                    @if (showActionIcon() && selectedId() !== event.id && rowActionIcon(event) === 'eye') {
+                      <svg lucideEye class="row-action-icon" strokeWidth="1.9" aria-hidden="true"></svg>
+                    }
+                    <span>{{ selectedId() === event.id ? 'Seleccionada' : btnLabel }}</span>
+                    @if (showActionIcon() && selectedId() !== event.id && rowActionIcon(event) === 'chevron') {
+                      <svg lucideChevronRight class="row-action-icon row-action-chevron" strokeWidth="2" aria-hidden="true"></svg>
+                    }
                   </button>
                 </td>
               }
@@ -138,10 +147,10 @@ import { ButtonDirective } from './button.component';
     .col-schedule { width: 22%; }
     .col-status { width: 16%; }
     .data-table.production-table.is-selectable .col-production { width: 33%; }
-    .data-table.production-table.is-selectable .col-location { width: 23%; }
-    .data-table.production-table.is-selectable .col-schedule { width: 20%; }
-    .data-table.production-table.is-selectable .col-status { width: 12%; }
-    .data-table.production-table.is-selectable .col-action { width: 12%; }
+    .data-table.production-table.is-selectable .col-location { width: 22%; }
+    .data-table.production-table.is-selectable .col-schedule { width: 18%; }
+    .data-table.production-table.is-selectable .col-status { width: 13.5%; }
+    .data-table.production-table.is-selectable .col-action { width: 13.5%; }
 
     .data-table.production-table thead tr {
       height: 38px;
@@ -368,6 +377,48 @@ import { ButtonDirective } from './button.component';
     }
     .row-select-btn {
       flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      height: 31px;
+      padding: 0 11px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 500;
+      transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+    }
+    .row-select-btn:focus-visible {
+      outline: 2px solid #2563EB;
+      outline-offset: 2px;
+    }
+    .row-select-btn.is-consult:not(.active) {
+      color: #475569;
+    }
+    .row-select-btn.is-consult:not(.active):hover {
+      color: #0F172A;
+    }
+    .row-action-icon {
+      width: 13.5px;
+      height: 13.5px;
+      flex-shrink: 0;
+      display: block;
+      opacity: 0.78;
+      transition: transform 140ms ease, opacity 140ms ease;
+    }
+    .row-select-btn:hover .row-action-icon {
+      opacity: 1;
+    }
+    .row-select-btn:hover .row-action-chevron {
+      transform: translateX(1.5px);
+    }
+    :host-context([data-theme="dark"]) .row-select-btn.is-consult:not(.active),
+    :host-context(.dark) .row-select-btn.is-consult:not(.active) {
+      color: #CBD5E1;
+    }
+    :host-context([data-theme="dark"]) .row-select-btn.is-consult:not(.active):hover,
+    :host-context(.dark) .row-select-btn.is-consult:not(.active):hover {
+      color: #F8FAFC;
     }
 
     /* Dark Pro 3D Mode Calibrations */
@@ -459,6 +510,25 @@ import { ButtonDirective } from './button.component';
     .mobile-cell-label {
       display: none;
     }
+    @container (max-width: 860px) {
+      .data-table.production-table th,
+      .data-table.production-table td {
+        padding: 10px 10px;
+      }
+      .data-table.production-table th:first-child,
+      .data-table.production-table td:first-child {
+        padding-left: 14px;
+      }
+      .data-table.production-table th:last-child,
+      .data-table.production-table td:last-child {
+        padding-right: 14px;
+      }
+      .data-table.production-table.is-selectable .col-production { width: 32%; }
+      .data-table.production-table.is-selectable .col-location { width: 20%; }
+      .data-table.production-table.is-selectable .col-schedule { width: 15.5%; }
+      .data-table.production-table.is-selectable .col-status { width: 15%; }
+      .data-table.production-table.is-selectable .col-action { width: 17.5%; }
+    }
     @container (max-width: 640px) {
       .data-table.production-table,
       .data-table.production-table tbody {
@@ -533,8 +603,30 @@ export class ProductionTable {
   readonly selectable = input(false);
   readonly selectedId = input<number | null>(null);
   readonly actionLabel = input('Gestionar');
+  readonly terminalActionLabel = input<string | null>(null);
+  readonly showActionIcon = input(false);
   readonly detailLinks = input(false);
   readonly selectProduction = output<ProductionViewModel>();
+
+  isTerminalStatus(status: ProductionViewModel['status']): boolean {
+    return status === 'CERRADO' || status === 'CANCELADO';
+  }
+
+  rowActionLabel(event: ProductionViewModel): string {
+    const terminal = this.terminalActionLabel();
+    if (terminal && this.isTerminalStatus(event.status)) {
+      return terminal;
+    }
+    return this.actionLabel();
+  }
+
+  rowActionIcon(event: ProductionViewModel): 'eye' | 'chevron' {
+    const label = this.rowActionLabel(event);
+    if (this.isTerminalStatus(event.status) || label === 'Consultar' || label === 'Ver detalle') {
+      return 'eye';
+    }
+    return 'chevron';
+  }
 
   organizerLabel(event: ProductionViewModel): string {
     return formatOrganizerDisplayLabel(

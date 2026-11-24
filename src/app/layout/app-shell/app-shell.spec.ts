@@ -251,4 +251,17 @@ describe('AppShell', () => {
       expect(fixture.nativeElement.querySelector('a[href="/organizers"]')).toBeNull();
     }
   });
+
+  it('UI/UX-01: renders topbar connectivity badge as a single status-pill capsule preserving dot, label and aria-label', () => {
+    const host: HTMLElement | null = fixture.nativeElement.querySelector('emx-status-pill.topbar-status-pill');
+    expect(host).not.toBeNull();
+    expect(host?.getAttribute('aria-label')).toBe('Estado de la plataforma: En línea');
+
+    const innerPills = host?.querySelectorAll('.emx-status-pill') ?? [];
+    expect(innerPills.length).toBe(1);
+    const pill = innerPills[0] as HTMLElement;
+    expect(pill.classList.contains('tone-positive')).toBe(true);
+    expect(pill.querySelector('.pill-dot')).not.toBeNull();
+    expect(pill.textContent?.trim()).toBe('En línea');
+  });
 });
