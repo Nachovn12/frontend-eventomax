@@ -605,8 +605,8 @@ describe('Productions EP2 actions', () => {
 
     const notice = fixture.nativeElement.querySelector('.terminal-notice-section');
     expect(notice).not.toBeNull();
-    expect(notice.textContent).toContain('Producción cerrada');
-    expect(notice.textContent).toContain('No se permiten nuevas transiciones');
+    expect(notice.textContent).toContain('Ciclo operativo finalizado');
+    expect(notice.textContent).toContain('Estado terminal · Solo lectura');
 
     expect(fixture.nativeElement.querySelector('[aria-label="Resumen de producción"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.detail-meta-grid')).not.toBeNull();

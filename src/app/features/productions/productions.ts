@@ -6,21 +6,42 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { BehaviorSubject, Subject, of } from 'rxjs';
 import { switchMap, map, catchError, startWith, distinctUntilChanged, debounceTime } from 'rxjs/operators';
 import {
+  LucideActivity,
   LucideCalendarDays,
+  LucideClock,
   LucideClock3,
   LucideCircleCheck,
+  LucideCheck,
+  LucideContactRound,
+  LucideInfo,
+  LucideLoaderCircle,
   LucideSearch,
   LucideSearchX,
   LucideCalendarX2,
   LucideCircleAlert,
   LucideX,
   LucideArrowRight,
-  LucideChevronDown,
+  LucideChevronRight,
   LucideMapPin,
-  LucideBuilding2,
-  LucideUsers,
+  LucideUserRound,
+  LucideUsersRound,
+  LucideUserRoundPlus,
   LucideTicket,
-  LucideDownload
+  LucideDownload,
+  LucideWrench,
+  LucidePlay,
+  LucideBan,
+  LucideMinus,
+  LucidePlus,
+  LucideTrash2,
+  LucideTriangleAlert,
+  LucideFileText,
+  LucidePackage,
+  LucidePackageOpen,
+  LucideLock,
+  LucideClipboardList,
+  LucidePrinter,
+  LucideCopy
 } from '@lucide/angular';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthorizationService } from '../../core/auth/authorization.service';
@@ -42,8 +63,13 @@ import { ProductionTable } from '../../shared/ui/production-table';
 import { StatusChip } from '../../shared/ui/status-chip';
 import { Tag } from '../../shared/ui/status-pill/status-pill';
 import { ButtonDirective } from '../../shared/ui/button.component';
+import { DateTimePickerComponent } from '../../shared/ui/date-picker/date-time-picker.component';
+import { StatusTransitionSelectorComponent } from './components/status-transition-selector/status-transition-selector.component';
+import { StatusFilterSelectorComponent } from './components/status-filter-selector/status-filter-selector.component';
+import { EquipmentComboboxComponent } from './components/equipment-combobox/equipment-combobox.component';
 import { ProductionsDataService } from './productions-data.service';
 import { CatalogDataService } from '../catalog/catalog-data.service';
+import { CatalogImageStorageService } from '../catalog/services/catalog-image-storage.service';
 import { Equipment, EquipmentReservationItem } from '../catalog/models/equipment.model';
 import { CatalogService } from '../catalog/models/catalog-service.model';
 import {
@@ -67,29 +93,55 @@ import {
     StatusChip,
     Tag,
     ButtonDirective,
+    DateTimePickerComponent,
+    StatusTransitionSelectorComponent,
+    StatusFilterSelectorComponent,
+    EquipmentComboboxComponent,
+    LucideActivity,
     LucideCalendarDays,
+    LucideClock,
     LucideClock3,
     LucideCircleCheck,
+    LucideCheck,
+    LucideContactRound,
+    LucideInfo,
+    LucideLoaderCircle,
     LucideSearch,
     LucideSearchX,
     LucideCalendarX2,
     LucideCircleAlert,
     LucideX,
     LucideArrowRight,
-    LucideChevronDown,
+    LucideChevronRight,
     LucideMapPin,
-    LucideBuilding2,
-    LucideUsers,
+    LucideUserRound,
+    LucideUsersRound,
+    LucideUserRoundPlus,
     LucideTicket,
-    LucideDownload
+    LucideDownload,
+    LucideWrench,
+    LucidePlay,
+    LucideBan,
+    LucideMinus,
+    LucidePlus,
+    LucideTrash2,
+    LucideTriangleAlert,
+    LucideFileText,
+    LucidePackage,
+    LucidePackageOpen,
+    LucideLock,
+    LucideClipboardList,
+    LucidePrinter,
+    LucideCopy
   ],
   templateUrl: './productions.html',
-  styleUrls: ['./productions.css', './crew-ticket-modal.css'],
+  styleUrls: ['./productions.css', './productions-page.css', './crew-ticket-modal.css', './detail-drawer.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Productions implements OnInit, OnDestroy {
   private readonly dataService = inject(ProductionsDataService);
   private readonly catalogDataService = inject(CatalogDataService);
+  private readonly imageStorage = inject(CatalogImageStorageService);
   private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly router = inject(Router, { optional: true });
   private readonly destroyRef = inject(DestroyRef);
@@ -120,6 +172,7 @@ export class Productions implements OnInit, OnDestroy {
   private readonly query = toSignal(this.search.valueChanges, { initialValue: '' });
   private readonly selectedStatus = toSignal(this.status.valueChanges, { initialValue: '' });
 
+  readonly searchHasValue = computed(() => this.query().trim().length > 0);
   readonly hasActiveFilters = computed(() => this.query().trim() !== '' || this.selectedStatus() !== '');
 
   readonly announcement = signal('');
@@ -248,6 +301,71 @@ export class Productions implements OnInit, OnDestroy {
     return current ? this.isTerminalStatus(current.status) : false;
   });
 
+  // UI/UX-04: Lifecycle indicator stages (presentation only — never certifies physical events)
+  readonly lifecycleStages = [
+    { key: 'SOLICITADO' as ProductionStatus, label: 'Solicitud' },
+    { key: 'CONFIRMADO' as ProductionStatus, label: 'Confirmación' },
+    { key: 'EN_MONTAJE' as ProductionStatus, label: 'Montaje' },
+    { key: 'EN_EJECUCION' as ProductionStatus, label: 'Ejecución' },
+    { key: 'CERRADO' as ProductionStatus, label: 'Cierre' },
+  ] as const;
+
+  // UI/UX-04: Presentation transition matrix aligned with ProductionStateCoordinator.ALLOWED_TRANSITIONS
+  getAllowedNextStatuses(current: ProductionStatus): readonly ProductionStatus[] {
+    switch (current) {
+      case 'SOLICITADO':
+        return ['CONFIRMADO', 'CANCELADO'];
+      case 'CONFIRMADO':
+        return ['EN_MONTAJE', 'CANCELADO'];
+      case 'EN_MONTAJE':
+        return ['EN_EJECUCION', 'CANCELADO'];
+      case 'EN_EJECUCION':
+        return ['CERRADO', 'CANCELADO'];
+      case 'CERRADO':
+      case 'CANCELADO':
+      default:
+        return [];
+    }
+  }
+
+  readonly allowedNextStatuses = computed<readonly ProductionStatus[]>(() => {
+    const current = this.detail();
+    return current ? this.getAllowedNextStatuses(current.status) : [];
+  });
+
+  getLifecycleStageIndex(status: ProductionStatus): number {
+    return this.lifecycleStages.findIndex((s) => s.key === status);
+  }
+
+  canShowCrewTicketAction(status: ProductionStatus): boolean {
+    return ['EN_MONTAJE', 'EN_EJECUCION', 'CERRADO'].includes(status) && this.canViewCrewTicket();
+  }
+
+  canShowQuotePdfAction(status: ProductionStatus): boolean {
+    return status === 'CERRADO' && this.canDownloadQuote();
+  }
+
+  hasDocumentActions(status: ProductionStatus): boolean {
+    return this.canShowCrewTicketAction(status) || this.canShowQuotePdfAction(status);
+  }
+
+  getTransitionSubmitLabel(next: ProductionStatus | ''): string {
+    switch (next) {
+      case 'CONFIRMADO':
+        return 'Confirmar y reservar equipos';
+      case 'EN_MONTAJE':
+        return 'Iniciar montaje';
+      case 'EN_EJECUCION':
+        return 'Iniciar ejecución';
+      case 'CERRADO':
+        return 'Cerrar producción';
+      case 'CANCELADO':
+        return 'Cancelar producción';
+      default:
+        return 'Actualizar estado';
+    }
+  }
+
   private lastTriggerElement: HTMLElement | null = null;
   private detailTriggerElement: HTMLElement | null = null;
   private ticketTriggerElement: HTMLElement | null = null;
@@ -289,6 +407,48 @@ export class Productions implements OnInit, OnDestroy {
   readonly crewNameControl = new FormControl<string>('', { nonNullable: true });
   readonly reservationInputError = signal('');
 
+  private readonly selectedEquipmentIdValue = toSignal(this.selectedEquipmentId.valueChanges, { initialValue: '' });
+
+  readonly reservationsTotalUnits = computed(() =>
+    this.productionReservations().reduce((acc, r) => acc + (r.quantity || 0), 0)
+  );
+
+  readonly draftReservationUnits = computed(() =>
+    this.reservationItems().reduce((acc, item) => acc + (item.quantity || 0), 0)
+  );
+
+  readonly draftEquipmentTotals = computed<Readonly<Record<number, number>>>(() => {
+    const mapTotals: Record<number, number> = {};
+    for (const item of this.reservationItems()) {
+      mapTotals[item.equipmentId] = (mapTotals[item.equipmentId] ?? 0) + item.quantity;
+    }
+    return mapTotals;
+  });
+
+  readonly selectedEquipmentRemainingStock = computed<number | null>(() => {
+    const rawId = this.selectedEquipmentIdValue() || this.selectedEquipmentId.value;
+    const eqId = Number(rawId);
+    if (!rawId || !Number.isSafeInteger(eqId) || eqId < 1) return null;
+    const eq = this.availableEquipment().find((e) => e.id === eqId);
+    if (!eq) return null;
+    const maxStock = eq.availableQty ?? eq.availableQuantity ?? 0;
+    const alreadyAdded = this.draftEquipmentTotals()[eqId] ?? 0;
+    return Math.max(0, maxStock - alreadyAdded);
+  });
+
+  stepQuantity(delta: number): void {
+    if (this.isSelectedTerminal() || this.saving()) return;
+    const cur = Number(this.selectedQuantity.value);
+    const base = Number.isSafeInteger(cur) && cur >= 1 ? cur : 1;
+    const maxRemaining = this.selectedEquipmentRemainingStock();
+    let next = Math.max(1, base + delta);
+    if (maxRemaining !== null && maxRemaining >= 1 && next > maxRemaining) {
+      next = maxRemaining;
+    }
+    this.selectedQuantity.setValue(next);
+    this.reservationInputError.set('');
+  }
+
   // Ticket de cuadrilla
   readonly ticketProductionId = signal<number | null>(null);
   readonly ticketLoading = signal<boolean>(false);
@@ -310,6 +470,10 @@ export class Productions implements OnInit, OnDestroy {
     if (this.ticketReservationsError()) return [];
     return this.ticketEquipmentReservations();
   });
+
+  readonly ticketReservationsTotalUnits = computed(() =>
+    this.ticketReservations().reduce((acc, r) => acc + (r.quantity || 0), 0),
+  );
 
   readonly ticketDataLoading = computed(
     () => this.ticketLoading() || this.ticketProductionLoading() || this.ticketReservationsLoading(),
@@ -595,6 +759,7 @@ export class Productions implements OnInit, OnDestroy {
 
   onDialogKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
+      if (event.defaultPrevented) return;
       if (!this.saving()) {
         event.preventDefault();
         this.closeCreateModal();
@@ -606,6 +771,7 @@ export class Productions implements OnInit, OnDestroy {
 
   onDetailKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
+      if (event.defaultPrevented) return;
       if (!this.saving()) {
         event.preventDefault();
         this.closeDetail();
@@ -980,6 +1146,38 @@ export class Productions implements OnInit, OnDestroy {
     return detail ? `${eq.name} (${detail})` : eq.name;
   }
 
+  // UI/UX-04.2: Structured read-only accessors for provisional equipment cards (preserves getEquipmentName untouched)
+  readonly failedDraftEquipmentImages = signal<ReadonlySet<number>>(new Set());
+
+  getEquipmentById(eqId: number): Equipment | null {
+    return this.availableEquipment().find((e) => e.id === eqId) ?? null;
+  }
+
+  getEquipmentDisplayName(eqId: number): string {
+    const cleanName = this.getEquipmentById(eqId)?.name?.trim();
+    return cleanName || `Equipo #${eqId}`;
+  }
+
+  getEquipmentCategory(eqId: number): string | null {
+    const cleanCategory = this.getEquipmentById(eqId)?.category?.trim();
+    return cleanCategory || null;
+  }
+
+  getEquipmentThumbnail(eqId: number): string | null {
+    if (this.failedDraftEquipmentImages().has(eqId)) return null;
+    const dtoUrl = this.getEquipmentById(eqId)?.imageUrl?.trim();
+    if (dtoUrl) return dtoUrl;
+    return this.imageStorage.getImage('equipment', eqId);
+  }
+
+  onDraftEquipmentImageError(eqId: number): void {
+    this.failedDraftEquipmentImages.update((prev) => {
+      const next = new Set(prev);
+      next.add(eqId);
+      return next;
+    });
+  }
+
   toggleService(serviceId: number): void {
     if (this.isSelectedTerminal()) return;
     const current = this.selectedServiceIds();
@@ -1092,6 +1290,10 @@ export class Productions implements OnInit, OnDestroy {
       case 'CANCELADO': return 'Cancelado';
       default: return status;
     }
+  }
+
+  clearSearch(): void {
+    this.search.setValue('');
   }
 
   clearFilters(): void {

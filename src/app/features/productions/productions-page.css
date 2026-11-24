@@ -1,0 +1,667 @@
+/* ==========================================================================
+   UI/UX-06 — Pantalla principal de Producciones (Light & Dark Design Tokens)
+   Encapsulated strictly to .productions-page (does not alter Detail Drawer,
+   Create Modal, DateTime Picker, Crew Ticket, or other modules).
+   ========================================================================== */
+
+.productions-page {
+  --pr-fg: #0F172A;
+  --pr-sub: #334155;
+  --pr-muted: #64748B;
+  --pr-faint: #94A3B8;
+  --pr-bg: #FFFFFF;
+  --pr-surf: #F8FAFC;
+  --pr-hover: #F1F5F9;
+  --pr-bdr: #E2E8F0;
+  --pr-bdr-soft: #F1F5F9;
+  --pr-bdr-h: #CBD5E1;
+  --pr-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.03);
+  --pr-shadow-h: 0 4px 12px -2px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --pr-acc: #2563EB;
+  --pr-acc-bg: rgba(37, 99, 235, 0.08);
+  --pr-acc-bdr: rgba(37, 99, 235, 0.22);
+  --pr-warn: #D97706;
+  --pr-warn-bg: rgba(245, 158, 11, 0.1);
+  --pr-warn-bdr: rgba(245, 158, 11, 0.28);
+  --pr-green: #15803D;
+  --pr-green-dot: #16A34A;
+  --pr-green-bg: rgba(22, 163, 74, 0.1);
+  --pr-green-bdr: rgba(22, 163, 74, 0.24);
+  --pr-emerald: #059669;
+  --pr-emerald-bg: rgba(16, 185, 129, 0.1);
+  --pr-emerald-bdr: rgba(16, 185, 129, 0.28);
+  --pr-neg: #DC2626;
+  --pr-neg-bg: rgba(220, 38, 38, 0.08);
+  --pr-neg-bdr: rgba(220, 38, 38, 0.24);
+
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+:host-context([data-theme="dark"]) .productions-page,
+:host-context(.dark) .productions-page {
+  --pr-fg: #F8FAFC;
+  --pr-sub: #E2E8F0;
+  --pr-muted: #94A3B8;
+  --pr-faint: #64748B;
+  --pr-bg: #16171F;
+  --pr-surf: #121319;
+  --pr-hover: #1D1F2B;
+  --pr-bdr: rgba(255, 255, 255, 0.09);
+  --pr-bdr-soft: rgba(255, 255, 255, 0.05);
+  --pr-bdr-h: rgba(255, 255, 255, 0.17);
+  --pr-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --pr-shadow-h: 0 6px 18px -4px rgba(0, 0, 0, 0.55);
+  --pr-acc: #3B82F6;
+  --pr-acc-bg: rgba(59, 130, 246, 0.14);
+  --pr-acc-bdr: rgba(96, 165, 250, 0.28);
+  --pr-warn: #FBBF24;
+  --pr-warn-bg: rgba(245, 158, 11, 0.14);
+  --pr-warn-bdr: rgba(251, 191, 36, 0.28);
+  --pr-green: #4ADE80;
+  --pr-green-dot: #22C55E;
+  --pr-green-bg: rgba(34, 197, 94, 0.14);
+  --pr-green-bdr: rgba(74, 222, 128, 0.28);
+  --pr-emerald: #34D399;
+  --pr-emerald-bg: rgba(16, 185, 129, 0.14);
+  --pr-emerald-bdr: rgba(52, 211, 153, 0.3);
+  --pr-neg: #F87171;
+  --pr-neg-bg: rgba(239, 68, 68, 0.14);
+  --pr-neg-bdr: rgba(248, 113, 113, 0.28);
+}
+
+.productions-page .font-mono-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* 1. Page Header */
+.productions-page .productions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0;
+}
+
+.productions-page .header-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.productions-page .eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pr-acc);
+  letter-spacing: 0;
+}
+
+.productions-page .page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: var(--pr-fg);
+}
+
+.productions-page .page-description {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--pr-muted);
+  line-height: 1.4;
+}
+
+.productions-page .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.productions-page .action-btn-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.productions-page .btn-self-contact-discreet {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 500;
+}
+
+/* 2. Operational KPI Grid (4 cols desktop -> 2 cols tablet -> 1 col mobile)
+   Specificity (0, 3, 0) cleanly overrides .emx-workspace .metric-grid (0, 2, 0). */
+.productions-page .metric-grid.productions-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+.productions-page .prod-kpi-card {
+  background: var(--pr-bg);
+  border: 1px solid var(--pr-bdr);
+  border-radius: 13px;
+  padding: 16px 18px;
+  box-shadow: var(--pr-shadow);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  box-sizing: border-box;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.productions-page .prod-kpi-card:hover {
+  border-color: var(--pr-bdr-h);
+  box-shadow: var(--pr-shadow-h);
+}
+
+.productions-page .prod-kpi-skeleton {
+  min-height: 154px;
+  justify-content: space-between;
+}
+
+.productions-page .prod-kpi-card .kpi-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.productions-page .prod-kpi-card .kpi-label-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pr-sub);
+  min-width: 0;
+}
+
+.productions-page .prod-kpi-card .kpi-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.productions-page .prod-kpi-card .kpi-status-dot.blue { background: var(--pr-acc); }
+.productions-page .prod-kpi-card .kpi-status-dot.amber { background: var(--pr-warn); }
+.productions-page .prod-kpi-card .kpi-status-dot.green { background: var(--pr-green-dot); }
+.productions-page .prod-kpi-card .kpi-status-dot.emerald { background: var(--pr-emerald); }
+
+.productions-page .prod-kpi-card .kpi-icon-tile {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  transition: none;
+}
+
+.productions-page .prod-kpi-card .kpi-icon-tile.blue {
+  background: var(--pr-acc-bg);
+  color: var(--pr-acc);
+  border-color: var(--pr-acc-bdr);
+}
+
+.productions-page .prod-kpi-card .kpi-icon-tile.amber {
+  background: var(--pr-warn-bg);
+  color: var(--pr-warn);
+  border-color: var(--pr-warn-bdr);
+}
+
+.productions-page .prod-kpi-card .kpi-icon-tile.green {
+  background: var(--pr-green-bg);
+  color: var(--pr-green);
+  border-color: var(--pr-green-bdr);
+}
+
+.productions-page .prod-kpi-card .kpi-icon-tile.emerald {
+  background: var(--pr-emerald-bg);
+  color: var(--pr-emerald);
+  border-color: var(--pr-emerald-bdr);
+}
+
+.productions-page .prod-kpi-card .kpi-vector-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.productions-page .prod-kpi-card .metric-value {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--pr-fg);
+}
+
+.productions-page .prod-kpi-card .metric-foot {
+  font-size: 12px;
+  color: var(--pr-muted);
+  margin: 4px 0 0;
+  line-height: 1.35;
+}
+
+.productions-page .prod-kpi-card .kpi-micro-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 6px;
+  font-size: 11.5px;
+  color: var(--pr-muted);
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--pr-bdr-soft);
+}
+
+.productions-page .prod-kpi-card .metric-foot + .kpi-micro-meta {
+  margin-top: 12px;
+}
+
+.productions-page .prod-kpi-card .meta-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.productions-page .prod-kpi-card .meta-dot.blue { background: var(--pr-acc); }
+.productions-page .prod-kpi-card .meta-dot.amber { background: var(--pr-warn); }
+.productions-page .prod-kpi-card .meta-dot.green { background: var(--pr-green-dot); }
+.productions-page .prod-kpi-card .meta-dot.emerald { background: var(--pr-emerald); }
+
+.productions-page .prod-kpi-card .meta-sep {
+  color: var(--pr-bdr-h);
+}
+
+.productions-page .prod-kpi-card .kpi-bicolor-track {
+  width: 100%;
+  height: 4px;
+  background: var(--pr-hover);
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  margin-top: 10px;
+  clip-path: none;
+}
+
+.productions-page .prod-kpi-card .kpi-bicolor-fill {
+  height: 100%;
+  transition: width 260ms ease;
+}
+
+.productions-page .prod-kpi-card .kpi-bicolor-fill.blue { background: var(--pr-acc); }
+.productions-page .prod-kpi-card .kpi-bicolor-fill.amber { background: var(--pr-warn); }
+.productions-page .prod-kpi-card .kpi-bicolor-fill.green { background: var(--pr-green-dot); }
+.productions-page .prod-kpi-card .kpi-bicolor-fill.emerald { background: var(--pr-emerald); }
+
+/* 3. Agenda Panel — overflow: visible so the corporate status filter popover never clips */
+.productions-page .agenda-panel {
+  background: var(--pr-bg);
+  border: 1px solid var(--pr-bdr);
+  border-radius: 13px;
+  box-shadow: var(--pr-shadow);
+  overflow: visible;
+  margin: 0;
+}
+
+.productions-page .agenda-heading {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--pr-bdr-soft);
+  border-radius: 13px 13px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.productions-page .agenda-heading h2 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--pr-fg);
+  margin: 0;
+}
+
+.productions-page .agenda-heading p {
+  font-size: 12.5px;
+  color: var(--pr-muted);
+  margin: 3px 0 0;
+  line-height: 1.4;
+}
+
+.productions-page .agenda-heading .count-pill {
+  background: var(--pr-acc-bg);
+  color: var(--pr-acc);
+  border: 1px solid var(--pr-acc-bdr);
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+/* 4. Search & Status Filter Toolbar */
+.productions-page .agenda-panel .toolbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--pr-bdr-soft);
+  background: var(--pr-surf);
+  flex-wrap: wrap;
+}
+
+.productions-page .agenda-panel .toolbar .field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 40px;
+}
+
+.productions-page .agenda-panel .toolbar .search-field.grow {
+  flex: 1 1 240px;
+  min-width: 0;
+  width: auto;
+}
+
+.productions-page .agenda-panel .toolbar .status-filter-field {
+  flex: 0 0 218px;
+  min-width: 200px;
+}
+
+.productions-page .agenda-panel .toolbar .field-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: var(--pr-muted);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.productions-page .agenda-panel .toolbar input[type="search"] {
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 36px 0 36px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid var(--pr-bdr);
+  background: var(--pr-bg);
+  color: var(--pr-fg);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  box-shadow: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+.productions-page .agenda-panel .toolbar input[type="search"]::placeholder {
+  color: var(--pr-muted);
+}
+
+.productions-page .agenda-panel .toolbar input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.productions-page .agenda-panel .toolbar input[type="search"]:hover {
+  border-color: var(--pr-bdr-h);
+}
+
+.productions-page .agenda-panel .toolbar input[type="search"]:focus,
+.productions-page .agenda-panel .toolbar input[type="search"]:focus-visible {
+  outline: none;
+  border-color: var(--pr-acc);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.productions-page .search-clear-btn {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 0;
+  background: transparent;
+  color: var(--pr-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.productions-page .search-clear-btn:hover {
+  background: var(--pr-hover);
+  color: var(--pr-fg);
+}
+
+.productions-page .search-clear-btn:focus-visible {
+  outline: 2px solid var(--pr-acc);
+  outline-offset: 1px;
+}
+
+.productions-page .search-clear-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.productions-page .toolbar .btn-clear {
+  flex-shrink: 0;
+  height: 36px;
+  font-size: 12.5px;
+  color: var(--pr-muted);
+}
+
+.productions-page .toolbar .btn-clear:hover {
+  color: var(--pr-fg);
+}
+
+/* 5. Encapsulated Emerald Badge for CERRADO inside Productions Table (matches UI/UX-04.4) */
+.productions-page .agenda-production-table ::ng-deep .status-chip[data-status="CERRADO"] {
+  background: rgba(16, 185, 129, 0.11) !important;
+  color: #047857 !important;
+  border: 1px solid rgba(16, 185, 129, 0.28) !important;
+  box-shadow: none;
+}
+
+.productions-page .agenda-production-table ::ng-deep .status-chip[data-status="CERRADO"] .status-dot {
+  background: #10B981 !important;
+}
+
+:host-context([data-theme="dark"]) .productions-page .agenda-production-table ::ng-deep .status-chip[data-status="CERRADO"],
+:host-context(.dark) .productions-page .agenda-production-table ::ng-deep .status-chip[data-status="CERRADO"] {
+  background: rgba(16, 185, 129, 0.16) !important;
+  color: #6EE7B7 !important;
+  border: 1px solid rgba(52, 211, 153, 0.32) !important;
+}
+
+:host-context([data-theme="dark"]) .productions-page .agenda-production-table ::ng-deep .status-chip[data-status="CERRADO"] .status-dot,
+:host-context(.dark) .productions-page .agenda-production-table ::ng-deep .status-chip[data-status="CERRADO"] .status-dot {
+  background: #34D399 !important;
+}
+
+/* 6. Agenda Footer */
+.productions-page .agenda-footer {
+  padding: 11px 20px;
+  border-top: 1px solid var(--pr-bdr-soft);
+  border-radius: 0 0 13px 13px;
+  background: var(--pr-surf);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--pr-muted);
+}
+
+.productions-page .active-selection-indicator {
+  color: var(--pr-sub);
+  font-size: 12px;
+}
+
+.productions-page .active-selection-indicator strong {
+  color: var(--pr-fg);
+  font-weight: 600;
+}
+
+/* 7. Empty & Error States */
+.productions-page .empty-state-panel,
+.productions-page .prod-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 44px 24px;
+}
+
+.productions-page .prod-error-state {
+  background: var(--pr-bg);
+  border: 1px solid var(--pr-neg-bdr);
+  border-radius: 13px;
+  box-shadow: var(--pr-shadow);
+}
+
+.productions-page .empty-state-panel h3,
+.productions-page .prod-error-state h3 {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pr-fg);
+}
+
+.productions-page .empty-state-panel p,
+.productions-page .prod-error-state p {
+  margin: 0 0 10px;
+  max-width: 440px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--pr-muted);
+}
+
+.productions-page .empty-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--pr-surf);
+  border: 1px solid var(--pr-bdr);
+  color: var(--pr-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.productions-page .empty-icon-wrapper svg {
+  width: 20px;
+  height: 20px;
+}
+
+.productions-page .empty-icon-wrapper.error {
+  background: var(--pr-neg-bg);
+  border-color: var(--pr-neg-bdr);
+  color: var(--pr-neg);
+}
+
+/* 8. Responsive Breakpoints (matching Dashboard UI/UX-05) */
+@media (max-width: 1080px) {
+  .productions-page .metric-grid.productions-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .productions-page .agenda-panel .toolbar {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 16px;
+  }
+
+  .productions-page .agenda-panel .toolbar .search-field.grow {
+    flex: 1 1 220px;
+    width: auto;
+  }
+
+  .productions-page .agenda-panel .toolbar .status-filter-field {
+    flex: 0 0 204px;
+    min-width: 196px;
+  }
+}
+
+@media (max-width: 640px) {
+  .productions-page {
+    gap: 14px;
+  }
+
+  .productions-page .productions-header {
+    align-items: stretch;
+  }
+
+  .productions-page .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .productions-page .metric-grid.productions-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .productions-page .agenda-heading {
+    padding: 14px 16px;
+  }
+
+  .productions-page .agenda-panel .toolbar {
+    padding: 12px 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .productions-page .agenda-panel .toolbar .search-field.grow,
+  .productions-page .agenda-panel .toolbar .status-filter-field {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+  }
+
+  .productions-page .agenda-footer {
+    padding: 11px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .productions-page .prod-kpi-card,
+  .productions-page .prod-kpi-card .kpi-bicolor-fill,
+  .productions-page .agenda-panel .toolbar input[type="search"],
+  .productions-page .search-clear-btn {
+    transition: none;
+  }
+}

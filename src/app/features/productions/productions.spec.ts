@@ -362,16 +362,18 @@ describe('Productions', () => {
     searchInput.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector('#production-status');
-    select.value = 'SOLICITADO';
-    select.dispatchEvent(new Event('change'));
+    const statusTrigger: HTMLButtonElement = fixture.nativeElement.querySelector('#production-status');
+    statusTrigger.click();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('button[data-filter-status="SOLICITADO"]') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(1);
     expect(fixture.nativeElement.querySelector('tbody').textContent).toContain('Lanzamiento Aura');
 
-    select.value = 'CANCELADO';
-    select.dispatchEvent(new Event('change'));
+    statusTrigger.click();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('button[data-filter-status="CANCELADO"]') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('No encontramos producciones');
@@ -414,7 +416,7 @@ describe('Productions', () => {
 
     expect(fixture.nativeElement.querySelector('#create-organizer-input')).toBeNull();
     expect(fixture.nativeElement.querySelector('.create-mode-tabs')).toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('asociada automáticamente a tu cuenta autenticada');
+    expect(fixture.nativeElement.textContent).toContain('La producción quedará asociada automáticamente a tu cuenta.');
   });
 
   it('submits SELF payload with canonical organizerId for Organizador-only role', async () => {
@@ -608,9 +610,11 @@ describe('Productions', () => {
       submitDefaultPrevented = event.defaultPrevented;
     });
 
-    const equipSelect: HTMLSelectElement = fixture.nativeElement.querySelector('#equipment-select');
-    equipSelect.value = '10';
-    equipSelect.dispatchEvent(new Event('change'));
+    const equipTrigger: HTMLButtonElement = fixture.nativeElement.querySelector('#equipment-select');
+    equipTrigger.click();
+    fixture.detectChanges();
+    const equipOpt: HTMLButtonElement = fixture.nativeElement.querySelector('button[data-equipment-id="10"]');
+    equipOpt.click();
     fixture.detectChanges();
 
     const qtyInput: HTMLInputElement = fixture.nativeElement.querySelector('#equipment-qty');
@@ -671,5 +675,230 @@ describe('Productions', () => {
       serviceIds: [101]
     });
     expect(fixture.componentInstance.selectedServiceIds()).toEqual([]);
+  });
+
+  it('UI/UX-03: integrates corporate DateTime Picker inside Nueva producción modal with payload equivalence and Escape isolation', async () => {
+    enableRoles([AppRole.Productor]);
+    authzMock.ownerId.mockReturnValue('tenant-duoc:prod-user-1');
+    fixture = TestBed.createComponent(Productions);
+    fixture.detectChanges();
+
+    fixture.componentInstance.openCreateModal();
+    fixture.detectChanges();
+
+    const trigger = fixture.nativeElement.querySelector('#create-scheduled-input') as HTMLButtonElement;
+    expect(trigger).not.toBeNull();
+    expect(trigger.tagName).toBe('BUTTON');
+    expect(trigger.textContent?.trim()).toBe('Seleccionar fecha y hora');
+
+    // Open picker; pressing Escape closes ONLY the picker and leaves parent modal open
+    trigger.click();
+    fixture.detectChanges();
+    const popover = fixture.nativeElement.querySelector('.emx-dtp-popover') as HTMLElement;
+    expect(popover).not.toBeNull();
+    popover.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.emx-dtp-popover')).toBeNull();
+    expect(fixture.componentInstance.showCreate()).toBe(true);
+
+    // Reopen, choose 2035-06-15 19:45 via selects + day + 24h inputs, apply and submit
+    trigger.click();
+    fixture.detectChanges();
+    const yearSelect = fixture.nativeElement.querySelector('.emx-dtp-select--year') as HTMLSelectElement;
+    const monthSelect = fixture.nativeElement.querySelector('.emx-dtp-select--month') as HTMLSelectElement;
+    yearSelect.value = '2035';
+    yearSelect.dispatchEvent(new Event('change'));
+    monthSelect.value = '6';
+    monthSelect.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('button[data-day-key="2035-06-15"]') as HTMLButtonElement).click();
+    const hourInput = fixture.nativeElement.querySelector('#create-scheduled-input-hour') as HTMLInputElement;
+    const minInput = fixture.nativeElement.querySelector('#create-scheduled-input-minute') as HTMLInputElement;
+    hourInput.value = '19';
+    hourInput.dispatchEvent(new Event('input'));
+    minInput.value = '45';
+    minInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.emx-dtp-btn-apply') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.createForm.controls.scheduledAt.value).toBe('2035-06-15T19:45');
+    expect(trigger.textContent?.trim()).toBe('15/06/2035 · 19:45 h');
+
+    fixture.componentInstance.createForm.controls.name.setValue('Evento DateTime Corporativo');
+    fixture.componentInstance.createForm.controls.location.setValue('Centro Parque');
+    fixture.componentInstance.submitCreate();
+
+    expect(dataServiceMock.createProduction).toHaveBeenCalledWith({
+      organizerMode: 'SELF',
+      organizerId: 'tenant-duoc:prod-user-1',
+      name: 'Evento DateTime Corporativo',
+      scheduledAt: '2035-06-15T19:45',
+      location: 'Centro Parque',
+    });
+  });
+
+  // =========================================================================
+  // UI/UX-06 — Refinamiento integral de la pantalla principal de Producciones
+  // =========================================================================
+
+  it('UI/UX-06: renders semantically accurate KPI cards without misleading copy or blue pending track', async () => {
+    fixture = TestBed.createComponent(Productions);
+    fixture.detectChanges();
+    productionsSubject.next([
+      { ...mockProductions[0], id: 11, status: 'SOLICITADO' },
+      { ...mockProductions[1], id: 12, status: 'EN_MONTAJE' },
+      { ...mockProductions[0], id: 13, name: 'Foro Cerrado', status: 'CERRADO' },
+      { ...mockProductions[0], id: 14, name: 'Seminario Cerrado', status: 'CERRADO' },
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Producciones registradas');
+    expect(text).toContain('1 pendiente de confirmación');
+    expect(text).toContain('Producciones en montaje o ejecución');
+    expect(text).toContain('Cerradas');
+    expect(text).toContain('Estado terminal');
+
+    expect(text).not.toContain('cotizar rider');
+    expect(text).not.toContain('Cuadrilla técnica en terreno');
+    expect(text).not.toContain('Acta de cierre completada');
+    expect(text).not.toContain('Finalizadas');
+    expect(fixture.nativeElement.querySelector('.kpi-track-bicolor-blue')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.selection-hint')).toBeNull();
+
+    const values = Array.from(fixture.nativeElement.querySelectorAll('.metric-value')).map((el: any) =>
+      el.textContent.trim(),
+    );
+    expect(values).toEqual(['4', '1', '1', '2']);
+  });
+
+  it('UI/UX-06: exposes corporate status filter with all 7 consultable options and keyboard navigation', async () => {
+    fixture = TestBed.createComponent(Productions);
+    fixture.detectChanges();
+    productionsSubject.next([
+      { ...mockProductions[0], id: 11, name: 'Evento Solicitado', status: 'SOLICITADO' },
+      { ...mockProductions[1], id: 12, name: 'Evento Cerrado', status: 'CERRADO' },
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const trigger = fixture.nativeElement.querySelector('#production-status') as HTMLButtonElement;
+    expect(trigger).not.toBeNull();
+    expect(trigger.tagName).toBe('BUTTON');
+    expect(trigger.textContent?.trim()).toContain('Todos los estados');
+
+    // Open with ArrowDown
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+
+    const options = Array.from(
+      fixture.nativeElement.querySelectorAll('button[role="option"][data-filter-status]'),
+    ) as HTMLButtonElement[];
+    expect(options.map((o) => o.getAttribute('data-filter-status'))).toEqual([
+      'ALL',
+      'SOLICITADO',
+      'CONFIRMADO',
+      'EN_MONTAJE',
+      'EN_EJECUCION',
+      'CERRADO',
+      'CANCELADO',
+    ]);
+
+    // Escape closes without mutating filter
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="listbox"]')).toBeNull();
+    expect(fixture.componentInstance.status.value).toBe('');
+
+    // Filter to CERRADO via click (local filtering, zero extra HTTP calls)
+    const callsBefore = dataServiceMock.getProductions.mock.calls.length;
+    trigger.click();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('button[data-filter-status="CERRADO"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.rows().length).toBe(1);
+    expect(fixture.componentInstance.rows()[0].status).toBe('CERRADO');
+    expect(dataServiceMock.getProductions.mock.calls.length).toBe(callsBefore);
+  });
+
+  it('UI/UX-06: provides inline search clear button without extra HTTP calls', async () => {
+    fixture = TestBed.createComponent(Productions);
+    fixture.detectChanges();
+    productionsSubject.next(mockProductions);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('.search-clear-btn')).toBeNull();
+
+    const searchInput = fixture.nativeElement.querySelector('#production-search') as HTMLInputElement;
+    const callsBefore = dataServiceMock.getProductions.mock.calls.length;
+    searchInput.value = 'Aura';
+    searchInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const clearBtn = fixture.nativeElement.querySelector('.search-clear-btn') as HTMLButtonElement;
+    expect(clearBtn).not.toBeNull();
+    expect(clearBtn.getAttribute('aria-label')).toBe('Limpiar búsqueda');
+    expect(fixture.componentInstance.rows().length).toBe(1);
+
+    clearBtn.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.search.value).toBe('');
+    expect(fixture.componentInstance.rows().length).toBe(2);
+    expect(fixture.nativeElement.querySelector('.search-clear-btn')).toBeNull();
+    expect(dataServiceMock.getProductions.mock.calls.length).toBe(callsBefore);
+  });
+
+  it('UI/UX-06: differentiates contextual row actions (Gestionar for active, Consultar for terminal and read-only)', async () => {
+    enableRoles([AppRole.Productor]);
+    fixture = TestBed.createComponent(Productions);
+    fixture.detectChanges();
+    productionsSubject.next([
+      { ...mockProductions[0], id: 21, name: 'Activa', status: 'EN_MONTAJE', scheduledAt: '2030-09-10T10:00:00Z' },
+      { ...mockProductions[0], id: 22, name: 'Cerrada', status: 'CERRADO', scheduledAt: '2030-09-11T10:00:00Z' },
+      { ...mockProductions[0], id: 23, name: 'Cancelada', status: 'CANCELADO', scheduledAt: '2030-09-12T10:00:00Z' },
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('.row-select-btn')) as HTMLButtonElement[];
+    expect(buttons.map((b) => b.textContent?.trim())).toEqual(['Gestionar', 'Consultar', 'Consultar']);
+
+    // Read-only Organizador gets Consultar on all rows
+    enableRoles([AppRole.Organizador]);
+    const roFixture = TestBed.createComponent(Productions);
+    roFixture.detectChanges();
+    productionsSubject.next([
+      { ...mockProductions[0], id: 31, name: 'Propia Activa', status: 'SOLICITADO', scheduledAt: '2030-09-10T10:00:00Z' },
+      { ...mockProductions[0], id: 32, name: 'Propia Cerrada', status: 'CERRADO', scheduledAt: '2030-09-11T10:00:00Z' },
+    ]);
+    roFixture.detectChanges();
+    await roFixture.whenStable();
+
+    const roButtons = Array.from(roFixture.nativeElement.querySelectorAll('.row-select-btn')) as HTMLButtonElement[];
+    expect(roButtons.map((b) => b.textContent?.trim())).toEqual(['Consultar', 'Consultar']);
+    roFixture.destroy();
+  });
+
+  it('UI/UX-06: renders Mi contacto as corporate secondary button preserving permission gates', async () => {
+    enableRoles([AppRole.Productor]);
+    authzMock.ownerId.mockReturnValue('tenant-duoc:prod-user-1');
+    fixture = TestBed.createComponent(Productions);
+    fixture.detectChanges();
+    productionsSubject.next(mockProductions);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const contactBtn = fixture.nativeElement.querySelector('.btn-self-contact-discreet') as HTMLButtonElement;
+    expect(contactBtn).not.toBeNull();
+    expect(contactBtn.textContent?.trim()).toContain('Mi contacto');
+    expect(contactBtn.classList.contains('emx-btn--secondary')).toBe(true);
+    expect(contactBtn.querySelector('svg')).not.toBeNull();
   });
 });

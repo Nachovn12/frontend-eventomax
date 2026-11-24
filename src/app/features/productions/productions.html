@@ -1,4 +1,4 @@
-<div class="page-content">
+<div class="page-content productions-page">
   <header class="page-header productions-header">
     <div class="header-copy">
       <p class="eyebrow">Planificación y coordinación</p>
@@ -13,12 +13,13 @@
           <button
             type="button"
             emxButton
-            variant="ghost"
-            size="small"
+            variant="secondary"
+            size="medium"
             class="btn-self-contact-discreet"
             (click)="openSelfContactForm()"
           >
-            Mi contacto
+            <svg lucideContactRound class="action-btn-icon" strokeWidth="1.9" aria-hidden="true"></svg>
+            <span>Mi contacto</span>
           </button>
         }
         <button
@@ -32,10 +33,7 @@
           aria-haspopup="dialog"
           (click)="openCreateModal(createTrigger)"
         >
-          <svg class="action-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
+          <svg lucidePlus class="action-btn-icon" strokeWidth="2.2" aria-hidden="true"></svg>
           <span>Nueva producción</span>
         </button>
       </div>
@@ -138,20 +136,20 @@
   @if (isLoading()) {
     <section class="metric-grid productions-metrics" aria-busy="true" aria-label="Cargando métricas">
       @for (card of [1, 2, 3, 4]; track card) {
-        <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm emx-kpi-skeleton">
+        <article class="metric-card prod-kpi-card prod-kpi-skeleton">
           <div class="kpi-top">
-            <div class="skeleton skeleton-pill" style="width: 96px; height: 16px;"></div>
+            <div class="skeleton skeleton-pill" style="width: 96px; height: 15px;"></div>
             <div class="skeleton skeleton-icon-tile"></div>
           </div>
-          <div class="skeleton skeleton-val" style="width: 50px; height: 28px; margin: 12px 0 6px;"></div>
-          <div class="skeleton skeleton-text short" style="width: 140px; height: 11px; margin-bottom: 12px;"></div>
+          <div class="skeleton skeleton-val" style="width: 48px; height: 30px; margin: 10px 0 6px;"></div>
+          <div class="skeleton skeleton-text short" style="width: 148px; height: 11px; margin-bottom: 14px;"></div>
           <div class="skeleton skeleton-bar" style="width: 100%; height: 4px;"></div>
         </article>
       }
     </section>
 
-    <section class="panel smooth-shadow-ring-xs emx-elevate-panel" aria-busy="true">
-      <div class="panel-heading">
+    <section class="panel agenda-panel" aria-busy="true">
+      <div class="panel-heading agenda-heading">
         <div>
           <h2>Agenda de producciones</h2>
           <p>Fechas programadas, ubicaciones y estado operativo en orden cronológico.</p>
@@ -161,7 +159,7 @@
         <div class="skeleton skeleton-toolbar"></div>
       </div>
       <div class="productions-table-skeleton" aria-hidden="true">
-        @for (row of [1, 2, 3, 4, 5, 6]; track row) {
+        @for (row of [1, 2, 3, 4, 5]; track row) {
           <div class="skeleton-table-row">
             <div class="skeleton skeleton-date-tile"></div>
             <div class="skeleton-row-content">
@@ -170,123 +168,115 @@
             </div>
             <div class="skeleton skeleton-text" style="width: 20%; height: 12px;"></div>
             <div class="skeleton skeleton-pill" style="width: 76px; height: 22px;"></div>
-            <div class="skeleton skeleton-btn" style="width: 80px; height: 28px;"></div>
+            <div class="skeleton skeleton-btn" style="width: 84px; height: 30px;"></div>
           </div>
         }
       </div>
     </section>
   } @else if (isError()) {
-    <div class="empty-state smooth-shadow-ring-xs" role="alert">
-      <div class="empty-icon-wrapper amber" aria-hidden="true">
+    <div class="empty-state prod-error-state" role="alert">
+      <div class="empty-icon-wrapper error" aria-hidden="true">
         <svg lucideCircleAlert strokeWidth="1.75" />
       </div>
       <h3>No pudimos cargar las producciones</h3>
-      <p>No fue posible obtener la información en este momento.</p>
+      <p>No fue posible obtener la información en este momento. Intenta nuevamente en unos segundos.</p>
       <button type="button" emxButton variant="secondary" size="medium" (click)="retry()">
         Reintentar
       </button>
     </div>
   } @else {
-    <section class="metric-grid productions-metrics emx-noticeline-grid emx-content-fade-in" aria-label="Resumen operativo">
-      <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+    <section class="metric-grid productions-metrics emx-content-fade-in" aria-label="Resumen operativo">
+      <article class="metric-card prod-kpi-card">
         <div class="kpi-top">
           <div class="kpi-label-group">
             <span class="kpi-status-dot blue" aria-hidden="true"></span>
             <span>Producciones</span>
           </div>
           <div class="kpi-icon-tile blue" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon" aria-hidden="true">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
+            <svg lucideCalendarDays class="kpi-vector-icon" strokeWidth="1.9" aria-hidden="true"></svg>
           </div>
         </div>
         <strong class="metric-value font-mono-num">{{ total() }}</strong>
-        <p class="metric-foot">Eventos registrados en agenda</p>
+        <p class="metric-foot">Producciones registradas</p>
         <div class="kpi-micro-meta">
-          <span class="meta-dot blue"></span><span title="Producciones en montaje o ejecución">{{ active() }} en operación</span>
-          <span class="meta-sep">·</span>
-          <span class="meta-dot purple"></span>{{ closed() }} cerradas
+          <span class="meta-dot blue" aria-hidden="true"></span>
+          <span title="Producciones en montaje o ejecución">{{ active() }} en operación</span>
+          <span class="meta-sep" aria-hidden="true">·</span>
+          <span class="meta-dot emerald" aria-hidden="true"></span>
+          <span>{{ closed() }} cerradas</span>
         </div>
         <div class="kpi-bicolor-track" aria-hidden="true">
           <div class="kpi-bicolor-fill blue" [style.width.%]="activePct()"></div>
-          <div class="kpi-bicolor-fill purple" [style.width.%]="closedPct()"></div>
+          <div class="kpi-bicolor-fill emerald" [style.width.%]="closedPct()"></div>
         </div>
       </article>
 
-      <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+      <article class="metric-card prod-kpi-card">
         <div class="kpi-top">
           <div class="kpi-label-group">
             <span class="kpi-status-dot amber" aria-hidden="true"></span>
             <span>Por confirmar</span>
           </div>
           <div class="kpi-icon-tile amber" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
+            <svg lucideClock class="kpi-vector-icon" strokeWidth="1.9" aria-hidden="true"></svg>
           </div>
         </div>
         <strong class="metric-value font-mono-num">{{ pending() }}</strong>
         <p class="metric-foot">Solicitudes pendientes de revisión</p>
         <div class="kpi-micro-meta">
-          <span class="meta-dot amber"></span>{{ pending() }} requiere cotizar rider
+          <span class="meta-dot amber" aria-hidden="true"></span>
+          <span>{{ pending() }} {{ pending() === 1 ? 'pendiente de confirmación' : 'pendientes de confirmación' }}</span>
         </div>
-        <div class="kpi-bicolor-track kpi-track-scaled kpi-track-bicolor-blue" aria-hidden="true">
-          <div class="kpi-bicolor-fill amber is-scaled" [style.--bar-scale]="pendingPct() / 100"></div>
+        <div class="kpi-bicolor-track" aria-hidden="true">
+          <div class="kpi-bicolor-fill amber" [style.width.%]="pendingPct()"></div>
         </div>
       </article>
 
-      <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+      <article class="metric-card prod-kpi-card">
         <div class="kpi-top">
           <div class="kpi-label-group">
             <span class="kpi-status-dot green" aria-hidden="true"></span>
             <span>En operación</span>
           </div>
           <div class="kpi-icon-tile green" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon" aria-hidden="true">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
+            <svg lucideActivity class="kpi-vector-icon" strokeWidth="1.9" aria-hidden="true"></svg>
           </div>
         </div>
         <strong class="metric-value font-mono-num">{{ active() }}</strong>
         <p class="metric-foot">Montaje y ejecución en curso</p>
         <div class="kpi-micro-meta">
-          <span class="meta-dot green"></span>Cuadrilla técnica en terreno
+          <span class="meta-dot green" aria-hidden="true"></span>
+          <span>Producciones en montaje o ejecución</span>
         </div>
-        <div class="kpi-bicolor-track kpi-track-scaled" aria-hidden="true">
-          <div class="kpi-bicolor-fill green is-scaled" [style.--bar-scale]="activePct() / 100"></div>
+        <div class="kpi-bicolor-track" aria-hidden="true">
+          <div class="kpi-bicolor-fill green" [style.width.%]="activePct()"></div>
         </div>
       </article>
 
-      <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
+      <article class="metric-card prod-kpi-card">
         <div class="kpi-top">
           <div class="kpi-label-group">
-            <span class="kpi-status-dot purple" aria-hidden="true"></span>
-            <span>Finalizadas</span>
+            <span class="kpi-status-dot emerald" aria-hidden="true"></span>
+            <span>Cerradas</span>
           </div>
-          <div class="kpi-icon-tile purple" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon" aria-hidden="true">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-              <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
+          <div class="kpi-icon-tile emerald" aria-hidden="true">
+            <svg lucideCircleCheck class="kpi-vector-icon" strokeWidth="1.9" aria-hidden="true"></svg>
           </div>
         </div>
         <strong class="metric-value font-mono-num">{{ closed() }}</strong>
         <p class="metric-foot">Producciones cerradas</p>
         <div class="kpi-micro-meta">
-          <span class="meta-dot purple"></span>Acta de cierre completada
+          <span class="meta-dot emerald" aria-hidden="true"></span>
+          <span>Estado terminal</span>
         </div>
-        <div class="kpi-bicolor-track kpi-track-scaled" aria-hidden="true">
-          <div class="kpi-bicolor-fill purple is-scaled" [style.--bar-scale]="closedPct() / 100"></div>
+        <div class="kpi-bicolor-track" aria-hidden="true">
+          <div class="kpi-bicolor-fill emerald" [style.width.%]="closedPct()"></div>
         </div>
       </article>
     </section>
 
     <section
-      class="panel agenda-panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel emx-content-fade-in"
+      class="panel agenda-panel emx-content-fade-in"
       aria-labelledby="agenda-heading"
     >
       <div class="panel-heading agenda-heading">
@@ -294,19 +284,16 @@
           <div class="heading-title-row">
             <h2 id="agenda-heading">Agenda de producciones</h2>
             @if (total() > 0) {
-              <span class="count-pill">{{ rows().length }}</span>
+              <span class="count-pill font-mono-num">{{ rows().length }}</span>
             }
           </div>
           <p>Fechas programadas, ubicaciones y estado operativo en orden cronológico.</p>
         </div>
-        @if (total() > 0) {
-          <span class="selection-hint">{{ canUpdate() ? 'Haz clic en «Gestionar» para consultar el detalle o actualizar el estado' : 'Haz clic en «Ver detalle» para consultar tu producción' }}</span>
-        }
       </div>
 
       <div class="toolbar" role="search" aria-label="Filtrar producciones">
-        <label class="field search-field grow" for="production-search">
-          <span class="sr-only">Buscar producción</span>
+        <div class="field search-field grow">
+          <label class="sr-only" for="production-search">Buscar producción</label>
           <svg lucideSearch class="field-icon" strokeWidth="2" aria-hidden="true" />
           <input
             id="production-search"
@@ -314,20 +301,36 @@
             type="search"
             [formControl]="search"
             placeholder="Buscar por nombre, organizador o ubicación"
+            autocomplete="off"
           />
-        </label>
-        <div class="field select-field">
+          @if (searchHasValue()) {
+            <button
+              type="button"
+              class="search-clear-btn"
+              aria-label="Limpiar búsqueda"
+              (click)="clearSearch(); searchInput.focus()"
+            >
+              <svg lucideX class="search-clear-icon" strokeWidth="2.1" aria-hidden="true"></svg>
+            </button>
+          }
+        </div>
+        <div class="field status-filter-field">
           <label class="sr-only" for="production-status">Estado</label>
-          <select id="production-status" [formControl]="status">
-            <option value="">Todos los estados</option>
-            @for (item of statuses(); track item) {
-              <option [value]="item">{{ getLabel(item) }}</option>
-            }
-          </select>
-          <svg lucideChevronDown class="select-chevron" strokeWidth="1.75" aria-hidden="true" />
+          <emx-status-filter-selector
+            inputId="production-status"
+            [formControl]="status"
+            [statuses]="statuses()"
+          />
         </div>
         @if (hasActiveFilters()) {
-          <button class="btn-clear" type="button" emxButton variant="ghost" size="small" (click)="clearFilters(); searchInput.focus()">
+          <button
+            class="btn-clear"
+            type="button"
+            emxButton
+            variant="ghost"
+            size="small"
+            (click)="clearFilters(); searchInput.focus()"
+          >
             Limpiar filtros
           </button>
         }
@@ -356,10 +359,7 @@
               size="medium"
               (click)="openCreateModal(emptyCreateTrigger)"
             >
-              <svg class="action-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
+              <svg lucidePlus class="action-btn-icon" strokeWidth="2.2" aria-hidden="true"></svg>
               <span>Nueva producción</span>
             </button>
           }
@@ -370,7 +370,7 @@
             <svg lucideSearchX strokeWidth="1.75" />
           </div>
           <h3>No encontramos producciones</h3>
-          <p>Prueba con otro nombre, ubicación o estado.</p>
+          <p>No hay coincidencias para los filtros aplicados. Prueba con otro término de búsqueda o cambia el estado seleccionado.</p>
           <button type="button" emxButton variant="secondary" size="small" (click)="clearFilters(); searchInput.focus()">
             Limpiar filtros
           </button>
@@ -381,7 +381,9 @@
           [rows]="rows()"
           [selectable]="true"
           [selectedId]="selectedProductionId()"
-          [actionLabel]="canUpdate() ? 'Gestionar' : 'Ver detalle'"
+          [actionLabel]="canUpdate() ? 'Gestionar' : 'Consultar'"
+          [terminalActionLabel]="'Consultar'"
+          [showActionIcon]="true"
           (selectProduction)="selectProduction($event)"
           caption="Agenda de producciones"
         />
@@ -392,7 +394,7 @@
           <span role="status">{{ rows().length }} de {{ total() }} producciones visibles</span>
           @if (detail(); as current) {
             <span class="active-selection-indicator">
-              En gestión: <strong>#{{ current.id }} {{ current.name }}</strong>
+              En consulta: <strong>#{{ current.id }} {{ current.name }}</strong>
             </span>
           }
         </div>
@@ -411,11 +413,42 @@
       >
         <div class="modal-header detail-heading">
           <div class="detail-heading-main">
-            <div class="detail-badges">
+            <div class="detail-header-badges">
               <emx-tag class="detail-id-badge">Producción #{{ selected.id }}</emx-tag>
               <emx-status [status]="selected.status" />
             </div>
             <h2 id="detail-panel-title" class="modal-title detail-title">{{ selected.name }}</h2>
+
+            @if (selected.status !== 'CANCELADO') {
+              <ol
+                class="lifecycle-stepper"
+                [class.is-all-closed]="selected.status === 'CERRADO'"
+                aria-label="Ciclo administrativo registrado"
+              >
+                @for (stage of lifecycleStages; track stage.key; let idx = $index) {
+                  <li
+                    class="lifecycle-step"
+                    [class.is-prior]="idx < getLifecycleStageIndex(selected.status)"
+                    [class.is-current]="idx === getLifecycleStageIndex(selected.status)"
+                    [class.is-terminal-closed]="selected.status === 'CERRADO' && idx === getLifecycleStageIndex(selected.status)"
+                    [class.is-future]="idx > getLifecycleStageIndex(selected.status)"
+                    [attr.aria-current]="idx === getLifecycleStageIndex(selected.status) ? 'step' : null"
+                  >
+                    <span class="lifecycle-dot" aria-hidden="true">
+                      @if (idx < getLifecycleStageIndex(selected.status) || (selected.status === 'CERRADO' && idx === getLifecycleStageIndex(selected.status))) {
+                        <svg lucideCheck class="lifecycle-check-icon"></svg>
+                      }
+                    </span>
+                    <span class="lifecycle-label">{{ stage.label }}</span>
+                  </li>
+                }
+              </ol>
+            } @else {
+              <div class="lifecycle-cancelled-strip" role="note">
+                <svg lucideBan class="lifecycle-cancel-icon" aria-hidden="true"></svg>
+                <span>Flujo detenido · Producción en estado cancelado</span>
+              </div>
+            }
           </div>
           <button
             id="detail-close-btn"
@@ -445,70 +478,100 @@
                 <dd>{{ selected.location }}</dd>
               </div>
               <div class="meta-item">
-                <dt><svg lucideBuilding2 class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Organizador</dt>
+                <dt><svg lucideUserRound class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Organizador</dt>
                 <dd>{{ getOrganizerLabel(selected) }}</dd>
               </div>
               <div class="meta-item">
-                <dt><svg lucideCircleCheck class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Estado operativo</dt>
-                <dd>{{ getReadableStatus(selected.status) }}</dd>
+                <dt><svg lucideUsersRound class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Cuadrilla técnica</dt>
+                <dd>
+                  @if (selected.crewName) {
+                    <span>{{ selected.crewName }}</span>
+                    @if (selected.crewId) {
+                      <span class="meta-crew-code">{{ selected.crewId }}</span>
+                    }
+                  } @else {
+                    <span class="meta-muted-value">Sin cuadrilla asignada</span>
+                  }
+                </dd>
               </div>
-              @if (selected.crewName) {
-                <div class="meta-item meta-item-full">
-                  <dt><svg lucideUsers class="meta-icon" strokeWidth="1.75" aria-hidden="true" /> Cuadrilla técnica asignada</dt>
-                  <dd>{{ selected.crewName }}</dd>
-                </div>
-              }
             </dl>
           </section>
 
-          <section class="detail-section" aria-labelledby="operations-docs-heading">
-            <div class="detail-section-header">
-              <h3 id="operations-docs-heading">Documentos y Hoja de Ruta</h3>
-            </div>
+          @if (hasDocumentActions(selected.status) || quoteError()) {
+            <section class="detail-section docs-section" aria-labelledby="operations-docs-heading">
+              <div class="detail-section-header">
+                <h3 id="operations-docs-heading">Documentos y Hoja de Ruta</h3>
+              </div>
 
-            @if (quoteError()) {
-              <div class="field-error-banner" role="alert">{{ quoteError() }}</div>
-            }
-
-            <div class="docs-action-buttons">
-              @if (['EN_MONTAJE', 'EN_EJECUCION', 'CERRADO'].includes(selected.status) && canViewCrewTicket()) {
-                <button
-                  #ticketBtn
-                  type="button"
-                  emxButton
-                  variant="secondary"
-                  size="medium"
-                  class="btn-ticket-view"
-                  [attr.aria-label]="'Ver ticket de cuadrilla para producción #' + selected.id"
-                  (click)="viewCrewTicket(selected.id, ticketBtn)"
-                >
-                  <svg lucideTicket class="icon-inline" strokeWidth="1.75" aria-hidden="true" />
-                  <span>Ver Ticket de Cuadrilla</span>
-                </button>
+              @if (quoteError()) {
+                <div class="field-error-banner" role="alert">{{ quoteError() }}</div>
               }
 
-              @if (selected.status === 'CERRADO' && canDownloadQuote()) {
-                <button
-                  type="button"
-                  emxButton
-                  variant="secondary"
-                  size="medium"
-                  class="btn-quote-download"
-                  [disabled]="quoteDownloading()"
-                  [attr.aria-label]="'Descargar acta de cierre en PDF para producción #' + selected.id"
-                  (click)="downloadQuotePdf(selected.id)"
-                >
-                  <svg lucideDownload class="icon-inline" strokeWidth="1.75" aria-hidden="true" />
-                  <span>{{ quoteDownloading() ? 'Descargando Acta…' : 'Descargar Acta de Cierre (PDF)' }}</span>
-                </button>
+              @if (hasDocumentActions(selected.status)) {
+                <div class="docs-action-list">
+                  @if (canShowCrewTicketAction(selected.status)) {
+                    <button
+                      #ticketBtn
+                      type="button"
+                      class="doc-action-card btn-ticket-view"
+                      [attr.aria-label]="'Ver ticket de cuadrilla para producción #' + selected.id"
+                      (click)="viewCrewTicket(selected.id, ticketBtn)"
+                    >
+                      <span class="doc-card-icon-wrap" aria-hidden="true">
+                        <svg lucideTicket class="doc-card-icon" strokeWidth="1.85"></svg>
+                      </span>
+                      <span class="doc-card-copy">
+                        <span class="doc-card-title">Ticket de Cuadrilla</span>
+                        <span class="doc-card-subtitle">Orden de Trabajo Técnica</span>
+                      </span>
+                      <svg lucideChevronRight class="doc-card-trailing" strokeWidth="2" aria-hidden="true"></svg>
+                    </button>
+                  }
+
+                  @if (canShowQuotePdfAction(selected.status)) {
+                    <button
+                      type="button"
+                      class="doc-action-card btn-quote-download"
+                      [disabled]="quoteDownloading()"
+                      [attr.aria-label]="'Descargar acta de cierre en PDF para producción #' + selected.id"
+                      (click)="downloadQuotePdf(selected.id)"
+                    >
+                      <span class="doc-card-icon-wrap doc-pdf" aria-hidden="true">
+                        @if (quoteDownloading()) {
+                          <svg lucideLoaderCircle class="doc-card-icon spin" strokeWidth="2"></svg>
+                        } @else {
+                          <svg lucideFileText class="doc-card-icon" strokeWidth="1.85"></svg>
+                        }
+                      </span>
+                      <span class="doc-card-copy">
+                        <span class="doc-card-title">{{ quoteDownloading() ? 'Descargando Acta de Cierre…' : 'Acta de Cierre PDF' }}</span>
+                        <span class="doc-card-subtitle">{{ quoteDownloading() ? 'Generando documento oficial…' : 'Documento oficial de cierre operativo' }}</span>
+                      </span>
+                      <svg lucideDownload class="doc-card-trailing" strokeWidth="2" aria-hidden="true"></svg>
+                    </button>
+                  }
+                </div>
               }
+            </section>
+          } @else if (selected.status === 'SOLICITADO' || selected.status === 'CONFIRMADO') {
+            <div class="docs-contextual-note" role="note">
+              <svg lucideFileText class="docs-note-icon" aria-hidden="true"></svg>
+              <span>
+                Los documentos operativos (Ticket de Cuadrilla y Acta de Cierre) se habilitan en las etapas de montaje y cierre según permisos.
+              </span>
             </div>
-          </section>
+          }
 
           <section class="detail-section" aria-labelledby="reservations-heading">
             <div class="detail-section-header">
               <h3 id="reservations-heading">Equipos reservados</h3>
-              <span class="count-pill subtle">{{ productionReservations().length }}</span>
+              @if (!reservationsLoading() && !reservationsError() && productionReservations().length > 0) {
+                <span class="count-pill subtle">
+                  {{ productionReservations().length }} {{ productionReservations().length === 1 ? 'equipo' : 'equipos' }} · {{ reservationsTotalUnits() }} u.
+                </span>
+              } @else {
+                <span class="count-pill subtle">{{ productionReservations().length }}</span>
+              }
             </div>
 
             @if (reservationsLoading()) {
@@ -533,18 +596,38 @@
                 </button>
               </div>
             } @else if (productionReservations().length > 0) {
-              <ul class="reservations-card-list">
+              <ul class="reservations-card-list" aria-label="Equipamiento reservado para la producción">
                 @for (r of productionReservations(); track r.reservationId) {
                   <li class="reservation-card-item">
-                    <div class="reservation-item-info">
-                      <strong>{{ r.equipmentName }}</strong>
-                      <span class="reservation-item-meta">Reserva #{{ r.reservationId }}</span>
+                    <div class="res-card-top">
+                      <span class="draft-item-thumb" aria-hidden="true">
+                        @if (getEquipmentThumbnail(r.equipmentId); as thumbSrc) {
+                          <img
+                            [src]="thumbSrc"
+                            [alt]="''"
+                            (error)="onDraftEquipmentImageError(r.equipmentId)"
+                          />
+                        } @else {
+                          <svg lucidePackage class="draft-thumb-fallback"></svg>
+                        }
+                      </span>
+                      <div class="reservation-item-info">
+                        <strong class="res-item-name">{{ r.equipmentName }}</strong>
+                        <span class="reservation-item-meta">Reserva #{{ r.reservationId }} · Equipo #{{ r.equipmentId }}</span>
+                      </div>
                     </div>
-                    <div class="reservation-item-status-col">
-                      <span class="reservation-qty">{{ r.quantity }} u.</span>
-                      <span class="reservation-status-tag">
+                    <div class="res-card-bottom">
+                      <span
+                        class="reservation-status-tag"
+                        [class.is-reserved]="r.status === 'RESERVED'"
+                        [class.is-other]="r.status !== 'RESERVED'"
+                      >
                         <span class="status-dot" aria-hidden="true"></span>
-                        {{ getReservationStatusLabel(r.status) }}
+                        <span>{{ getReservationStatusLabel(r.status) }}</span>
+                      </span>
+                      <span class="draft-qty-group">
+                        <span class="draft-qty-label">Cantidad</span>
+                        <span class="reservation-qty">{{ r.quantity }} u.</span>
                       </span>
                     </div>
                   </li>
@@ -559,7 +642,11 @@
 
           @if (isTerminalStatus(selected.status)) {
             <section class="detail-section terminal-notice-section" aria-label="Información de estado terminal">
-              <div class="terminal-notice-card" [class.cancelled]="selected.status === 'CANCELADO'">
+              <div
+                class="terminal-notice-card"
+                [class.closed]="selected.status === 'CERRADO'"
+                [class.cancelled]="selected.status === 'CANCELADO'"
+              >
                 <div class="terminal-notice-header">
                   @if (selected.status === 'CERRADO') {
                     <div class="terminal-notice-icon-wrapper closed">
@@ -567,20 +654,24 @@
                     </div>
                   } @else {
                     <div class="terminal-notice-icon-wrapper cancelled">
-                      <svg lucideCircleAlert class="terminal-notice-icon cancelled" strokeWidth="2" aria-hidden="true" />
+                      <svg lucideBan class="terminal-notice-icon cancelled" strokeWidth="2" aria-hidden="true" />
                     </div>
                   }
-                  <div>
+                  <div class="terminal-notice-copy">
                     <h3 class="terminal-notice-title">
-                      {{ selected.status === 'CERRADO' ? 'Producción cerrada' : 'Producción cancelada' }}
+                      {{ selected.status === 'CERRADO' ? 'Ciclo operativo finalizado' : 'Producción cancelada' }}
                     </h3>
                     <p class="terminal-notice-desc">
                       {{
                         selected.status === 'CERRADO'
-                          ? 'Producción cerrada. No se permiten nuevas transiciones de estado.'
+                          ? 'La producción se encuentra cerrada administrativamente y su información permanece disponible para consulta.'
                           : 'Producción cancelada. No se permiten nuevas transiciones de estado.'
                       }}
                     </p>
+                    <span class="terminal-readonly-meta">
+                      <svg lucideLock class="terminal-lock-icon" aria-hidden="true"></svg>
+                      <span>Estado terminal · Solo lectura</span>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -591,12 +682,12 @@
                 <div>
                   <h3 id="workflow-heading">Transición de estado</h3>
                   <p class="workflow-subtitle">
-                    Selecciona el nuevo estado operativo para esta producción.
+                    Selecciona el siguiente estado permitido para avanzar o detener el flujo operativo.
                   </p>
                 </div>
               </div>
 
-              <form class="workflow-form" [formGroup]="workflowForm" (ngSubmit)="submitStatus()" aria-label="Cambiar estado" novalidate>
+              <form id="production-workflow-form" class="workflow-form" [formGroup]="workflowForm" (ngSubmit)="submitStatus()" aria-label="Cambiar estado" novalidate>
                 <div class="transition-preview">
                   <div class="transition-step">
                     <span class="step-label">Estado actual</span>
@@ -604,31 +695,37 @@
                   </div>
                   <svg lucideArrowRight class="transition-arrow" strokeWidth="1.75" aria-hidden="true" />
                   <div class="transition-step grow">
-                    <label class="step-label" for="production-next-status">Estado solicitado</label>
-                    <div class="select-wrapper">
-                      <select id="production-next-status" [formControl]="nextStatus">
-                        @for (item of statuses(); track item) {
-                          @if (item !== 'SOLICITADO') {
-                            <option [value]="item">{{ getLabel(item) }}</option>
-                          }
-                        }
-                      </select>
-                      <svg lucideChevronDown class="select-chevron" strokeWidth="1.75" aria-hidden="true" />
-                    </div>
+                    <label class="step-label" for="production-next-status">Estado destino</label>
+                    <emx-status-transition-selector
+                      inputId="production-next-status"
+                      [formControl]="nextStatus"
+                      [allowedStatuses]="allowedNextStatuses()"
+                    />
                   </div>
                 </div>
 
                 @if (nextStatus.value === 'CONFIRMADO') {
                   @if (confirmContactMissing()) {
-                    <p class="confirm-contact-notice" role="status">
-                      Aviso: el organizador no tiene un contacto registrado. La confirmación continuará normalmente, pero las notificaciones por correo requerirán que el organizador configure su contacto.
-                    </p>
+                    <div class="confirm-contact-notice" role="status">
+                      <svg lucideInfo class="contextual-note-icon" aria-hidden="true"></svg>
+                      <span>
+                        Aviso: el organizador no tiene un contacto registrado. La confirmación continuará normalmente, pero las notificaciones por correo requerirán que el organizador configure su contacto.
+                      </span>
+                    </div>
                   }
+
                   <div class="reservation-builder">
                     <div class="reservation-builder-head">
-                      <h4>Asignación obligatoria de equipos</h4>
+                      <div class="builder-title-row">
+                        <h4>Asignación obligatoria de equipos</h4>
+                        @if (reservationItems().length > 0) {
+                          <span class="draft-summary-pill">
+                            {{ reservationItems().length }} {{ reservationItems().length === 1 ? 'equipo' : 'equipos' }} · {{ draftReservationUnits() }} {{ draftReservationUnits() === 1 ? 'unidad' : 'unidades' }}
+                          </span>
+                        }
+                      </div>
                       <p>
-                        Para confirmar la producción, asigna al menos un equipo con stock disponible en inventario.
+                        Asigna al menos un equipo con stock disponible antes de confirmar la producción.
                       </p>
                     </div>
 
@@ -638,65 +735,143 @@
 
                     <div class="picker-stack">
                       <div class="picker-field picker-equipment">
-                        <label for="equipment-select">Equipo disponible</label>
-                        <div class="select-wrapper">
-                          <select id="equipment-select" [formControl]="selectedEquipmentId">
-                            <option value="">Seleccionar equipo</option>
-                            @for (eq of availableEquipment(); track eq.id) {
-                              <option [value]="eq.id" [disabled]="(eq.availableQty ?? eq.availableQuantity) <= 0">
-                                {{ eq.name }}{{ (eq.description || eq.category) ? ' (' + (eq.description || eq.category) + ')' : '' }} — Stock: {{ eq.availableQty ?? eq.availableQuantity }}
-                              </option>
-                            }
-                          </select>
-                          <svg lucideChevronDown class="select-chevron" strokeWidth="1.75" aria-hidden="true" />
-                        </div>
+                        <label for="equipment-select">Equipo de catálogo</label>
+                        <emx-equipment-combobox
+                          inputId="equipment-select"
+                          [formControl]="selectedEquipmentId"
+                          [equipment]="availableEquipment()"
+                          [draftQuantities]="draftEquipmentTotals()"
+                        />
                       </div>
 
                       <div class="picker-qty-row">
                         <div class="picker-field picker-qty">
                           <label for="equipment-qty">Cantidad</label>
-                          <input id="equipment-qty" type="number" min="1" [formControl]="selectedQuantity" />
+                          <div class="qty-stepper">
+                            <button
+                              type="button"
+                              class="qty-step-btn"
+                              aria-label="Disminuir cantidad"
+                              [disabled]="saving() || selectedQuantity.value <= 1"
+                              (click)="stepQuantity(-1)"
+                            >
+                              <svg lucideMinus class="qty-step-icon" aria-hidden="true"></svg>
+                            </button>
+                            <input
+                              id="equipment-qty"
+                              type="number"
+                              min="1"
+                              class="qty-step-input"
+                              [formControl]="selectedQuantity"
+                            />
+                            <button
+                              type="button"
+                              class="qty-step-btn"
+                              aria-label="Aumentar cantidad"
+                              [disabled]="saving() || (selectedEquipmentRemainingStock() !== null && selectedQuantity.value >= selectedEquipmentRemainingStock()!)"
+                              (click)="stepQuantity(1)"
+                            >
+                              <svg lucidePlus class="qty-step-icon" aria-hidden="true"></svg>
+                            </button>
+                          </div>
                         </div>
-                        <button type="button" emxButton variant="secondary" size="small" class="btn-add-item" (click)="addReservationItem()">
-                          Agregar ítem
+
+                        <button
+                          type="button"
+                          emxButton
+                          variant="secondary"
+                          size="small"
+                          class="btn-add-item"
+                          [disabled]="saving()"
+                          (click)="addReservationItem()"
+                        >
+                          <svg lucidePlus class="icon-inline-sm" aria-hidden="true"></svg>
+                          <span>Agregar equipo</span>
                         </button>
                       </div>
                     </div>
 
                     @if (reservationItems().length > 0) {
-                      <ul class="added-items-list" aria-label="Equipos asignados para confirmar la producción">
-                        @for (item of reservationItems(); track item.equipmentId; let idx = $index) {
-                          <li class="added-item-card">
-                            <div class="added-item-info">
-                              <strong>{{ getEquipmentName(item.equipmentId) }}</strong>
-                              <span class="qty-badge">{{ item.quantity }} unid.</span>
-                            </div>
-                            <button
-                              type="button"
-                              emxButton
-                              variant="danger"
-                              size="xs"
-                              class="btn-remove-item"
-                              [attr.aria-label]="'Quitar ' + getEquipmentName(item.equipmentId)"
-                              (click)="removeReservationItem(idx)"
-                            >
-                              Quitar
-                            </button>
-                          </li>
-                        }
-                      </ul>
+                      <div class="draft-items-block">
+                        <div class="draft-items-caption">
+                          <span>Equipos pendientes de confirmación</span>
+                          <span class="draft-pending-tag">Provisional</span>
+                        </div>
+                        <ul class="added-items-list" aria-label="Equipos pendientes de confirmación">
+                          @for (item of reservationItems(); track item.equipmentId; let idx = $index) {
+                            <li class="added-item-card">
+                              <div class="draft-card-top">
+                                <span class="draft-item-thumb" aria-hidden="true">
+                                  @if (getEquipmentThumbnail(item.equipmentId); as thumbSrc) {
+                                    <img
+                                      [src]="thumbSrc"
+                                      [alt]="''"
+                                      (error)="onDraftEquipmentImageError(item.equipmentId)"
+                                    />
+                                  } @else {
+                                    <svg lucidePackage class="draft-thumb-fallback"></svg>
+                                  }
+                                </span>
+                                <div class="added-item-info">
+                                  <strong class="draft-item-name">{{ getEquipmentDisplayName(item.equipmentId) }}</strong>
+                                  <span class="added-item-meta">
+                                    Equipo #{{ item.equipmentId }}@if (getEquipmentCategory(item.equipmentId); as category) { · {{ category }} }
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  class="btn-remove-item"
+                                  title="Quitar equipo"
+                                  [attr.aria-label]="'Quitar ' + getEquipmentDisplayName(item.equipmentId)"
+                                  [disabled]="saving()"
+                                  (click)="removeReservationItem(idx)"
+                                >
+                                  <svg lucideTrash2 class="remove-icon" aria-hidden="true"></svg>
+                                </button>
+                              </div>
+                              <div class="draft-card-bottom">
+                                <span class="draft-pending-state">
+                                  <svg lucideClock class="draft-status-icon" aria-hidden="true"></svg>
+                                  <span>Pendiente de reserva</span>
+                                </span>
+                                <span class="draft-qty-group">
+                                  <span class="draft-qty-label">Cantidad</span>
+                                  <span class="draft-qty-value">{{ item.quantity }} u.</span>
+                                </span>
+                              </div>
+                            </li>
+                          }
+                        </ul>
+                      </div>
                     } @else {
-                      <p class="reservation-empty-hint" role="note">
-                        Agrega al menos un equipo a la lista antes de confirmar el estado.
-                      </p>
+                      <div class="draft-empty-state" role="status">
+                        <span class="draft-empty-icon-wrap" aria-hidden="true">
+                          <svg lucidePackageOpen class="draft-empty-icon"></svg>
+                        </span>
+                        <div class="draft-empty-copy">
+                          <strong>Sin equipos agregados</strong>
+                          <span>Agrega al menos un equipo para confirmar la producción</span>
+                        </div>
+                      </div>
                     }
                   </div>
 
                   <div class="services-contract-builder">
                     <div class="services-builder-head">
-                      <h4>Servicios a contratar (opcional)</h4>
+                      <div class="builder-title-row">
+                        <div class="services-title-group">
+                          <h4>Servicios a contratar</h4>
+                          <span class="optional-tag">Opcional</span>
+                        </div>
+                        @if (selectedServiceIds().length > 0) {
+                          <span class="draft-summary-pill">
+                            {{ selectedServiceIds().length }}
+                            {{ selectedServiceIds().length === 1 ? 'seleccionado' : 'seleccionados' }}
+                          </span>
+                        }
+                      </div>
                       <p>
-                        Selecciona los servicios de catálogo que formarán parte de la contratación para esta confirmación.
+                        Selecciona servicios activos del catálogo para incluirlos en esta confirmación.
                       </p>
                     </div>
 
@@ -706,17 +881,23 @@
                           <label class="service-checkbox-card" [class.selected]="isServiceSelected(srv.id)">
                             <input
                               type="checkbox"
+                              class="service-checkbox-input"
                               [checked]="isServiceSelected(srv.id)"
                               (change)="toggleService(srv.id)"
                               [disabled]="saving()"
                             />
+                            <span class="service-checkbox-box" aria-hidden="true">
+                              @if (isServiceSelected(srv.id)) {
+                                <svg lucideCheck class="service-checkbox-check"></svg>
+                              }
+                            </span>
                             <div class="service-card-info">
                               <span class="service-card-name">{{ srv.name }}</span>
                               @if (srv.description) {
                                 <span class="service-card-desc">{{ srv.description }}</span>
                               }
-                              <span class="service-card-rate">${{ srv.rate | number:'1.0-2' }}</span>
                             </div>
+                            <span class="service-card-rate">${{ srv.rate | number:'1.0-2' }}</span>
                           </label>
                         }
                       </div>
@@ -735,6 +916,10 @@
                       <p>
                         Indica la cuadrilla técnica responsable del montaje y operación del evento en terreno.
                       </p>
+                    </div>
+                    <div class="contextual-stage-note" role="note">
+                      <svg lucideWrench class="contextual-note-icon" aria-hidden="true"></svg>
+                      <span>Al iniciar montaje, la producción pasa a preparación operativa y se habilita la consulta del Ticket de Cuadrilla según permisos.</span>
                     </div>
                     <div class="picker-stack">
                       <div class="picker-field">
@@ -761,28 +946,84 @@
                   </div>
                 }
 
-                <div class="workflow-actions">
-                  <button
-                    type="submit"
-                    emxButton
-                    variant="primary"
-                    size="medium"
-                    class="btn-submit-status"
-                    [disabled]="saving()"
-                  >
-                    {{
-                      saving()
-                        ? 'Guardando…'
-                        : nextStatus.value === 'CONFIRMADO'
-                          ? 'Confirmar y reservar equipos'
-                          : 'Actualizar estado'
-                    }}
-                  </button>
-                </div>
+                @if (nextStatus.value === 'EN_EJECUCION') {
+                  <div class="contextual-stage-card positive" role="note">
+                    <span class="contextual-stage-icon-wrap positive" aria-hidden="true">
+                      <svg lucidePlay class="contextual-stage-icon"></svg>
+                    </span>
+                    <div class="contextual-stage-copy">
+                      <strong>Paso a ejecución operativa</strong>
+                      <p>La producción quedará marcada en estado En ejecución dentro de la agenda operativa.</p>
+                    </div>
+                  </div>
+                }
+
+                @if (nextStatus.value === 'CERRADO') {
+                  <div class="contextual-stage-card neutral" role="note">
+                    <span class="contextual-stage-icon-wrap neutral" aria-hidden="true">
+                      <svg lucideFileText class="contextual-stage-icon"></svg>
+                    </span>
+                    <div class="contextual-stage-copy">
+                      <strong>Cierre administrativo de la producción</strong>
+                      <p>Al confirmar, la producción pasará a estado terminal Cerrado y se activará el proceso documental y de notificación configurado en el sistema.</p>
+                    </div>
+                  </div>
+                }
+
+                @if (nextStatus.value === 'CANCELADO') {
+                  <div class="contextual-stage-card danger" role="alert">
+                    <span class="contextual-stage-icon-wrap danger" aria-hidden="true">
+                      <svg lucideTriangleAlert class="contextual-stage-icon"></svg>
+                    </span>
+                    <div class="contextual-stage-copy">
+                      <strong>Estado terminal — Cancelar producción</strong>
+                      <p>Esta acción detiene el flujo operativo de forma definitiva. Una vez cancelada, la producción no podrá volver a un estado activo.</p>
+                    </div>
+                  </div>
+                }
               </form>
             </section>
           }
         </div>
+
+        @if (!isTerminalStatus(selected.status) && canUpdate()) {
+          <footer class="detail-workflow-footer">
+            <button
+              type="submit"
+              form="production-workflow-form"
+              emxButton
+              [variant]="nextStatus.value === 'CANCELADO' ? 'danger' : 'primary'"
+              size="medium"
+              class="btn-submit-status"
+              [class.is-danger]="nextStatus.value === 'CANCELADO'"
+              [disabled]="saving()"
+            >
+              @if (saving()) {
+                <svg lucideLoaderCircle class="submit-btn-icon spin" aria-hidden="true"></svg>
+                <span>Guardando…</span>
+              } @else {
+                @switch (nextStatus.value) {
+                  @case ('CONFIRMADO') {
+                    <svg lucideCircleCheck class="submit-btn-icon" aria-hidden="true"></svg>
+                  }
+                  @case ('EN_MONTAJE') {
+                    <svg lucideWrench class="submit-btn-icon" aria-hidden="true"></svg>
+                  }
+                  @case ('EN_EJECUCION') {
+                    <svg lucidePlay class="submit-btn-icon" aria-hidden="true"></svg>
+                  }
+                  @case ('CERRADO') {
+                    <svg lucideCircleCheck class="submit-btn-icon" aria-hidden="true"></svg>
+                  }
+                  @case ('CANCELADO') {
+                    <svg lucideBan class="submit-btn-icon" aria-hidden="true"></svg>
+                  }
+                }
+                <span>{{ getTransitionSubmitLabel(nextStatus.value) }}</span>
+              }
+            </button>
+          </footer>
+        }
       </aside>
     }
   }
@@ -852,195 +1093,251 @@
 
           @if (canUseExternalMode()) {
             <div class="create-mode-section">
-              <span class="create-mode-label" id="create-mode-heading">¿Para quién es el evento?</span>
-              <div class="create-mode-tabs" role="radiogroup" aria-labelledby="create-mode-heading">
-                <button
-                  type="button"
-                  role="radio"
-                  class="create-mode-tab"
-                  [class.active]="createMode() === 'SELF'"
-                  [attr.aria-checked]="createMode() === 'SELF'"
-                  (click)="setCreateMode('SELF')"
-                >
-                  Para mí — Soy el organizador
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  class="create-mode-tab"
-                  [class.active]="createMode() === 'EXTERNAL'"
-                  [attr.aria-checked]="createMode() === 'EXTERNAL'"
-                  (click)="setCreateMode('EXTERNAL')"
-                >
-                  Para otro cliente
-                </button>
+              <div class="create-mode-heading-group">
+                <span class="create-mode-label" id="create-mode-heading">¿Para quién es el evento?</span>
+                <p class="create-mode-helper" id="create-mode-helper">
+                  Selecciona quién será el organizador de la producción.
+                </p>
               </div>
-            </div>
-          }
+              <div
+                class="create-mode-tabs"
+                role="radiogroup"
+                aria-labelledby="create-mode-heading"
+                aria-describedby="create-mode-helper"
+              >
+                <label class="create-mode-tab" [class.active]="createMode() === 'SELF'">
+                  <input
+                    type="radio"
+                    class="create-mode-radio-input"
+                    name="createOrganizerMode"
+                    value="SELF"
+                    [checked]="createMode() === 'SELF'"
+                    (change)="setCreateMode('SELF')"
+                  />
+                  <span class="mode-card-top">
+                    <span class="mode-card-icon-wrap" aria-hidden="true">
+                      <svg lucideUserRound class="mode-card-icon"></svg>
+                    </span>
+                    <span class="mode-card-radio" aria-hidden="true">
+                      <span class="mode-card-radio-dot"></span>
+                    </span>
+                  </span>
+                  <span class="mode-card-copy">
+                    <span class="mode-card-title">Para mí</span>
+                    <span class="mode-card-desc">Soy el organizador</span>
+                  </span>
+                </label>
 
-          @if (!canUseExternalMode() || createMode() === 'SELF') {
-            <p class="self-mode-hint" role="note">
-              Esta producción quedará asociada automáticamente a tu cuenta autenticada.
-            </p>
-          } @else {
-            <div class="external-selector-section">
-              @if (!creatingNewExternalClient()) {
-                <div class="external-selector-header">
-                  <label for="external-organizer-search">Buscar organizador o cliente</label>
-                  <button
-                    type="button"
-                    emxButton
-                    variant="secondary"
-                    size="xs"
-                    class="btn-new-external-client"
-                    (click)="toggleNewExternalClient(true)"
-                  >
-                    + Registrar nuevo cliente externo
-                  </button>
+                <label class="create-mode-tab" [class.active]="createMode() === 'EXTERNAL'">
+                  <input
+                    type="radio"
+                    class="create-mode-radio-input"
+                    name="createOrganizerMode"
+                    value="EXTERNAL"
+                    [checked]="createMode() === 'EXTERNAL'"
+                    (change)="setCreateMode('EXTERNAL')"
+                  />
+                  <span class="mode-card-top">
+                    <span class="mode-card-icon-wrap" aria-hidden="true">
+                      <svg lucideUsersRound class="mode-card-icon"></svg>
+                    </span>
+                    <span class="mode-card-radio" aria-hidden="true">
+                      <span class="mode-card-radio-dot"></span>
+                    </span>
+                  </span>
+                  <span class="mode-card-copy">
+                    <span class="mode-card-title">Para otro cliente</span>
+                    <span class="mode-card-desc">Asignar un organizador</span>
+                  </span>
+                </label>
+              </div>
+
+              @if (createMode() === 'SELF') {
+                <div class="self-mode-hint" role="note">
+                  <svg lucideInfo class="self-mode-info-icon" aria-hidden="true"></svg>
+                  <span>La producción quedará asociada automáticamente a tu cuenta.</span>
                 </div>
-
-                <input
-                  id="external-organizer-search"
-                  type="search"
-                  autocomplete="off"
-                  [formControl]="externalSearchControl"
-                  placeholder="Buscar por nombre del organizador o cliente…"
-                />
-
-                @if (eligibleDirectoryStatus() === 'DISABLED') {
-                  <p class="directory-status-note disabled" role="status">
-                    La búsqueda de cuentas Microsoft Entra está temporalmente deshabilitada. Mostrando clientes externos registrados.
-                  </p>
-                } @else if (eligibleDirectoryStatus() === 'DEGRADED') {
-                  <p class="directory-status-note degraded" role="status">
-                    El directorio Microsoft Entra no está disponible temporalmente. Puedes elegir un cliente externo registrado o registrar uno nuevo.
-                  </p>
-                }
-
-                @if (eligibleLoading()) {
-                  <p class="directory-status-note" role="status">Buscando organizadores elegibles…</p>
-                } @else if (eligibleError()) {
-                  <div class="directory-error-box" role="alert">
-                    <span>{{ eligibleError() }}</span>
-                    <button type="button" emxButton variant="secondary" size="xs" (click)="retryEligibleSearch()">
-                      Reintentar
-                    </button>
-                  </div>
-                } @else if (eligibleOrganizers().length === 0) {
-                  <p class="directory-status-note" role="status">
-                    No encontramos organizadores elegibles para esa búsqueda. Puedes registrar un nuevo cliente externo.
-                  </p>
-                } @else {
-                  <div class="eligible-list" role="listbox" aria-label="Organizadores elegibles">
-                    @for (org of eligibleOrganizers(); track org.organizerId) {
+              } @else {
+                <div class="external-selector-section">
+                  @if (!creatingNewExternalClient()) {
+                    <div class="external-selector-header">
+                      <label class="external-selector-label" for="external-organizer-search">
+                        Buscar organizador o cliente
+                      </label>
                       <button
                         type="button"
-                        role="option"
-                        class="eligible-option"
-                        [class.selected]="selectedEligibleOrganizer()?.organizerId === org.organizerId"
-                        [attr.aria-selected]="selectedEligibleOrganizer()?.organizerId === org.organizerId"
-                        [disabled]="org.source === 'ENTRA_ORGANIZER' && eligibleDirectoryStatus() === 'DEGRADED'"
-                        (click)="selectEligibleOrganizer(org)"
+                        class="btn-new-external-client"
+                        (click)="toggleNewExternalClient(true)"
                       >
-                        <div class="eligible-option-main">
-                          <strong>{{ org.displayName }}</strong>
-                          <span class="eligible-source-badge" [class.entra]="org.source === 'ENTRA_ORGANIZER'">
-                            {{ org.source === 'ENTRA_ORGANIZER' ? 'Cuenta EventoMax' : 'Cliente externo' }}
-                          </span>
-                        </div>
-                        <div class="eligible-option-meta">
-                          @if (org.hasRegisteredContact) {
-                            <span>Contacto registrado</span>
-                            @if (org.maskedEmail) { <span>· {{ org.maskedEmail }}</span> }
-                          } @else {
-                            <span>Sin contacto registrado</span>
-                          }
-                        </div>
-                      </button>
-                    }
-                  </div>
-
-                  @if (eligibleTotal() > eligiblePageSize) {
-                    <div class="eligible-pagination">
-                      <button
-                        type="button"
-                        emxButton
-                        variant="ghost"
-                        size="xs"
-                        [disabled]="eligiblePage() <= 0 || eligibleLoading()"
-                        (click)="goToEligiblePage(eligiblePage() - 1)"
-                      >
-                        Anterior
-                      </button>
-                      <span>Página {{ eligiblePage() + 1 }} de {{ eligibleTotalPages() }}</span>
-                      <button
-                        type="button"
-                        emxButton
-                        variant="ghost"
-                        size="xs"
-                        [disabled]="eligiblePage() + 1 >= eligibleTotalPages() || eligibleLoading()"
-                        (click)="goToEligiblePage(eligiblePage() + 1)"
-                      >
-                        Siguiente
+                        <svg lucideUserRoundPlus class="external-add-icon" aria-hidden="true"></svg>
+                        <span>Registrar nuevo cliente externo</span>
                       </button>
                     </div>
-                  }
-                }
 
-                @if (externalSelectionError()) {
-                  <span class="field-error-text" role="alert">{{ externalSelectionError() }}</span>
-                }
-              } @else {
-                <div class="new-external-client-box" [formGroup]="newExternalClientForm">
-                  <div class="external-selector-header">
-                    <strong>Nuevo cliente externo</strong>
-                    <button
-                      type="button"
-                      emxButton
-                      variant="ghost"
-                      size="xs"
-                      class="btn-back-to-selector"
-                      (click)="toggleNewExternalClient(false)"
-                    >
-                      Volver al selector
-                    </button>
-                  </div>
+                    <div class="external-search-box">
+                      <svg lucideSearch class="external-search-icon" aria-hidden="true"></svg>
+                      <input
+                        id="external-organizer-search"
+                        class="external-search-input"
+                        type="search"
+                        autocomplete="off"
+                        [formControl]="externalSearchControl"
+                        placeholder="Buscar por nombre del organizador o cliente…"
+                      />
+                    </div>
 
-                  <div class="form-field">
-                    <label for="new-external-client-name">
-                      Nombre del cliente <span class="required-mark" aria-hidden="true">*</span>
-                    </label>
-                    <input
-                      id="new-external-client-name"
-                      type="text"
-                      formControlName="externalClientName"
-                      maxlength="150"
-                      placeholder="Ej: Productora Costera SpA"
-                    />
-                    @if (hasExternalClientFieldError('externalClientName')) {
-                      <span class="field-error-text" role="alert">{{ getExternalClientFieldError('externalClientName') }}</span>
+                    @if (eligibleDirectoryStatus() === 'DISABLED') {
+                      <p class="directory-status-note disabled" role="status">
+                        La búsqueda de cuentas Microsoft Entra está temporalmente deshabilitada. Mostrando clientes externos registrados.
+                      </p>
+                    } @else if (eligibleDirectoryStatus() === 'DEGRADED') {
+                      <p class="directory-status-note degraded" role="status">
+                        El directorio Microsoft Entra no está disponible temporalmente. Puedes elegir un cliente externo registrado o registrar uno nuevo.
+                      </p>
                     }
-                  </div>
 
-                  <div class="form-field">
-                    <label for="new-external-client-email">
-                      Correo de notificaciones <span class="required-mark" aria-hidden="true">*</span>
-                    </label>
-                    <input
-                      id="new-external-client-email"
-                      type="email"
-                      formControlName="externalClientEmail"
-                      maxlength="255"
-                      placeholder="contacto@cliente.cl"
-                    />
-                    @if (hasExternalClientFieldError('externalClientEmail')) {
-                      <span class="field-error-text" role="alert">{{ getExternalClientFieldError('externalClientEmail') }}</span>
+                    @if (eligibleLoading()) {
+                      <div class="directory-status-note loading" role="status">
+                        <svg lucideLoaderCircle class="directory-loading-icon" aria-hidden="true"></svg>
+                        <span>Buscando organizadores elegibles…</span>
+                      </div>
+                    } @else if (eligibleError()) {
+                      <div class="directory-error-box" role="alert">
+                        <span>{{ eligibleError() }}</span>
+                        <button type="button" emxButton variant="secondary" size="xs" (click)="retryEligibleSearch()">
+                          Reintentar
+                        </button>
+                      </div>
+                    } @else if (eligibleOrganizers().length === 0) {
+                      <div class="directory-status-note empty" role="status">
+                        <svg lucideSearchX class="directory-empty-icon" aria-hidden="true"></svg>
+                        <span>No encontramos organizadores elegibles para esa búsqueda. Puedes registrar un nuevo cliente externo.</span>
+                      </div>
                     } @else {
-                      <span class="field-hint">Se guardará como contacto de notificaciones del cliente (no verificado por enlace o token).</span>
+                      <div class="eligible-list" role="listbox" aria-label="Organizadores elegibles">
+                        @for (org of eligibleOrganizers(); track org.organizerId) {
+                          <button
+                            type="button"
+                            role="option"
+                            class="eligible-option"
+                            [class.selected]="selectedEligibleOrganizer()?.organizerId === org.organizerId"
+                            [attr.aria-selected]="selectedEligibleOrganizer()?.organizerId === org.organizerId"
+                            [disabled]="org.source === 'ENTRA_ORGANIZER' && eligibleDirectoryStatus() === 'DEGRADED'"
+                            (click)="selectEligibleOrganizer(org)"
+                          >
+                            <div class="eligible-option-main">
+                              <span class="eligible-option-name-row">
+                                <strong>{{ org.displayName }}</strong>
+                                <span class="eligible-source-badge" [class.entra]="org.source === 'ENTRA_ORGANIZER'">
+                                  {{ org.source === 'ENTRA_ORGANIZER' ? 'Cuenta EventoMax' : 'Cliente externo' }}
+                                </span>
+                              </span>
+                              @if (selectedEligibleOrganizer()?.organizerId === org.organizerId) {
+                                <span class="eligible-selected-mark" aria-hidden="true">
+                                  <svg lucideCheck class="eligible-check-icon"></svg>
+                                </span>
+                              }
+                            </div>
+                            <div class="eligible-option-meta">
+                              @if (org.hasRegisteredContact) {
+                                <span>Contacto registrado</span>
+                                @if (org.maskedEmail) { <span>· {{ org.maskedEmail }}</span> }
+                              } @else {
+                                <span>Sin contacto registrado</span>
+                              }
+                            </div>
+                          </button>
+                        }
+                      </div>
+
+                      @if (eligibleTotal() > eligiblePageSize) {
+                        <div class="eligible-pagination">
+                          <button
+                            type="button"
+                            emxButton
+                            variant="ghost"
+                            size="xs"
+                            [disabled]="eligiblePage() <= 0 || eligibleLoading()"
+                            (click)="goToEligiblePage(eligiblePage() - 1)"
+                          >
+                            Anterior
+                          </button>
+                          <span>Página {{ eligiblePage() + 1 }} de {{ eligibleTotalPages() }}</span>
+                          <button
+                            type="button"
+                            emxButton
+                            variant="ghost"
+                            size="xs"
+                            [disabled]="eligiblePage() + 1 >= eligibleTotalPages() || eligibleLoading()"
+                            (click)="goToEligiblePage(eligiblePage() + 1)"
+                          >
+                            Siguiente
+                          </button>
+                        </div>
+                      }
                     }
-                  </div>
+
+                    @if (externalSelectionError()) {
+                      <span class="field-error-text" role="alert">{{ externalSelectionError() }}</span>
+                    }
+                  } @else {
+                    <div class="new-external-client-box" [formGroup]="newExternalClientForm">
+                      <div class="external-selector-header">
+                        <strong class="new-external-client-title">Nuevo cliente externo</strong>
+                        <button
+                          type="button"
+                          emxButton
+                          variant="ghost"
+                          size="xs"
+                          class="btn-back-to-selector"
+                          (click)="toggleNewExternalClient(false)"
+                        >
+                          Volver al selector
+                        </button>
+                      </div>
+
+                      <div class="form-field">
+                        <label for="new-external-client-name">
+                          Nombre del cliente <span class="required-mark" aria-hidden="true">*</span>
+                        </label>
+                        <input
+                          id="new-external-client-name"
+                          type="text"
+                          formControlName="externalClientName"
+                          maxlength="150"
+                          placeholder="Ej: Productora Costera SpA"
+                        />
+                        @if (hasExternalClientFieldError('externalClientName')) {
+                          <span class="field-error-text" role="alert">{{ getExternalClientFieldError('externalClientName') }}</span>
+                        }
+                      </div>
+
+                      <div class="form-field">
+                        <label for="new-external-client-email">
+                          Correo de notificaciones <span class="required-mark" aria-hidden="true">*</span>
+                        </label>
+                        <input
+                          id="new-external-client-email"
+                          type="email"
+                          formControlName="externalClientEmail"
+                          maxlength="255"
+                          placeholder="contacto@cliente.cl"
+                        />
+                        @if (hasExternalClientFieldError('externalClientEmail')) {
+                          <span class="field-error-text" role="alert">{{ getExternalClientFieldError('externalClientEmail') }}</span>
+                        } @else {
+                          <span class="field-hint">Se guardará como contacto de notificaciones del cliente (no verificado por enlace o token).</span>
+                        }
+                      </div>
+                    </div>
+                  }
                 </div>
               }
+            </div>
+          } @else {
+            <div class="self-mode-hint" role="note">
+              <svg lucideInfo class="self-mode-info-icon" aria-hidden="true"></svg>
+              <span>La producción quedará asociada automáticamente a tu cuenta.</span>
             </div>
           }
 
@@ -1048,13 +1345,12 @@
             <label for="create-scheduled-input">
               Fecha programada <span class="required-mark" aria-hidden="true">*</span>
             </label>
-            <input
-              id="create-scheduled-input"
+            <emx-date-time-picker
+              inputId="create-scheduled-input"
               formControlName="scheduledAt"
-              type="datetime-local"
-              required
-              [attr.aria-invalid]="hasFieldError('scheduledAt')"
-              [attr.aria-describedby]="hasFieldError('scheduledAt') ? 'err-scheduled' : 'hint-scheduled'"
+              placeholder="Seleccionar fecha y hora"
+              [invalid]="hasFieldError('scheduledAt')"
+              [ariaDescribedBy]="hasFieldError('scheduledAt') ? 'err-scheduled' : 'hint-scheduled'"
             />
             @if (hasFieldError('scheduledAt')) {
               <span id="err-scheduled" class="field-error-text" role="alert">{{ getFieldError('scheduledAt') }}</span>
@@ -1127,14 +1423,20 @@
               src="/branding/eventomax/logos/eventomax-logo-dark.svg"
               alt="EventoMax — Operaciones de Eventos"
             />
+            <span class="ticket-brand-divider" aria-hidden="true"></span>
             <span class="ticket-doc-tag">Orden de Trabajo Técnica</span>
           </div>
           @if (currentTicket(); as ticket) {
-            <div class="ticket-breadcrumbs">
-              <emx-tag class="detail-id-badge tabular-nums">Producción #{{ ticket.productionId }}</emx-tag>
-              <span class="ticket-crumb-sep" aria-hidden="true">/</span>
-              <emx-tag class="ticket-folio tabular-nums">Ticket #{{ ticket.id }}</emx-tag>
-              <emx-status [status]="ticket.status" />
+            <div class="ticket-meta-strip">
+              <div class="ticket-breadcrumbs">
+                <emx-tag class="detail-id-badge tabular-nums">Producción #{{ ticket.productionId }}</emx-tag>
+                <span class="ticket-crumb-sep" aria-hidden="true">/</span>
+                <emx-tag class="ticket-folio-pill tabular-nums">Ticket #{{ ticket.id }}</emx-tag>
+              </div>
+              <div class="ticket-emitted-status">
+                <span class="ticket-emitted-label">Estado al emitir</span>
+                <emx-status [status]="ticket.status" />
+              </div>
             </div>
           } @else {
             <p class="eyebrow">HOJA DE RUTA OPERATIVA</p>
@@ -1199,60 +1501,57 @@
             </div>
           }
 
-          <dl class="ticket-prop-list">
-            <div class="ticket-prop-row">
-              <dt class="ticket-prop-label">
-                <svg class="ticket-prop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
+          <dl class="ticket-info-card">
+            <div class="ticket-info-item">
+              <dt>
+                <svg lucideUsersRound class="meta-icon" strokeWidth="1.75" aria-hidden="true" />
                 <span>Cuadrilla asignada</span>
               </dt>
-              <dd class="ticket-prop-value">
-                @if (crew.crewName || crew.crewId) {
-                  @if (crew.crewName) {
-                    <span>{{ crew.crewName }}</span>
-                  }
-                  @if (crew.crewId) {
-                    <code class="ticket-crew-code">{{ crew.crewId }}</code>
-                  }
+              <dd>
+                @if (crew.crewName) {
+                  <span>{{ crew.crewName }}</span>
                 } @else {
                   <span class="ticket-prop-muted">Sin registro</span>
                 }
               </dd>
             </div>
 
-            <div class="ticket-prop-row">
-              <dt class="ticket-prop-label">
-                <svg lucideCalendarDays class="ticket-prop-icon" strokeWidth="1.75" aria-hidden="true" />
+            <div class="ticket-info-item">
+              <dt>
+                <svg lucideWrench class="meta-icon" strokeWidth="1.75" aria-hidden="true" />
+                <span>Código de cuadrilla</span>
+              </dt>
+              <dd>
+                @if (crew.crewId) {
+                  <code class="ticket-crew-code">{{ crew.crewId }}</code>
+                } @else {
+                  <span class="ticket-prop-muted">Sin código</span>
+                }
+              </dd>
+            </div>
+
+            <div class="ticket-info-item">
+              <dt>
+                <svg lucideCalendarDays class="meta-icon" strokeWidth="1.75" aria-hidden="true" />
                 <span>Fecha programada</span>
               </dt>
-              <dd class="ticket-prop-value tabular-nums">
-                {{ formatTicketScheduledAt(ticket.scheduledAt) }}
-              </dd>
+              <dd class="tabular-nums">{{ formatTicketScheduledAt(ticket.scheduledAt) }}</dd>
             </div>
 
-            <div class="ticket-prop-row">
-              <dt class="ticket-prop-label">
-                <svg class="ticket-prop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-                <span>Ubicación</span>
-              </dt>
-              <dd class="ticket-prop-value">{{ ticket.location }}</dd>
-            </div>
-
-            <div class="ticket-prop-row">
-              <dt class="ticket-prop-label">
-                <svg lucideClock3 class="ticket-prop-icon" strokeWidth="1.75" aria-hidden="true" />
+            <div class="ticket-info-item">
+              <dt>
+                <svg lucideClock3 class="meta-icon" strokeWidth="1.75" aria-hidden="true" />
                 <span>Registro de emisión</span>
               </dt>
-              <dd class="ticket-prop-value tabular-nums">
-                {{ formatTicketIssuedAt(ticket.createdAt) }}
-              </dd>
+              <dd class="tabular-nums">{{ formatTicketIssuedAt(ticket.createdAt) }}</dd>
+            </div>
+
+            <div class="ticket-info-item ticket-info-full">
+              <dt>
+                <svg lucideMapPin class="meta-icon" strokeWidth="1.75" aria-hidden="true" />
+                <span>Ubicación</span>
+              </dt>
+              <dd>{{ ticket.location }}</dd>
             </div>
           </dl>
 
@@ -1264,16 +1563,32 @@
             <section class="ticket-section" aria-label="Equipos para montaje">
               <div class="detail-section-header">
                 <h3>Equipos para montaje</h3>
-                <span class="count-pill subtle tabular-nums">{{ ticketReservations().length }}</span>
+                <span class="ticket-count-pill tabular-nums">
+                  {{ ticketReservations().length }} {{ ticketReservations().length === 1 ? 'equipo' : 'equipos' }} · {{ ticketReservationsTotalUnits() }} {{ ticketReservationsTotalUnits() === 1 ? 'unidad' : 'unidades' }}
+                </span>
               </div>
-              <ul class="reservations-card-list">
+              <ul class="ticket-equip-list">
                 @for (r of ticketReservations(); track r.reservationId) {
-                  <li class="reservation-card-item">
-                    <div class="reservation-item-info">
-                      <strong>{{ r.equipmentName }}</strong>
-                      <span class="reservation-item-meta tabular-nums">Reserva #{{ r.reservationId }}</span>
+                  <li class="ticket-equip-card">
+                    <span class="ticket-equip-thumb" aria-hidden="true">
+                      @if (getEquipmentThumbnail(r.equipmentId); as thumbSrc) {
+                        <img
+                          [src]="thumbSrc"
+                          [alt]="''"
+                          (error)="onDraftEquipmentImageError(r.equipmentId)"
+                        />
+                      } @else {
+                        <svg lucidePackage class="draft-thumb-fallback"></svg>
+                      }
+                    </span>
+                    <div class="ticket-equip-info">
+                      <strong class="ticket-equip-name">{{ r.equipmentName }}</strong>
+                      <span class="ticket-equip-meta tabular-nums">Reserva #{{ r.reservationId }}</span>
                     </div>
-                    <span class="qty-badge tabular-nums">{{ r.quantity }} u.</span>
+                    <span class="ticket-equip-qty">
+                      <span class="ticket-qty-label">Cantidad</span>
+                      <span class="ticket-qty-val tabular-nums">{{ r.quantity }} u.</span>
+                    </span>
                   </li>
                 }
               </ul>
@@ -1285,8 +1600,13 @@
           }
 
           <section class="ticket-section" aria-label="Directiva de terreno">
-            <h3>Directiva de terreno</h3>
-            <p class="ticket-instructions">{{ resolvedTicketDirective() }}</p>
+            <div class="ticket-section-heading">
+              <svg lucideClipboardList class="ticket-section-icon" strokeWidth="1.85" aria-hidden="true"></svg>
+              <h3>Directiva de terreno</h3>
+            </div>
+            <div class="ticket-directive-card">
+              <p class="ticket-instructions">{{ resolvedTicketDirective() }}</p>
+            </div>
           </section>
         }
       </div>
@@ -1295,9 +1615,6 @@
         @if (currentTicket(); as ticket) {
           <button
             type="button"
-            emxButton
-            variant="secondary"
-            size="xs"
             class="btn-copy-event-id"
             [title]="'Copiar RabbitMQ Event ID: ' + ticket.eventId"
             [attr.aria-label]="'Copiar identificador de evento ' + ticket.eventId"
@@ -1305,15 +1622,10 @@
           >
             <span class="ticket-event-code tabular-nums">evt · {{ formatShortEventId(ticket.eventId) }}</span>
             @if (ticketCopied()) {
-              <svg class="ticket-copy-icon copied" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
+              <svg lucideCheck class="ticket-copy-icon copied" strokeWidth="2.2" aria-hidden="true"></svg>
               <span class="ticket-copied-text">Copiado</span>
             } @else {
-              <svg class="ticket-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-              </svg>
+              <svg lucideCopy class="ticket-copy-icon" strokeWidth="1.85" aria-hidden="true"></svg>
             }
           </button>
         }
@@ -1329,11 +1641,7 @@
               [disabled]="!ticketPrintReady()"
               (click)="printCrewTicket()"
             >
-              <svg class="ticket-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" />
-                <rect x="6" y="14" width="12" height="8" rx="1" />
-              </svg>
+              <svg lucidePrinter class="ticket-btn-icon" strokeWidth="1.85" aria-hidden="true"></svg>
               <span>{{ ticketDataLoading() ? 'Cargando datos…' : 'Imprimir' }}</span>
             </button>
           }
