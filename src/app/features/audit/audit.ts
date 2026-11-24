@@ -109,6 +109,7 @@ export class Audit {
   readonly filterError = signal('');
   readonly page = signal(0);
   readonly copiedKey = signal<string | null>(null);
+  readonly expandedEventIds = signal<ReadonlySet<string>>(new Set());
 
   readonly auditPresets: readonly DatePickerPreset[] = [
     { id: 'all', label: 'Cualquier fecha' },
@@ -134,10 +135,14 @@ export class Audit {
         }
         const hasCache = this.cachedItems.length > 0;
         return this.api.getTimeline(filters).pipe(
-          tap((items) => { this.cachedItems = items; }),
+          tap((items) => {
+            this.cachedItems = items;
+            this.pruneExpandedEventIds(items);
+          }),
           map((items): AuditViewState => ({ items, loading: false, error: null })),
           catchError((error: HttpErrorResponse) => {
             this.cachedItems = [];
+            this.clearExpandedEventIds();
             return of<AuditViewState>({ items: [], loading: false, error: error.status });
           }),
           startWith<AuditViewState>({
@@ -300,6 +305,50 @@ export class Audit {
     return this.copiedKey() === key;
   }
 
+  detailsPanelId(eventId: string): string {
+    return `audit-details-panel-${eventId.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+  }
+
+  isDetailsExpanded(eventId: string): boolean {
+    return this.expandedEventIds().has(eventId);
+  }
+
+  toggleDetails(eventId: string): void {
+    this.expandedEventIds.update((current) => {
+      const next = new Set(current);
+      if (next.has(eventId)) {
+        next.delete(eventId);
+      } else {
+        next.add(eventId);
+      }
+      return next;
+    });
+  }
+
+  private pruneExpandedEventIds(items: readonly AuditEvent[]): void {
+    const current = this.expandedEventIds();
+    if (current.size === 0) return;
+    const visibleIds = new Set(items.map((item) => item.eventId));
+    let changed = false;
+    const pruned = new Set<string>();
+    for (const id of current) {
+      if (visibleIds.has(id)) {
+        pruned.add(id);
+      } else {
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.expandedEventIds.set(pruned);
+    }
+  }
+
+  private clearExpandedEventIds(): void {
+    if (this.expandedEventIds().size > 0) {
+      this.expandedEventIds.set(new Set());
+    }
+  }
+
   /** Inputs datetime-local representan hora de Chile continental (America/Santiago): serializar como UTC SIN Z para el contrato Audit. */
   private toAuditUtc(input: string): string | undefined {
     return chileLocalInputToAuditUtc(input);
@@ -317,6 +366,7 @@ export class Audit {
     }
     this.filterError.set('');
     this.page.set(0);
+    this.clearExpandedEventIds();
     this.querySubject.next({
       actor: actor.trim() || undefined,
       type: type.trim() || undefined,
@@ -332,6 +382,7 @@ export class Audit {
     this.auditRangePreset.set('all');
     this.filterError.set('');
     this.page.set(0);
+    this.clearExpandedEventIds();
     this.querySubject.next({ page: 0, size: this.pageSize });
   }
 
@@ -380,12 +431,14 @@ export class Audit {
   nextPage(): void {
     if (!this.canAdvance() || this.isLoading()) return;
     this.page.update((value) => value + 1);
+    this.clearExpandedEventIds();
     this.querySubject.next({ ...this.querySubject.value, page: this.page() });
   }
 
   previousPage(): void {
     if (this.page() === 0 || this.isLoading()) return;
     this.page.update((value) => value - 1);
+    this.clearExpandedEventIds();
     this.querySubject.next({ ...this.querySubject.value, page: this.page() });
   }
 

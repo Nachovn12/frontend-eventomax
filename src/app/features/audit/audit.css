@@ -711,27 +711,51 @@
   color: #059669;
 }
 
-/* Accordion de Payload JSON */
+/* Accordion de Payload JSON (WAI-ARIA Disclosure) */
 .audit-details-accordion {
   margin-top: 12px;
   border-top: 1px solid #F1F5F9;
   padding-top: 10px;
 }
 
-.audit-details-summary {
+.audit-details-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.audit-details-summary {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 6px;
   cursor: pointer;
   user-select: none;
+  font: inherit;
   font-size: 12.5px;
   font-weight: 600;
   color: #2563EB;
-  list-style: none;
+  text-align: left;
+  transition: color 140ms ease, background-color 140ms ease;
 }
 
-.audit-details-summary::-webkit-details-marker {
-  display: none;
+.audit-details-summary:hover {
+  color: #1D4ED8;
+}
+
+.audit-details-summary:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+
+:host-context([data-theme="dark"]) .audit-details-summary:focus-visible,
+:host-context(.dark) .audit-details-summary:focus-visible {
+  outline-color: #38BDF8;
 }
 
 .summary-title {
@@ -746,8 +770,12 @@
   transition: transform 180ms ease;
 }
 
-.audit-details-accordion[open] .accordion-chevron {
+.audit-details-accordion.is-open .accordion-chevron {
   transform: rotate(180deg);
+}
+
+.audit-details-content[hidden] {
+  display: none;
 }
 
 .btn-copy-json {

@@ -324,4 +324,134 @@ describe('Audit EP2 (EMX-109/110)', () => {
     expect(cards[3].querySelector('.audit-actor-source-value')?.textContent?.trim())
       .toBe('Identidad no resuelta');
   });
+
+  it('OBS-04: renders 14 audit events with WAI-ARIA Disclosure sibling buttons and zero interactive controls nested in <summary>', async () => {
+    const fourteenRows: AuditEvent[] = Array.from({ length: 14 }, (_, idx) => ({
+      ...sample,
+      eventId: `evt-a11y-${String(idx + 1).padStart(2, '0')}`,
+      details: JSON.stringify({ productionId: 13, seq: idx + 1 }),
+    }));
+    const { fixture } = await setup(true, fourteenRows);
+    const root: HTMLElement = fixture.nativeElement;
+
+    // Zero <summary> elements and zero nested interactive controls
+    expect(root.querySelectorAll('summary')).toHaveLength(0);
+    expect(root.querySelectorAll('summary button, button button')).toHaveLength(0);
+
+    const toggleButtons = Array.from(root.querySelectorAll('button.audit-details-summary')) as HTMLButtonElement[];
+    const copyButtons = Array.from(root.querySelectorAll('button.btn-copy-json')) as HTMLButtonElement[];
+    const panels = Array.from(root.querySelectorAll('.audit-details-content')) as HTMLElement[];
+
+    expect(toggleButtons).toHaveLength(14);
+    expect(copyButtons).toHaveLength(14);
+    expect(panels).toHaveLength(14);
+
+    // Every toggle button has unique aria-controls pointing to a matching hidden panel and is sibling (not ancestor) of copy button
+    const panelIds = new Set<string>();
+    toggleButtons.forEach((btn, idx) => {
+      const controlsId = btn.getAttribute('aria-controls');
+      expect(controlsId).toBeTruthy();
+      panelIds.add(controlsId!);
+      expect(btn.getAttribute('aria-expanded')).toBe('false');
+      expect(btn.contains(copyButtons[idx])).toBe(false);
+      expect(panels[idx].id).toBe(controlsId);
+      expect(panels[idx].hidden).toBe(true);
+    });
+    expect(panelIds.size).toBe(14);
+  });
+
+  it('OBS-04: toggles disclosure via button click without Copy JSON involuntarily opening or closing the panel', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+
+    const { fixture } = await setup(true, [sample]);
+    const root: HTMLElement = fixture.nativeElement;
+    const accordion = root.querySelector('.audit-details-accordion') as HTMLElement;
+    const toggleBtn = root.querySelector('button.audit-details-summary') as HTMLButtonElement;
+    const copyJsonBtn = root.querySelector('button.btn-copy-json') as HTMLButtonElement;
+    const panel = root.querySelector('.audit-details-content') as HTMLElement;
+
+    // 1. Click "Copiar JSON" while collapsed -> copies payload, shows "¡Copiado!", keeps panel collapsed
+    copyJsonBtn.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(writeText).toHaveBeenCalledWith(sample.details);
+    expect(copyJsonBtn.textContent).toContain('¡Copiado!');
+    expect(toggleBtn.getAttribute('aria-expanded')).toBe('false');
+    expect(panel.hidden).toBe(true);
+    expect(accordion.classList.contains('is-open')).toBe(false);
+
+    // 2. Click toggle button -> expands panel and rotates chevron via .is-open
+    toggleBtn.click();
+    fixture.detectChanges();
+
+    expect(toggleBtn.getAttribute('aria-expanded')).toBe('true');
+    expect(panel.hidden).toBe(false);
+    expect(accordion.classList.contains('is-open')).toBe(true);
+
+    // 3. Click "Copiar JSON" while expanded -> keeps panel open
+    copyJsonBtn.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(toggleBtn.getAttribute('aria-expanded')).toBe('true');
+    expect(panel.hidden).toBe(false);
+
+    // 4. Click toggle button again -> collapses panel cleanly
+    toggleBtn.click();
+    fixture.detectChanges();
+
+    expect(toggleBtn.getAttribute('aria-expanded')).toBe('false');
+    expect(panel.hidden).toBe(true);
+    expect(accordion.classList.contains('is-open')).toBe(false);
+  });
+
+  it('OBS-04: prunes stale expanded event IDs on refresh and resets expansion on filter/pagination', async () => {
+    const pageOneRows: AuditEvent[] = Array.from({ length: 25 }, (_, idx) => ({
+      ...sample,
+      eventId: `evt-p1-${idx}`,
+    }));
+    const { api, component, fixture } = await setup(true, pageOneRows);
+
+    // Open two events on page 1
+    component.toggleDetails('evt-p1-0');
+    component.toggleDetails('evt-p1-1');
+    expect(component.expandedEventIds().size).toBe(2);
+
+    // Refresh where evt-p1-1 rolled off the list -> evt-p1-0 stays open, evt-p1-1 is pruned (no stale accumulation)
+    api.getTimeline.mockReturnValue(of([pageOneRows[0], { ...sample, eventId: 'evt-new-99' }]));
+    component.retry();
+    fixture.detectChanges();
+    expect(component.isDetailsExpanded('evt-p1-0')).toBe(true);
+    expect(component.isDetailsExpanded('evt-p1-1')).toBe(false);
+    expect(component.expandedEventIds().size).toBe(1);
+
+    // Filtering resets expanded state cleanly
+    api.getTimeline.mockReturnValue(of(pageOneRows));
+    component.filtersForm.patchValue({ actor: 'usuario-demo' });
+    component.applyFilters();
+    fixture.detectChanges();
+    expect(component.expandedEventIds().size).toBe(0);
+
+    // Pagination resets expanded state cleanly
+    component.toggleDetails('evt-p1-0');
+    expect(component.expandedEventIds().size).toBe(1);
+    component.nextPage();
+    fixture.detectChanges();
+    expect(component.expandedEventIds().size).toBe(0);
+
+    component.toggleDetails('evt-p1-0');
+    component.previousPage();
+    fixture.detectChanges();
+    expect(component.expandedEventIds().size).toBe(0);
+
+    component.toggleDetails('evt-p1-0');
+    component.clearFilters();
+    fixture.detectChanges();
+    expect(component.expandedEventIds().size).toBe(0);
+  });
 });
