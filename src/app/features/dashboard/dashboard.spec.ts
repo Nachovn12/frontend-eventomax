@@ -132,9 +132,10 @@ describe('Dashboard', () => {
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Producciones2');
     expect(text).toContain('2 abiertas');
-    expect(text).toContain('Pendientes1');
+    expect(text).toContain('Por confirmar1');
     expect(text).toContain('En operación0');
     expect(text).toContain('Servicios activos 1/2');
+    expect(text).toContain('1 servicio inactivo');
   });
 
   it('orders future productions chronologically and takes first 4', async () => {
@@ -311,8 +312,8 @@ describe('Dashboard', () => {
 
     expect(fixture.componentInstance.telemetryAxisLabels().now).toBe('19:00');
     expect(fixture.componentInstance.telemetryAxisLabels().tzAbbr).toBe('CLST');
-    expect(fixture.nativeElement.textContent).toContain('Tiempo Real (19:00 CLST)');
-    expect(fixture.nativeElement.textContent).not.toContain('Tiempo Real (19:00 CLT)');
+    expect(fixture.nativeElement.textContent).toContain('Corte (19:00 CLST)');
+    expect(fixture.nativeElement.textContent).not.toContain('Corte (19:00 CLT)');
 
     // Winter anchor (July = CLT, UTC-4): 22:00Z -> 18:00 CLT
     reportsMock.getKpis.mockReturnValue(of({
@@ -326,7 +327,73 @@ describe('Dashboard', () => {
 
     expect(fixture.componentInstance.telemetryAxisLabels().now).toBe('18:00');
     expect(fixture.componentInstance.telemetryAxisLabels().tzAbbr).toBe('CLT');
-    expect(fixture.nativeElement.textContent).toContain('Tiempo Real (18:00 CLT)');
+    expect(fixture.nativeElement.textContent).toContain('Corte (18:00 CLT)');
+  });
+
+  it('enforces UI/UX-05 hierarchy, semantic accuracy, honest Kafka config/lag, and empty 24h activity state', async () => {
+    roles.set([AppRole.Admin]);
+    dataServiceMock.getProductions.mockReturnValue(of([
+      { id: 1, name: 'Evento Cumbre', organizerId: 'org', location: 'SurActivo', scheduledAt: '2030-12-10T10:00:00', status: 'SOLICITADO', createdAt: '', updatedAt: '' },
+      { id: 2, name: 'Gala Anual', organizerId: 'org', location: 'SurActivo', scheduledAt: '2030-12-12T10:00:00', status: 'EN_EJECUCION', createdAt: '', updatedAt: '' },
+    ]));
+    dataServiceMock.getCatalogServices.mockReturnValue(of([
+      { id: 1, name: 'Audio', description: '', rate: 100, active: true },
+      { id: 2, name: 'Video', description: '', rate: 200, active: false },
+    ]));
+    reportsMock.getKpis.mockReturnValue(of({
+      ...reportResponse,
+      metrics: { ...reportResponse.metrics, totalStatusChanges: 0, closedCount: 0, cancelledCount: 0 },
+    }));
+
+    fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const text = el.textContent ?? '';
+
+    // 1. Visual hierarchy order: KPI Grid -> Report Transitions -> Próximas producciones
+    const kpiGrid = el.querySelector('.dash-kpi-grid') as HTMLElement;
+    const reportSection = el.querySelector('.telemetry-card') as HTMLElement;
+    const tableSection = el.querySelector('.dashboard-table-panel') as HTMLElement;
+    expect(kpiGrid.compareDocumentPosition(reportSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(reportSection.compareDocumentPosition(tableSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // 2. Semantic precision (no legacy misleading labels)
+    expect(text).toContain('Por confirmar');
+    expect(text).toContain('1 pendiente de confirmación');
+    expect(text).toContain('1 en ejecución');
+    expect(text).toContain('1 servicio activo');
+    expect(text).toContain('1 servicio inactivo');
+    expect(text).toContain('Transiciones a Cerrado registradas');
+    expect(text).not.toContain('cotizar rider');
+    expect(text).not.toContain('en bodega');
+    expect(text).not.toContain('bloqueos');
+    expect(text).not.toContain('acta final');
+
+    // 3. Honest Kafka config vs unreported consumer lag & 30s polling wording
+    expect(text).toContain('production-status-changed');
+    expect(text).toContain('Consumer lag (report)');
+    expect(text).toContain('No reportado');
+    expect(text).not.toContain('0 lag');
+    expect(text).not.toContain('Escuchando en vivo');
+    expect(text).not.toContain('Actualizado en tiempo real');
+    expect(text).toContain('Sincronización automática · cada 30 s');
+
+    // 4. Empty 24h activity state without fabricated bars
+    expect(el.querySelector('.dash-chart-empty-badge')?.textContent?.trim()).toBe(
+      'Sin transiciones registradas en las últimas 24 horas'
+    );
+    expect(el.querySelectorAll('.dash-bar-fill.is-active').length).toBe(0);
+
+    // 5. Accessible segmented filter tabs
+    const tabs = Array.from(el.querySelectorAll('button[role="tab"]')) as HTMLButtonElement[];
+    expect(tabs.length).toBe(3);
+    expect(tabs[0].getAttribute('aria-selected')).toBe('true');
+    tabs[1].click();
+    fixture.detectChanges();
+    expect(tabs[1].getAttribute('aria-selected')).toBe('true');
   });
 
 });

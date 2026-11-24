@@ -1,0 +1,20 @@
+<div class="clp-input-wrap" [class.is-disabled]="disabled()">
+  <span class="clp-prefix" aria-hidden="true">$</span>
+  <input
+    #rateInput
+    class="clp-native-input"
+    type="text"
+    inputmode="decimal"
+    autocomplete="off"
+    [id]="inputId()"
+    [value]="displayText()"
+    [placeholder]="placeholder()"
+    [disabled]="disabled()"
+    (input)="onInput($event)"
+    (blur)="onBlur()"
+  />
+  <span class="clp-suffix" aria-hidden="true">CLP</span>
+</div>
+@if (formattedPreview(); as preview) {
+  <span class="clp-preview-hint" aria-live="polite">Tarifa vigente: <strong>{{ preview }}</strong></span>
+}

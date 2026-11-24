@@ -1,16 +1,10 @@
 <div class="page-content dashboard-page">
+  <!-- 1. Encabezado Panel de control -->
   <header class="page-header dashboard-header">
     <div class="header-main">
-      <div class="header-badges">
-        <p class="eyebrow">
-          {{ (isAuditor() && !isAdmin()) ? 'Panel de auditoría' : 'Resumen operativo' }}
-        </p>
-        @if (canViewProductions()) {
-          <emx-status-pill tone="brand" size="sm" glyph="dot">
-            Streaming operacional sincronizado
-          </emx-status-pill>
-        }
-      </div>
+      <p class="dash-eyebrow">
+        {{ (isAuditor() && !isAdmin()) ? 'Panel de auditoría' : 'Resumen operativo' }}
+      </p>
       <h1 class="page-title">
         {{ (isAuditor() && !isAdmin()) ? 'Bienvenido a EventoMax' : 'Panel de control' }}
       </h1>
@@ -26,39 +20,179 @@
     @if (canViewProductions()) {
       <div class="dashboard-header-actions">
         <a routerLink="/productions" class="btn-system-link" emxButtonLink variant="secondary" size="medium">
-          <svg class="action-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-            <line x1="9" y1="3" x2="9" y2="18"/>
-            <line x1="15" y1="6" x2="15" y2="21"/>
-          </svg>
+          <svg lucideMap class="action-btn-icon" strokeWidth="1.9" aria-hidden="true"></svg>
           <span>Hoja de Ruta</span>
         </a>
         <a routerLink="/productions" [queryParams]="{ action: 'new' }" class="btn-system-link" emxButtonLink variant="primary" size="medium">
-          <svg class="action-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          <span>Nueva Producción</span>
+          <svg lucidePlus class="action-btn-icon" strokeWidth="2.2" aria-hidden="true"></svg>
+          <span>Nueva producción</span>
         </a>
       </div>
     }
   </header>
 
+  <!-- 2. Cards de indicadores operativos (prioridad ejecutiva arriba) -->
+  @if (isLoading()) {
+    <section class="metric-grid dash-kpi-grid" aria-busy="true" aria-label="Cargando métricas">
+      @for (card of [1, 2, 3, 4]; track card) {
+        <article class="metric-card dash-kpi-card dash-kpi-skeleton">
+          <div class="kpi-top">
+            <div class="skeleton skeleton-pill" style="width: 96px; height: 15px;"></div>
+            <div class="skeleton skeleton-icon-tile"></div>
+          </div>
+          <div class="skeleton skeleton-val" style="width: 56px; height: 32px; margin: 12px 0 6px;"></div>
+          <div class="skeleton skeleton-text" style="width: 140px; height: 13px; margin-bottom: 8px;"></div>
+          <div class="skeleton skeleton-text short" style="width: 110px; height: 11px; margin-bottom: 12px;"></div>
+          <div class="skeleton skeleton-bar" style="width: 100%; height: 4px;"></div>
+        </article>
+      }
+    </section>
+  } @else if (isError()) {
+    <div class="empty-state dash-error-card" role="alert">
+      <div class="empty-icon-wrapper amber" aria-hidden="true">
+        <svg lucideCircleAlert strokeWidth="1.75"></svg>
+      </div>
+      <h3>No pudimos cargar tu panel</h3>
+      <p>No fue posible obtener la información en este momento.</p>
+      <button type="button" class="btn-system" emxButton variant="secondary" size="medium" (click)="retry()">
+        Reintentar
+      </button>
+    </div>
+  } @else if (canViewCatalog()) {
+    <section class="metric-grid dash-kpi-grid" aria-label="Métricas de operación">
+      <!-- KPI 1: Producciones -->
+      <article class="metric-card dash-kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-label-group">
+            <span class="kpi-status-dot blue" aria-hidden="true"></span>
+            <span>Producciones</span>
+          </div>
+          <div class="kpi-icon-tile blue" aria-hidden="true">
+            <svg lucideCalendarDays class="kpi-vector-icon" strokeWidth="1.85"></svg>
+          </div>
+        </div>
+        <strong class="metric-value font-mono-num">{{ totalProductions() }}</strong>
+        <p class="metric-foot">Producciones registradas</p>
+        <div class="kpi-micro-meta">
+          <span class="meta-dot blue" aria-hidden="true"></span>
+          <span title="Estados no terminales (solicitado, confirmado, en montaje y en ejecución)">{{ activeProductionsCount() }} abiertas</span>
+          <span class="meta-sep" aria-hidden="true">·</span>
+          <span class="meta-dot slate" aria-hidden="true"></span>
+          <span>{{ closed() }} cerradas</span>
+        </div>
+        <div class="kpi-bicolor-track" aria-hidden="true">
+          <div class="kpi-bicolor-fill blue" [style.width.%]="activeProductionsPct()"></div>
+          <div class="kpi-bicolor-fill slate" [style.width.%]="closedPct()"></div>
+        </div>
+      </article>
+
+      <!-- KPI 2: Por confirmar -->
+      <article class="metric-card dash-kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-label-group">
+            <span class="kpi-status-dot amber" aria-hidden="true"></span>
+            <span>Por confirmar</span>
+          </div>
+          <div class="kpi-icon-tile amber" aria-hidden="true">
+            <svg lucideClock class="kpi-vector-icon" strokeWidth="1.85"></svg>
+          </div>
+        </div>
+        <strong class="metric-value font-mono-num">{{ requested() }}</strong>
+        <p class="metric-foot">Eventos por revisar y confirmar</p>
+        <div class="kpi-micro-meta">
+          <span class="meta-dot amber" aria-hidden="true"></span>
+          <span>{{ requested() }} {{ requested() === 1 ? 'pendiente de confirmación' : 'pendientes de confirmación' }}</span>
+          <a routerLink="/productions" class="meta-link">Revisar →</a>
+        </div>
+        <div class="kpi-bicolor-track" aria-hidden="true">
+          <div class="kpi-bicolor-fill amber" [style.width.%]="requestedPct()"></div>
+        </div>
+      </article>
+
+      <!-- KPI 3: En operación -->
+      <article class="metric-card dash-kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-label-group">
+            <span class="kpi-status-dot green" aria-hidden="true"></span>
+            <span>En operación</span>
+          </div>
+          <div class="kpi-icon-tile green" aria-hidden="true">
+            <svg lucideActivity class="kpi-vector-icon" strokeWidth="1.85"></svg>
+          </div>
+        </div>
+        <strong class="metric-value font-mono-num">{{ live() }}</strong>
+        <p class="metric-foot">Producciones en montaje o ejecución</p>
+        <div class="kpi-micro-meta">
+          <span class="meta-dot purple" aria-hidden="true"></span>
+          <span>{{ montage() }} montaje</span>
+          <span class="meta-sep" aria-hidden="true">·</span>
+          <span class="meta-dot green" aria-hidden="true"></span>
+          <span>{{ execution() }} en ejecución</span>
+        </div>
+        <div class="kpi-bicolor-track" aria-hidden="true">
+          <div class="kpi-bicolor-fill purple" [style.width.%]="montagePct()"></div>
+          <div class="kpi-bicolor-fill green" [style.width.%]="executionPct()"></div>
+        </div>
+      </article>
+
+      <!-- KPI 4: Servicios activos -->
+      <article class="metric-card dash-kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-label-group">
+            <span class="kpi-status-dot purple" aria-hidden="true"></span>
+            <span>Servicios activos</span>
+          </div>
+          <div class="kpi-icon-tile purple" aria-hidden="true">
+            <svg lucideLayers class="kpi-vector-icon" strokeWidth="1.85"></svg>
+          </div>
+        </div>
+        <strong class="metric-value font-mono-num">
+          {{ activeServicesCount() }}<small>/{{ totalServicesCount() }}</small>
+        </strong>
+        <p class="metric-foot">Activos / Total servicios registrados</p>
+        <div class="kpi-micro-meta">
+          <span class="meta-dot purple" aria-hidden="true"></span>
+          <span>{{ activeServicesCount() }} {{ activeServicesCount() === 1 ? 'servicio activo' : 'servicios activos' }}</span>
+          <span class="meta-sep" aria-hidden="true">·</span>
+          <span class="meta-dot slate" aria-hidden="true"></span>
+          <span>{{ inactiveServicesCount() }} {{ inactiveServicesCount() === 1 ? 'servicio inactivo' : 'servicios inactivos' }}</span>
+        </div>
+        <div class="kpi-bicolor-track" aria-hidden="true">
+          <div class="kpi-bicolor-fill purple" [style.width.%]="activeServicesPct()"></div>
+        </div>
+      </article>
+    </section>
+  }
+
+  <!-- 3. Análisis de transiciones y flujo de eventos (independiente de Productions/Catalog - EMX-106) -->
   @if (canViewReportSummary()) {
-    <section class="telemetry-card smooth-shadow-ring-xs" aria-labelledby="dashboard-report-heading">
+    <section class="telemetry-card dash-section-card" aria-labelledby="dashboard-report-heading">
       <header class="telemetry-header">
-        <div>
+        <div class="telemetry-header-copy">
           <div class="telemetry-header-title">
             <h2 id="dashboard-report-heading">Análisis de transiciones (últimas 24 horas)</h2>
+            @if (reportLoading()) {
+              <span class="dash-report-pill is-loading" role="status">
+                <span class="dash-pill-dot" aria-hidden="true"></span>
+                <span>Sincronizando Report…</span>
+              </span>
+            } @else if (reportErrorCode() !== null) {
+              <span class="dash-report-pill is-error" role="status">
+                <span class="dash-pill-dot" aria-hidden="true"></span>
+                <span>Report no disponible</span>
+              </span>
+            } @else if (reportKpis()) {
+              <span class="dash-report-pill is-ok" role="status">
+                <span class="dash-pill-dot" aria-hidden="true"></span>
+                <span>Report sincronizado</span>
+              </span>
+            }
           </div>
           <p>Métricas reales del servicio Report; no equivalen al inventario total de producciones.</p>
         </div>
         <a class="btn-link-action" routerLink="/reports">
-          Ver reportes completos
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
+          <span>Ver reportes completos</span>
+          <svg lucideArrowRight class="link-arrow-icon" strokeWidth="2" aria-hidden="true"></svg>
         </a>
       </header>
 
@@ -77,24 +211,26 @@
             }
           </div>
           <div class="telemetry-chart-skeleton">
-            <div class="skeleton" style="height: 52px; width: 100%; border-radius: 6px;"></div>
+            <div class="skeleton" style="height: 84px; width: 100%; border-radius: 10px;"></div>
           </div>
         </div>
       } @else if (reportErrorCode() !== null) {
-        <div class="dashboard-report-feedback" role="status">
-          Los KPIs de Report no están disponibles por ahora (HTTP {{ reportErrorCode() }}).
-          El resto del panel continúa operativo.
-          <button class="btn-system" type="button" emxButton variant="secondary" size="small" (click)="retry()">Reintentar</button>
+        <div class="dash-report-error" role="status">
+          <svg lucideCircleAlert class="report-err-icon" strokeWidth="1.9" aria-hidden="true"></svg>
+          <div class="dash-report-error-copy">
+            <strong>Los KPIs de Report no están disponibles por ahora (HTTP {{ reportErrorCode() }}).</strong>
+            <span>El resto del panel continúa operativo.</span>
+          </div>
+          <button class="btn-system" type="button" emxButton variant="secondary" size="small" (click)="retry()">
+            Reintentar
+          </button>
         </div>
       } @else if (reportKpis(); as report) {
-        <!-- 4 Stat Metrics (4x4 Grid Alignment with KPIs) -->
         <div class="telemetry-stat-strip">
           <div class="stat-col">
             <div class="stat-col-header">
               <div class="stat-icon-tile blue" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                </svg>
+                <svg lucideActivity class="stat-icon-svg" strokeWidth="1.9"></svg>
               </div>
               <span>Cambios de estado observados</span>
             </div>
@@ -105,10 +241,7 @@
           <div class="stat-col">
             <div class="stat-col-header">
               <div class="stat-icon-tile amber" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
+                <svg lucideClock class="stat-icon-svg" strokeWidth="1.9"></svg>
               </div>
               <span>Tiempo prom. montaje</span>
             </div>
@@ -119,96 +252,129 @@
           <div class="stat-col">
             <div class="stat-col-header">
               <div class="stat-icon-tile green" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                  <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
+                <svg lucideCircleCheck class="stat-icon-svg" strokeWidth="1.9"></svg>
               </div>
-              <span>Transiciones a CERRADO</span>
+              <span>Transiciones a Cerrado</span>
             </div>
             <strong class="stat-number font-mono-num">{{ report.metrics.closedCount }}</strong>
-            <span class="stat-footnote">Producciones con acta final</span>
+            <span class="stat-footnote">Transiciones a Cerrado registradas</span>
           </div>
 
           <div class="stat-col">
             <div class="stat-col-header">
               <div class="stat-icon-tile red" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="15" y1="9" x2="9" y2="15"/>
-                  <line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
+                <svg lucideCircleX class="stat-icon-svg" strokeWidth="1.9"></svg>
               </div>
-              <span>Transiciones a CANCELADO</span>
+              <span>Transiciones a Cancelado</span>
             </div>
             <strong class="stat-number font-mono-num">{{ report.metrics.cancelledCount }}</strong>
             <span class="stat-footnote">Cancelaciones registradas en el período</span>
           </div>
         </div>
 
-        <!-- Telemetry Inspector (Honest 24h Activity Strip) -->
         <div class="telemetry-chart-section">
           <div class="chart-telemetry-header">
             <div class="chart-telemetry-label">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#2563EB" stroke-width="2">
-                <rect x="2" y="2" width="20" height="20" rx="2" ry="2"/>
-                <path d="M7 12h10M12 7v10"/>
-              </svg>
-              Flujo de eventos en tiempo real
+              <svg lucideActivity class="chart-head-icon" strokeWidth="1.9" aria-hidden="true"></svg>
+              <span>Flujo de eventos (ventana 24h)</span>
             </div>
-            <div class="chart-telemetry-meta font-mono-num" role="group" aria-label="Telemetría de clúster Kafka">
-              <emx-tag>Kafka 3 Brokers</emx-tag>
-              <emx-tag>Particiones: 3</emx-tag>
-              <emx-tag>ACK=all</emx-tag>
-              <emx-tag tone="positive">
-                <span class="tag-indicator-dot" aria-hidden="true"></span>
-                0 lag
-              </emx-tag>
-            </div>
+            <span class="chart-sync-meta font-mono-num">
+              <svg lucideRefreshCw class="sync-icon" strokeWidth="1.9" aria-hidden="true"></svg>
+              <span>Sincronización automática · cada 30 s</span>
+            </span>
           </div>
 
-          <!-- 24-Hour Timeline Activity Grid -->
-          <div class="timeline-histogram-wrap">
-            <div class="histogram-bars-row">
-              @for (bar of telemetryBars(); track $index; let last = $last) {
-                <div class="hist-col" [class.live-now]="last && report.metrics.totalStatusChanges === 0" [title]="bar.label + ' - ' + bar.count + ' eventos'">
-                  <div class="hist-bar"
-                       [class.resting]="!bar.active"
-                       [class.active]="bar.active"
-                       [style.height.%]="bar.active ? bar.heightPct : null"></div>
+          <div class="dash-chart-surface">
+            <div class="dash-chart-plot-row">
+              <div class="dash-y-axis font-mono-num" aria-hidden="true">
+                <span>{{ telemetryYAxis().top }}</span>
+                <span>{{ telemetryYAxis().mid }}</span>
+                <span>{{ telemetryYAxis().bottom }}</span>
+              </div>
+
+              <div class="dash-bars-stage">
+                <div class="dash-grid-lines" aria-hidden="true">
+                  <span></span>
+                  <span></span>
+                  <span></span>
                 </div>
-              }
+
+                @if (report.metrics.totalStatusChanges === 0) {
+                  <div class="dash-chart-empty-badge" role="status">
+                    Sin transiciones registradas en las últimas 24 horas
+                  </div>
+                }
+
+                <div class="dash-bars-row" role="list" aria-label="Actividad horaria de transiciones en las últimas 24 horas">
+                  @for (bar of telemetryBars(); track $index) {
+                    <div
+                      class="dash-bar-slot"
+                      role="listitem"
+                      tabindex="0"
+                      [class.has-events]="bar.active"
+                      [title]="bar.label + ' · ' + bar.count + (bar.count === 1 ? ' evento' : ' eventos')"
+                      [attr.aria-label]="bar.label + ': ' + bar.count + (bar.count === 1 ? ' evento' : ' eventos')"
+                    >
+                      <span class="dash-bar-tooltip font-mono-num" aria-hidden="true">
+                        {{ bar.label }} · {{ bar.count }} {{ bar.count === 1 ? 'evento' : 'eventos' }}
+                      </span>
+                      <div
+                        class="dash-bar-fill"
+                        [class.is-active]="bar.active"
+                        [class.is-empty]="!bar.active"
+                        [style.height.%]="bar.active ? bar.heightPct : null"
+                      ></div>
+                    </div>
+                  }
+                </div>
+              </div>
             </div>
 
-            <div class="histogram-axis font-mono-num">
+            <div class="dash-x-axis font-mono-num">
               <span>{{ telemetryAxisLabels().first }}</span>
               <span>{{ telemetryAxisLabels().second }}</span>
               <span>{{ telemetryAxisLabels().third }}</span>
               <span>{{ telemetryAxisLabels().fourth }}</span>
-              <span class="axis-live">● Tiempo Real ({{ telemetryAxisLabels().now }} {{ telemetryAxisLabels().tzAbbr }})</span>
+              <span class="dash-x-now">Corte ({{ telemetryAxisLabels().now }} {{ telemetryAxisLabels().tzAbbr }})</span>
             </div>
           </div>
 
-          <div class="telemetry-status-banner">
-            <div class="status-left">
-              <span class="radar-dot-pulse"></span>
-              @if (report.metrics.totalStatusChanges === 0) {
-                <span>Canal de eventos en streaming activo · <strong>0 transiciones observadas</strong> en las últimas 24h.</span>
-              } @else {
-                <span>Canal de eventos en streaming activo · <strong>{{ report.metrics.totalStatusChanges }} transiciones procesadas</strong> en las últimas 24h.</span>
-              }
+          <!-- Indicadores técnicos Kafka: distingue configuración declarada vs lag no reportado -->
+          <div class="dash-kafka-strip" role="group" aria-label="Configuración Kafka y estado de consumo">
+            <div class="dash-kafka-context">
+              <svg lucideServer class="kafka-head-icon" strokeWidth="1.85" aria-hidden="true"></svg>
+              <span>Kafka · topic <code>production-status-changed</code></span>
             </div>
-            <span class="status-right font-mono-num">Escuchando en vivo</span>
+            <div class="dash-kafka-items font-mono-num">
+              <span class="dash-kafka-item" title="Configuración declarada del clúster Kafka">
+                <span class="dk-k">Brokers</span>
+                <strong class="dk-v">3</strong>
+                <em class="dk-src">config.</em>
+              </span>
+              <span class="dash-kafka-item" title="Configuración declarada del topic production-status-changed">
+                <span class="dk-k">Particiones</span>
+                <strong class="dk-v">3</strong>
+                <em class="dk-src">config.</em>
+              </span>
+              <span class="dash-kafka-item" title="Política de confirmación declarada en el productor Kafka">
+                <span class="dk-k">ACK</span>
+                <strong class="dk-v">all</strong>
+                <em class="dk-src">config.</em>
+              </span>
+              <span
+                class="dash-kafka-item is-unknown"
+                title="El endpoint de KPIs del servicio Report no expone actualmente el consumer lag en vivo del grupo de consumo"
+              >
+                <span class="dk-k">Consumer lag (report)</span>
+                <strong class="dk-v">No reportado</strong>
+              </span>
+            </div>
           </div>
         </div>
 
         @if (report.partialCoverage.isPartial) {
           <footer class="telemetry-footer-note" role="note">
-            <svg class="footer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
+            <svg lucideInfo class="footer-icon" strokeWidth="1.9" aria-hidden="true"></svg>
             <span>{{ report.partialCoverage.description }}</span>
           </footer>
         }
@@ -216,22 +382,9 @@
     </section>
   }
 
+  <!-- 4. Próximas producciones / Vistas por rol -->
   @if (isLoading()) {
-    <section class="metric-grid emx-noticeline-grid" aria-busy="true" aria-label="Cargando métricas">
-      @for (card of [1, 2, 3, 4]; track card) {
-        <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm emx-kpi-skeleton">
-          <div class="kpi-top">
-            <div class="skeleton skeleton-pill" style="width: 96px; height: 16px;"></div>
-            <div class="skeleton skeleton-icon-tile"></div>
-          </div>
-          <div class="skeleton skeleton-val" style="width: 56px; height: 32px; margin: 12px 0 6px;"></div>
-          <div class="skeleton skeleton-text" style="width: 140px; height: 13px; margin-bottom: 8px;"></div>
-          <div class="skeleton skeleton-text short" style="width: 110px; height: 10px; margin-bottom: 12px;"></div>
-          <div class="skeleton skeleton-bar" style="width: 100%; height: 4px;"></div>
-        </article>
-      }
-    </section>
-    <section class="panel dashboard-table-panel smooth-shadow-ring-xs emx-elevate-panel" aria-busy="true">
+    <section class="panel dashboard-table-panel dash-section-card" aria-busy="true">
       <header class="panel-heading">
         <div>
           <div class="skeleton skeleton-title" style="width: 180px; height: 20px; margin-bottom: 6px;"></div>
@@ -239,7 +392,7 @@
         </div>
       </header>
       <div class="dashboard-table-skeleton" aria-hidden="true">
-        @for (row of [1, 2, 3, 4, 5]; track row) {
+        @for (row of [1, 2, 3, 4]; track row) {
           <div class="skeleton-table-row">
             <div class="skeleton skeleton-date-tile"></div>
             <div class="skeleton-row-content">
@@ -247,117 +400,13 @@
               <div class="skeleton skeleton-text short" style="width: 30%; height: 11px;"></div>
             </div>
             <div class="skeleton skeleton-pill" style="width: 76px; height: 22px;"></div>
-            <div class="skeleton skeleton-btn" style="width: 80px; height: 28px;"></div>
           </div>
         }
       </div>
     </section>
-  } @else if (isError()) {
-    <div class="empty-state smooth-shadow-ring-xs" role="alert">
-      <div class="empty-icon-wrapper amber" aria-hidden="true"><svg lucideCircleAlert strokeWidth="1.75" /></div>
-      <h3>No pudimos cargar tu panel</h3>
-      <p>No fue posible obtener la información en este momento.</p>
-      <button type="button" class="btn-system" emxButton variant="secondary" size="medium" (click)="retry()">
-        Reintentar
-      </button>
-    </div>
-  } @else {
-
+  } @else if (!isError()) {
     @if (canViewCatalog()) {
-      <!-- 4 KPIs de Alta Fidelidad Estilo Noticeline (Garantizan paso de tests unitarios) -->
-      <section class="metric-grid emx-noticeline-grid emx-content-fade-in" aria-label="Métricas de operación">
-        
-        <!-- KPI 1: Producciones -->
-        <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-          <div class="kpi-top">
-            <div class="kpi-label-group">
-              <span class="kpi-status-dot blue" aria-hidden="true"></span>
-              <span>Producciones</span>
-            </div>
-            <div class="kpi-icon-tile blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-          </div>
-          <strong class="metric-value font-mono-num">{{ totalProductions() }}</strong>
-          <p class="metric-foot">Producciones registradas</p>
-          <div class="kpi-micro-meta">
-            <span class="meta-dot blue"></span><span title="Estados no terminales (solicitado, confirmado, en montaje y en ejecución)">{{ activeProductionsCount() }} abiertas</span>
-            <span class="meta-sep">·</span>
-            <span class="meta-dot slate"></span>{{ closed() }} cerradas
-          </div>
-          <div class="kpi-bicolor-track" aria-hidden="true">
-            <div class="kpi-bicolor-fill blue" [style.width.%]="activeProductionsPct()"></div>
-            <div class="kpi-bicolor-fill slate" [style.width.%]="closedPct()"></div>
-          </div>
-        </article>
-
-        <!-- KPI 2: Pendientes -->
-        <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-          <div class="kpi-top">
-            <div class="kpi-label-group">
-              <span class="kpi-status-dot amber" aria-hidden="true"></span>
-              <span>Pendientes</span>
-            </div>
-            <div class="kpi-icon-tile amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-          </div>
-          <strong class="metric-value font-mono-num">{{ requested() }}</strong>
-          <p class="metric-foot">Eventos por revisar y confirmar</p>
-          <div class="kpi-micro-meta">
-            <span class="meta-dot amber"></span>{{ requested() }} requiere cotizar rider
-            <a routerLink="/productions" class="meta-link">Revisar →</a>
-          </div>
-          <div class="kpi-bicolor-track" aria-hidden="true">
-            <div class="kpi-bicolor-fill amber" [style.width.%]="requestedPct()"></div>
-            <div class="kpi-bicolor-fill blue" [style.width.%]="100 - requestedPct()"></div>
-          </div>
-        </article>
-
-        <!-- KPI 3: En Operación -->
-        <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-          <div class="kpi-top">
-            <div class="kpi-label-group">
-              <span class="kpi-status-dot green" aria-hidden="true"></span>
-              <span>En operación</span>
-            </div>
-            <div class="kpi-icon-tile green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-          </div>
-          <strong class="metric-value font-mono-num">{{ live() }}</strong>
-          <p class="metric-foot">Producciones en montaje o ejecución</p>
-          <div class="kpi-micro-meta">
-            <span class="meta-dot purple"></span>{{ montage() }} montaje
-            <span class="meta-sep">·</span>
-            <span class="meta-dot green"></span>{{ execution() }} en vivo
-          </div>
-          <div class="kpi-bicolor-track" aria-hidden="true">
-            <div class="kpi-bicolor-fill purple" [style.width.%]="montagePct()"></div>
-            <div class="kpi-bicolor-fill green" [style.width.%]="executionPct()"></div>
-          </div>
-        </article>
-
-        <!-- KPI 4: Servicios Activos -->
-        <article class="metric-card emx-kpi-noticeline smooth-shadow-ring-sm hover:smooth-shadow-ring-md emx-elevate-kpi">
-          <div class="kpi-top">
-            <div class="kpi-label-group">
-              <span class="kpi-status-dot purple" aria-hidden="true"></span>
-              <span>Servicios activos</span>
-            </div>
-            <div class="kpi-icon-tile purple" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="kpi-vector-icon"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
-          </div>
-          <strong class="metric-value font-mono-num">
-            {{ activeServicesCount() }}<small>/{{ totalServicesCount() }}</small>
-          </strong>
-          <p class="metric-foot">Activos / Total servicios registrados</p>
-          <div class="kpi-micro-meta">
-            <span class="meta-dot purple"></span>{{ activeServicesCount() }} en bodega
-            <span class="meta-sep">·</span>
-            <span class="meta-ok">0 bloqueos</span>
-          </div>
-          <div class="kpi-bicolor-track kpi-track-scaled" aria-hidden="true">
-            <div class="kpi-bicolor-fill purple is-scaled" style="--bar-scale: 1"></div>
-          </div>
-        </article>
-      </section>
-
-      <!-- Tabla de Próximas Producciones (Agenda Operativa de Alta Fidelidad) -->
-      <section class="panel dashboard-table-panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel emx-content-fade-in">
+      <section class="panel dashboard-table-panel dash-section-card">
         <div class="panel-heading">
           <div>
             <h2>
@@ -368,27 +417,45 @@
           </div>
 
           <div class="agenda-controls-group">
-            <div class="pipeline-filters" role="tablist" aria-label="Filtro de agenda operativa">
-              <button type="button" class="pill-tab" [class.active]="selectedPipelineFilter() === 'all'" (click)="setPipelineFilter('all')">
+            <div class="dash-segmented" role="tablist" aria-label="Filtro de agenda operativa">
+              <button
+                type="button"
+                role="tab"
+                class="dash-seg-btn"
+                [class.is-active]="selectedPipelineFilter() === 'all'"
+                [attr.aria-selected]="selectedPipelineFilter() === 'all'"
+                (click)="setPipelineFilter('all')"
+              >
                 <span>Todas</span>
                 <span class="seg-count font-mono-num">{{ activeProductions().length }}</span>
               </button>
-              <button type="button" class="pill-tab" [class.active]="selectedPipelineFilter() === 'live'" (click)="setPipelineFilter('live')">
-                <span>En Terreno</span>
+              <button
+                type="button"
+                role="tab"
+                class="dash-seg-btn"
+                [class.is-active]="selectedPipelineFilter() === 'live'"
+                [attr.aria-selected]="selectedPipelineFilter() === 'live'"
+                (click)="setPipelineFilter('live')"
+              >
+                <span>En terreno</span>
                 <span class="seg-count font-mono-num">{{ live() }}</span>
               </button>
-              <button type="button" class="pill-tab" [class.active]="selectedPipelineFilter() === 'requested'" (click)="setPipelineFilter('requested')">
-                <span>Por Confirmar</span>
+              <button
+                type="button"
+                role="tab"
+                class="dash-seg-btn"
+                [class.is-active]="selectedPipelineFilter() === 'requested'"
+                [attr.aria-selected]="selectedPipelineFilter() === 'requested'"
+                (click)="setPipelineFilter('requested')"
+              >
+                <span>Por confirmar</span>
                 <span class="seg-count font-mono-num">{{ requested() }}</span>
               </button>
             </div>
 
             <a class="text-link-all" routerLink="/productions">
               <span>Ver todas</span>
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
+              <svg lucideArrowRight class="link-arrow-icon" strokeWidth="2" aria-hidden="true"></svg>
             </a>
           </div>
         </div>
@@ -396,29 +463,29 @@
         @if (filteredUpcoming().length > 0) {
           <emx-production-table [rows]="filteredUpcoming()" caption="Próximas producciones abiertas" />
         } @else {
-          <div class="empty-state empty-state-panel">
-            <span class="icon-tile"><svg lucideCalendarDays class="metric-icon" /></span>
+          <div class="empty-state empty-state-panel" role="status">
+            <span class="icon-tile"><svg lucideCalendarDays class="metric-icon" aria-hidden="true"></svg></span>
             <p>No hay producciones abiertas programadas para el filtro seleccionado.</p>
           </div>
         }
 
         <div class="panel-footer">
           <span>Mostrando {{ filteredUpcoming().length }} de {{ filteredAgenda().length }} producciones para el filtro seleccionado</span>
-          <span class="font-mono-num">Actualizado en tiempo real</span>
+          <span class="font-mono-num">Actualización automática · cada 30 s</span>
         </div>
       </section>
     }
 
     @if (isAuditor() && !isAdmin()) {
-      <section class="panel smooth-shadow-ring-xs dashboard-audit-link">
+      <section class="panel dash-section-card dashboard-audit-link">
         <h2>Actividad y trazabilidad</h2>
         <p>Consulta la línea de tiempo y aplica filtros de auditoría con tu rol autorizado.</p>
-        <a class="text-link" routerLink="/audit">Ir a auditoría <svg lucideArrowRight class="link-icon" /></a>
+        <a class="text-link" routerLink="/audit">Ir a auditoría <svg lucideArrowRight class="link-icon" aria-hidden="true"></svg></a>
       </section>
     }
 
     @if (isOrganizerOnly()) {
-      <section class="panel smooth-shadow-ring-xs hover:smooth-shadow-ring-sm emx-elevate-panel">
+      <section class="panel dash-section-card dashboard-table-panel">
         <div class="panel-heading">
           <div>
             <h2>Mis eventos</h2>
@@ -430,21 +497,20 @@
           <emx-production-table [rows]="upcoming()" [detailLinks]="true" caption="Mis próximas producciones" />
         } @else {
           <div class="empty-state empty-state-panel" role="status">
-            <span class="icon-tile"><svg lucideCalendarDays class="metric-icon" /></span>
+            <span class="icon-tile"><svg lucideCalendarDays class="metric-icon" aria-hidden="true"></svg></span>
             <p>No tienes próximas producciones en tu listado autorizado.</p>
           </div>
         }
         @if (overdueProductions().length > 0) {
-          <header class="panel-heading"><h3>Pendientes atrasadas</h3></header>
+          <header class="panel-heading panel-subheading"><h3>Pendientes atrasadas</h3></header>
           <emx-production-table [rows]="overdueProductions().slice(0, 4)" [detailLinks]="true" caption="Mis producciones pendientes atrasadas" />
         }
         @if (live() > 0) {
-          <header class="panel-heading"><h3>En montaje o ejecución</h3></header>
+          <header class="panel-heading panel-subheading"><h3>En montaje o ejecución</h3></header>
           <emx-production-table [rows]="liveProductions().slice(0, 4)" [detailLinks]="true" caption="Mis producciones en montaje o ejecución" />
         }
         <div class="panel-footer"><a class="text-link" routerLink="/productions">Ver todos mis eventos</a></div>
       </section>
     }
-
   }
 </div>
