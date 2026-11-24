@@ -95,4 +95,22 @@ describe('ProductionTable role actions', () => {
     expect(text).toContain('Cliente externo');
     expect(text).not.toContain(rawCanonicalId);
   });
+
+  it('formats scheduledAt in Chile standard dd/MM/yyyy and dynamic 24h CLST/CLT', async () => {
+    await TestBed.configureTestingModule({ imports: [ProductionTable], providers: [provideRouter([])] }).compileComponents();
+    const fixture = TestBed.createComponent(ProductionTable);
+    fixture.componentRef.setInput('rows', [
+      { id: 13, name: 'Verano CLST', location: 'Santiago', scheduledAt: '2026-11-25T09:00:00', status: 'SOLICITADO' },
+      { id: 14, name: 'Invierno CLT', location: 'Concepción', scheduledAt: '2026-07-15T18:00:00Z', status: 'CONFIRMADO' },
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const times = Array.from(fixture.nativeElement.querySelectorAll('.schedule-time')) as HTMLElement[];
+    const dates = Array.from(fixture.nativeElement.querySelectorAll('.schedule-date')) as HTMLElement[];
+    expect(times[0].textContent?.trim()).toBe('09:00 CLST');
+    expect(dates[0].textContent?.trim()).toBe('25/11/2026');
+    expect(times[1].textContent?.trim()).toBe('14:00 CLT');
+    expect(dates[1].textContent?.trim()).toBe('15/07/2026');
+  });
 });

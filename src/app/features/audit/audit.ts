@@ -1,11 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, merge, of, timer } from 'rxjs';
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { DEFAULT_POLL_INTERVAL_MS } from '../../core/utils/live-polling';
+import {
+  AuditTimestampChile,
+  chileLocalInputToAuditUtc,
+  formatAuditTimestampChile,
+  formatCalendarRangeToChileDatetimeLocal,
+  formatInstantToChileDatetimeLocal,
+  getChileMonthStartDatetimeLocal,
+} from '../../core/utils/chile-time';
 import {
   LucideActivity,
   LucideCircleCheck,
@@ -52,7 +59,6 @@ interface AuditViewState {
   selector: 'app-audit',
   standalone: true,
   imports: [
-    DatePipe,
     ReactiveFormsModule,
     DateRangePickerComponent,
     LucideActivity,
@@ -294,11 +300,9 @@ export class Audit {
     return this.copiedKey() === key;
   }
 
-  /** Inputs datetime-local representan hora local del navegador: serializar como UTC SIN Z para el contrato Audit. */
+  /** Inputs datetime-local representan hora de Chile continental (America/Santiago): serializar como UTC SIN Z para el contrato Audit. */
   private toAuditUtc(input: string): string | undefined {
-    if (!input) return undefined;
-    const date = new Date(input);
-    return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 19) : undefined;
+    return chileLocalInputToAuditUtc(input);
   }
 
   applyFilters(): void {
@@ -341,49 +345,36 @@ export class Audit {
     if (preset === 'last24h') {
       const from = new Date(now.getTime() - 86400000);
       this.filtersForm.patchValue({
-        from: this.toLocalDatetimeString(from),
-        to: this.toLocalDatetimeString(now),
+        from: formatInstantToChileDatetimeLocal(from),
+        to: formatInstantToChileDatetimeLocal(now),
       });
     } else if (preset === 'last7d') {
       const from = new Date(now.getTime() - 7 * 86400000);
       this.filtersForm.patchValue({
-        from: this.toLocalDatetimeString(from),
-        to: this.toLocalDatetimeString(now),
+        from: formatInstantToChileDatetimeLocal(from),
+        to: formatInstantToChileDatetimeLocal(now),
       });
     } else if (preset === 'last30d') {
       const from = new Date(now.getTime() - 30 * 86400000);
       this.filtersForm.patchValue({
-        from: this.toLocalDatetimeString(from),
-        to: this.toLocalDatetimeString(now),
+        from: formatInstantToChileDatetimeLocal(from),
+        to: formatInstantToChileDatetimeLocal(now),
       });
     } else if (preset === 'thisMonth') {
-      const from = new Date(now.getFullYear(), now.getMonth(), 1);
       this.filtersForm.patchValue({
-        from: this.toLocalDatetimeString(from),
-        to: this.toLocalDatetimeString(now),
+        from: getChileMonthStartDatetimeLocal(now),
+        to: formatInstantToChileDatetimeLocal(now),
       });
     }
   }
 
   onAuditRangeChange(range: { start: Date; end: Date }): void {
     this.auditRangePreset.set('custom');
-    const start = new Date(range.start);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(range.end);
-    end.setHours(23, 59, 59, 999);
+    const bounds = formatCalendarRangeToChileDatetimeLocal(range.start, range.end);
     this.filtersForm.patchValue({
-      from: this.toLocalDatetimeString(start),
-      to: this.toLocalDatetimeString(end),
+      from: bounds.from,
+      to: bounds.to,
     });
-  }
-
-  private toLocalDatetimeString(d: Date): string {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
   nextPage(): void {
@@ -405,6 +396,11 @@ export class Audit {
   /** Audit define timestamp ISO sin offset, cuyo valor representa UTC. */
   timestampUtc(value: string): string {
     return /(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : `${value}Z`;
+  }
+
+  /** Presentación estándar de Chile continental (America/Santiago, es-CL, 24h, CLST/CLT dinámico). */
+  formatTimestampChile(value: string): AuditTimestampChile {
+    return formatAuditTimestampChile(value);
   }
 
   errorText(status: number | null): string {

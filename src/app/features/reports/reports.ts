@@ -1,10 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, of } from 'rxjs';
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
+import {
+  OperationalTimestampChile,
+  formatOperationalTimestampChile,
+  getChileDateTimeParts,
+  parseServerTimestampAsUtc,
+} from '../../core/utils/chile-time';
 import {
   LucideActivity,
   LucideClock,
@@ -42,7 +47,6 @@ interface TopServicesViewState {
   selector: 'app-reports',
   standalone: true,
   imports: [
-    DatePipe,
     ReactiveFormsModule,
     StatusDistributionChart,
     DailyEventsChart,
@@ -199,7 +203,10 @@ export class Reports {
     if (raw.length > 0) return raw;
     const total = res?.metrics.totalStatusChanges ?? 0;
     if (total > 0) {
-      const fallbackDate = (res?.to || res?.generatedAt || '').slice(0, 10) || 'Período actual';
+      const refInstant = parseServerTimestampAsUtc(res?.to || res?.generatedAt);
+      const fallbackDate = refInstant
+        ? getChileDateTimeParts(refInstant).dateKey
+        : (res?.to || res?.generatedAt || '').slice(0, 10) || 'Período actual';
       return [{ date: fallbackDate, count: total }];
     }
     return [];
@@ -278,6 +285,10 @@ export class Reports {
     if (code === 404) return 'El servicio de analítica no se encuentra disponible en este momento.';
     if (code === 0 || code === 502 || code === 503) return 'Report no está disponible. Revisa la conectividad cloud.';
     return 'No fue posible cargar la información. Intenta nuevamente.';
+  }
+
+  formatReportTimestamp(iso: string | null | undefined): OperationalTimestampChile {
+    return formatOperationalTimestampChile(iso);
   }
 
   retry(): void {

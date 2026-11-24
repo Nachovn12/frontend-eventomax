@@ -54,8 +54,9 @@ describe('Audit EP2 (EMX-109/110)', () => {
     expect(fixture.nativeElement.textContent).toContain('Acceso restringido');
   });
 
-  it('applies filters with browser-local datetime converted into UTC', async () => {
+  it('applies filters with Chile (America/Santiago) datetime converted into UTC independently of device TZ', async () => {
     const { component, api } = await setup();
+    // October in Chile = CLST (UTC-3)
     component.filtersForm.patchValue({
       actor: ' usuario-demo ', type: 'ProductionStatusChanged',
       from: '2026-10-01T10:00', to: '2026-10-15T18:30'
@@ -64,8 +65,21 @@ describe('Audit EP2 (EMX-109/110)', () => {
     expect(api.getTimeline).toHaveBeenLastCalledWith({
       actor: 'usuario-demo',
       type: 'ProductionStatusChanged',
-      from: new Date('2026-10-01T10:00').toISOString().slice(0, 19),
-      to: new Date('2026-10-15T18:30').toISOString().slice(0, 19),
+      from: '2026-10-01T13:00:00',
+      to: '2026-10-15T21:30:00',
+      page: 0, size: 25
+    });
+
+    // July in Chile = CLT (UTC-4)
+    component.filtersForm.patchValue({
+      from: '2026-07-15T10:00', to: '2026-07-15T23:59:59'
+    });
+    component.applyFilters();
+    expect(api.getTimeline).toHaveBeenLastCalledWith({
+      actor: 'usuario-demo',
+      type: 'ProductionStatusChanged',
+      from: '2026-07-15T14:00:00',
+      to: '2026-07-16T03:59:59',
       page: 0, size: 25
     });
   });
@@ -106,6 +120,31 @@ describe('Audit EP2 (EMX-109/110)', () => {
   it('interprets LocalDateTime timestamps as UTC', async () => {
     const { component } = await setup();
     expect(component.timestampUtc('2026-10-14T19:00:00')).toBe('2026-10-14T19:00:00Z');
+  });
+
+  it('renders Chile summer (CLST, UTC-3) and winter (CLT, UTC-4) timestamps without fake UTC labels and preserves UTC tooltip/detail', async () => {
+    const rows: AuditEvent[] = [
+      { ...sample, eventId: 'evt-prod-13-summer', timestamp: '2026-11-23T22:30:26' },
+      { ...sample, eventId: 'evt-winter-clt', timestamp: '2026-07-15T22:30:26Z' },
+    ];
+    const { fixture } = await setup(true, rows);
+    const timeCols = Array.from(fixture.nativeElement.querySelectorAll('.audit-time-col')) as HTMLElement[];
+    const dateBadges = Array.from(fixture.nativeElement.querySelectorAll('.audit-date-badge')) as HTMLElement[];
+    const timeTexts = Array.from(fixture.nativeElement.querySelectorAll('.audit-time-text')) as HTMLElement[];
+    const utcValues = Array.from(fixture.nativeElement.querySelectorAll('.audit-utc-tech-value')) as HTMLElement[];
+
+    // Summer (Production #13 case): 2026-11-23T22:30:26Z -> 23/11/2026 · 19:30:26 CLST (UTC-3)
+    expect(dateBadges[0].textContent?.trim()).toBe('23/11/2026');
+    expect(timeTexts[0].textContent?.trim()).toBe('19:30:26 CLST (UTC-3)');
+    expect(timeTexts[0].textContent?.trim()).not.toBe('19:30:26 UTC');
+    expect(timeCols[0].getAttribute('title')).toContain('2026-11-23T22:30:26Z');
+    expect(utcValues[0].textContent?.trim()).toBe('2026-11-23T22:30:26Z');
+
+    // Winter: 2026-07-15T22:30:26Z -> 15/07/2026 · 18:30:26 CLT (UTC-4)
+    expect(dateBadges[1].textContent?.trim()).toBe('15/07/2026');
+    expect(timeTexts[1].textContent?.trim()).toBe('18:30:26 CLT (UTC-4)');
+    expect(timeCols[1].getAttribute('title')).toContain('2026-07-15T22:30:26Z');
+    expect(utcValues[1].textContent?.trim()).toBe('2026-07-15T22:30:26Z');
   });
 
   it('polls audit timeline automatically every 30s without losing active filters', async () => {

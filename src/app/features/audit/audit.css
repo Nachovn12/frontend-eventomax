@@ -339,7 +339,7 @@
 
 .audit-event {
   display: grid;
-  grid-template-columns: 140px 32px minmax(0, 1fr);
+  grid-template-columns: 164px 32px minmax(0, 1fr);
   gap: 16px;
   position: relative;
 }

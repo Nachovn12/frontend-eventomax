@@ -180,11 +180,13 @@
         <!-- Línea de Tiempo Visual Continua -->
         <ol class="audit-timeline emx-content-fade-in" aria-label="Eventos ordenados por fecha descendente">
           @for (item of items(); track item.eventId) {
+            @let ts = formatTimestampChile(item.timestamp);
             <li class="audit-event">
-              <!-- Columna 1: Marca de tiempo -->
-              <div class="audit-time-col">
-                <span class="audit-date-badge">{{ timestampUtc(item.timestamp) | date:'dd MMM yyyy' }}</span>
-                <span class="audit-time-text">{{ timestampUtc(item.timestamp) | date:'HH:mm:ss' }} UTC</span>
+              <!-- Columna 1: Marca de tiempo (Chile continental + tooltip UTC original) -->
+              <div class="audit-time-col" [title]="'Timestamp UTC original: ' + ts.utcIso">
+                <span class="audit-date-badge">{{ ts.date }}</span>
+                <span class="audit-time-text">{{ ts.time }} {{ ts.tzLabel }}</span>
+                <span class="sr-only">{{ ts.combined }}</span>
               </div>
 
               <!-- Conector Visual Timeline -->
@@ -376,6 +378,12 @@
                         </button>
                       </div>
                     }
+                    <div class="audit-actor-tech-row audit-utc-tech-row">
+                      <div class="audit-actor-tech-meta">
+                        <span class="audit-actor-tech-label">Timestamp UTC original (servidor)</span>
+                        <code class="audit-utc-tech-value">{{ ts.utcIso }}</code>
+                      </div>
+                    </div>
                     @if (formatResolutionSource(item); as sourceLabel) {
                       <div class="audit-actor-source-row">
                         <span class="audit-actor-tech-label">Fuente de resolución</span>

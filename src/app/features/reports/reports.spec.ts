@@ -75,6 +75,9 @@ describe('Reports EP2 (EMX-105)', () => {
     expect(fixture.nativeElement.textContent).toContain('Solo eventos ProductionStatusChanged');
     expect(fixture.nativeElement.textContent).toContain('CONFIRMADO');
     expect(fixture.nativeElement.querySelectorAll('.report-bar-row')).toHaveLength(2);
+    // Report period timestamps rendered in Chile standard (October = CLST, UTC-3) with UTC tooltip
+    expect(fixture.nativeElement.textContent).toContain('14/10/2026 · 08:00 CLST (UTC-3)');
+    expect(fixture.nativeElement.textContent).toContain('15/10/2026 · 08:00 CLST (UTC-3)');
   });
 
   it('requests the selected reporting period', async () => {
